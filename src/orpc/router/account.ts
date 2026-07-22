@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { publicProcedure } from '#/orpc/context'
 import { auth } from '#/lib/auth'
 import { invitation, user } from '#/db/schema'
+import { invitedRegistration } from '#/lib/registration-context'
 
 const CredentialsSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -105,10 +106,16 @@ export const acceptInvite = publicProcedure
         message: 'Einladung ist ungültig oder abgelaufen.',
       })
     }
-    await createAccount(context.headers, {
-      name: input.name,
-      email: invite.email,
-      password: input.password,
-    })
+    // Run the sign-up inside the invited-registration context so the auth
+    // create hook trusts it. This is the ONLY path that sets that context.
+    await invitedRegistration.run(
+      { email: invite.email.toLowerCase(), role: invite.role },
+      () =>
+        createAccount(context.headers, {
+          name: input.name,
+          email: invite.email,
+          password: input.password,
+        }),
+    )
     return { email: invite.email }
   })

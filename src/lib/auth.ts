@@ -2,10 +2,11 @@ import { betterAuth } from 'better-auth'
 import { APIError } from 'better-auth/api'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { and, eq, gt, isNull } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 
 import { db } from '#/db'
 import { account, invitation, session, user, verification } from '#/db/schema'
+import { invitedRegistration } from '#/lib/registration-context'
 
 /**
  * Registration policy: invite-only, with a bootstrap exception for the very
@@ -49,26 +50,18 @@ export const auth = betterAuth({
             return { data: { ...newUser, email, role: 'admin' } }
           }
 
-          const [invite] = await db
-            .select()
-            .from(invitation)
-            .where(
-              and(
-                eq(invitation.email, email),
-                isNull(invitation.acceptedAt),
-                gt(invitation.expiresAt, new Date()),
-              ),
-            )
-            .limit(1)
-
-          if (!invite) {
-            throw new APIError('FORBIDDEN', {
-              message:
-                'Registration is invite-only. Ask an administrator for an invitation.',
-            })
+          // Otherwise the sign-up must originate from acceptInvite, which only
+          // enters this context after validating the invite TOKEN. The public
+          // sign-up route never sets it, so a known email alone is rejected.
+          const invited = invitedRegistration.getStore()
+          if (invited && invited.email === email) {
+            return { data: { ...newUser, email, role: invited.role } }
           }
 
-          return { data: { ...newUser, email, role: invite.role } }
+          throw new APIError('FORBIDDEN', {
+            message:
+              'Registration is invite-only. Ask an administrator for an invitation.',
+          })
         },
         after: async (createdUser) => {
           // Consume any pending invitations for this email.

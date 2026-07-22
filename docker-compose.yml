@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rustdesk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: rustdesk_book
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U rustdesk -d rustdesk_book']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    # Pull the released image by default; `docker compose up --build` builds locally.
+    image: ghcr.io/lucabmn/rustdesk-book:latest
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://rustdesk:${POSTGRES_PASSWORD}@postgres:5432/rustdesk_book
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?set APP_ENCRYPTION_KEY in .env}
+      MCP_API_KEY: ${MCP_API_KEY:-}
+    ports:
+      - '${PORT:-3000}:3000'
+
+volumes:
+  pgdata:

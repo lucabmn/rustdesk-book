@@ -1,0 +1,33 @@
+{
+  "projectName": "rustdesk-book",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "npm",
+  "includeExamples": false,
+  "tailwind": true,
+  "projectPreset": "default",
+  "addOnOptions": {
+    "drizzle": {
+      "database": "postgresql"
+    }
+  },
+  "git": true,
+  "install": true,
+  "intent": true,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "nitro",
+    "drizzle",
+    "form",
+    "oRPC",
+    "mcp",
+    "paraglide",
+    "shadcn",
+    "table",
+    "better-auth",
+    "store",
+    "tanstack-query"
+  ]
+}

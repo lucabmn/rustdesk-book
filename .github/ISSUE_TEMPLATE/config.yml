@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Sicherheitslücke melden
+    url: https://github.com/lucabmn/rustdesk-book/security/advisories/new
+    about: Sicherheitsprobleme bitte vertraulich melden – nicht als öffentliches Issue. Siehe SECURITY.md.
+  - name: Frage / Diskussion
+    url: https://github.com/lucabmn/rustdesk-book/discussions
+    about: Fragen zur Einrichtung oder Nutzung gehören in die Discussions.

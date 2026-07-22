@@ -1,0 +1,50 @@
+name: Fehler melden
+description: Ein reproduzierbares Problem in rustdesk-book melden.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für den Bericht. Bitte **keine** Passwörter, Tokens oder echten
+        RustDesk-IDs einfügen.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Was ist passiert?
+      description: Beschreibe das Problem und was du stattdessen erwartet hast.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Schritte zur Reproduktion
+      placeholder: |
+        1. …
+        2. …
+        3. Fehler tritt auf
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / Image-Tag
+      placeholder: 'z.B. v1.0.0 oder ghcr …:latest'
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Betrieb
+      options:
+        - Docker Compose
+        - Einzel-Container
+        - Lokale Entwicklung (pnpm dev)
+        - Sonstiges
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevante Logs
+      description: Container-/Serverlogs. Bitte Secrets schwärzen.
+      render: shell

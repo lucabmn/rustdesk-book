@@ -1,249 +1,124 @@
-Welcome to your new TanStack Start app!
+# rustdesk-book
 
-# Getting Started
+Ein selbstgehostetes Adressbuch für [RustDesk](https://rustdesk.com). Es hält
+Geräte, Zugangsdaten und Kundenzuordnung an einem Ort – und öffnet die
+Fernwartung per Klick. Gedacht für IT-Dienstleister und alle, die mehr als eine
+Handvoll RustDesk-IDs pflegen.
 
-To run this application:
+Im Kern ist rustdesk-book ein Passwort-Tresor. Passwörter liegen ausschließlich
+verschlüsselt in der Datenbank; Klartext gibt es nur auf ausdrückliche,
+protokollierte Anfrage. Details dazu in [SECURITY.md](./SECURITY.md).
 
-```bash
-npm install
-npm run dev
-```
+## Funktionen
 
-# Building For Production
+- Geräte mit RustDesk-ID, Alias, Kunde, Betriebssystem, Tags und Notizen
+- Verbinden per Klick über `rustdesk://` – die URI wird serverseitig gebaut und
+  das Passwort korrekt kodiert
+- Passwörter AES-256-GCM-verschlüsselt; Anzeigen und Verbinden werden auditiert
+- Drei Ansichten (Tabelle, nach Kunde gruppiert, Karten), Volltextsuche und
+  Filter nach Status, OS, Kunde und Tag
+- Import/Export als JSON (Export ohne Passwörter)
+- Einladungsbasierte Registrierung; erstes Konto wird zum Administrator
+- Heller und dunkler Modus
+- Optionaler, lesender MCP-Server: „Habe ich ein Gerät für Kunde X?“ direkt aus
+  dem Assistenten beantworten
 
-To build this application for production:
+## Schnellstart mit Docker Compose
 
-```bash
-npm run build
-```
-
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-
-## Deploy with Nitro
-
-This project uses Nitro as a generic server adapter, so it can run on any Node-compatible host.
+Vorausgesetzt sind Docker und Docker Compose.
 
 ```bash
-npm run build
-node dist/server/index.mjs
+# 1. Repository holen
+git clone https://github.com/lucabmn/rustdesk-book.git
+cd rustdesk-book
+
+# 2. Umgebung anlegen
+cp .env.example .env
 ```
 
-The build output is a self-contained Node server. To deploy, push the `dist/` directory to your host (Render, Fly.io, your own VPS, etc.) and run the server command above.
-
-For host-specific presets (Vercel, Netlify, Cloudflare, AWS Lambda, etc.) and tuning, see https://v3.nitro.build/deploy.
-
-
-# Paraglide i18n
-
-This add-on wires up ParaglideJS for localized routing and message formatting.
-
-- Messages live in `project.inlang/messages`.
-- URLs are localized through the Paraglide Vite plugin and router `rewrite` hooks.
-- Run the dev server or build to regenerate the `src/paraglide` outputs.
-
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+Trage in `.env` die nötigen Werte ein und **erzeuge eigene Schlüssel**:
 
 ```bash
-pnpm dlx shadcn@latest add button
+# 32-Byte-Schlüssel für die Passwortverschlüsselung (Pflicht)
+openssl rand -base64 32
+
+# Session-Secret für better-auth
+openssl rand -base64 32
+
+# optionaler Bearer-Token für den MCP-Endpunkt
+openssl rand -hex 32
 ```
 
+Minimal benötigte Variablen in `.env`:
 
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   npx -y @better-auth/cli secret
-   ```
-
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
-
-### Adding a Database (Optional)
-
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-});
+```dotenv
+POSTGRES_PASSWORD=…            # frei wählbar
+BETTER_AUTH_SECRET=…           # openssl rand -base64 32
+APP_ENCRYPTION_KEY=…           # openssl rand -base64 32  (getrennt sichern!)
+BETTER_AUTH_URL=https://adressbuch.example.com
+# MCP_API_KEY=…                # nur setzen, wenn der MCP-Server genutzt wird
 ```
 
-Then run migrations:
+Dann starten:
 
 ```bash
-npx -y @better-auth/cli migrate
+docker compose up -d
 ```
 
+Die App läuft auf Port 3000. Migrationen werden beim Start automatisch angewandt.
+Beim ersten Aufruf legst du das Administrator-Konto an – danach ist die
+Registrierung nur noch per Einladung möglich.
 
+Das Container-Image wird bei jedem Release nach
+`ghcr.io/lucabmn/rustdesk-book` veröffentlicht (multi-arch, amd64/arm64).
 
-## Routing
+## Konfiguration
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
+| Variable             | Pflicht | Beschreibung                                                                 |
+| -------------------- | :-----: | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`       |   ja    | PostgreSQL-Verbindung. In Compose automatisch gesetzt.                        |
+| `APP_ENCRYPTION_KEY` |   ja    | 32-Byte-Schlüssel (base64/hex) für die Passwortverschlüsselung.              |
+| `BETTER_AUTH_SECRET` |   ja    | Secret zum Signieren der Sessions. Muss sich vom Verschlüsselungsschlüssel unterscheiden. |
+| `BETTER_AUTH_URL`    |   ja    | Öffentliche Basis-URL der Instanz.                                           |
+| `MCP_API_KEY`        |  nein   | Bearer-Token für `/mcp`. Ohne diesen ist der MCP-Endpunkt deaktiviert.        |
 
-### Adding A Route
+> **Wichtig:** Geht `APP_ENCRYPTION_KEY` verloren, sind alle gespeicherten
+> Passwörter unwiederbringlich verloren. Sichere ihn getrennt von der Datenbank.
 
-To add a new route to your application just add a new file in the `./src/routes` directory.
+## MCP-Server
 
-TanStack will automatically generate the content of the route file for you.
+rustdesk-book stellt optional einen [Model-Context-Protocol](https://modelcontextprotocol.io)-Server
+unter `/mcp` bereit. Er ist lesend und gibt keine Passwörter aus. Zugriff nur mit
+`Authorization: Bearer <MCP_API_KEY>`.
 
-Now that you have two routes you can use a `Link` component to navigate between them.
+Verfügbare Tools:
 
-### Adding Links
+- `search_devices` – Volltextsuche über ID, Alias, Kunde, Tags, Notizen
+- `list_devices` – Liste, optional nach Kunde, OS, Status oder Tag gefiltert
+- `get_device` – ein Gerät per RustDesk-ID oder Alias
+- `list_customers` – alle Kunden mit Gerätezahl
 
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
+Damit lassen sich Fragen wie „Habe ich ein Gerät für die Bäckerei Krause?“ oder
+„Welche Server sind offline?“ direkt aus einem Assistenten beantworten.
 
-```tsx
-import { Link } from "@tanstack/react-router";
+## Entwicklung
+
+Voraussetzungen: Node 22, pnpm, PostgreSQL.
+
+```bash
+pnpm install
+cp .env.example .env.local        # Werte eintragen, Schlüssel erzeugen
+pnpm db:migrate
+pnpm dev                          # http://localhost:3000
 ```
 
-Then anywhere in your JSX you can use it like so:
+Weitere Hinweise in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-```tsx
-<Link to="/about">About</Link>
-```
+## Technik
 
-This will create a link that will navigate to the `/about` route.
+TanStack Start (React, SSR) · oRPC · Drizzle ORM · PostgreSQL · better-auth ·
+Paraglide (i18n) · Vite. Das UI basiert auf dem Tenvima Design System.
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+## Lizenz
 
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+[MIT](./LICENSE)

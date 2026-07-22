@@ -1,0 +1,22 @@
+name: Funktion vorschlagen
+description: Eine Idee oder Verbesserung für rustdesk-book vorschlagen.
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem löst der Vorschlag?
+      description: Beschreibe den Anwendungsfall, nicht nur die Lösung.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Vorgeschlagene Lösung
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativen
+      description: Andere Ansätze, die du erwogen hast.

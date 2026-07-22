@@ -46,8 +46,8 @@ export const list = adminOnly.handler(async ({ context }) => {
       id: invitation.id,
       email: invitation.email,
       role: invitation.role,
+      token: invitation.token,
       expiresAt: invitation.expiresAt,
-      acceptedAt: invitation.acceptedAt,
       createdAt: invitation.createdAt,
     })
     .from(invitation)
@@ -57,6 +57,7 @@ export const list = adminOnly.handler(async ({ context }) => {
     id: r.id,
     email: r.email,
     role: r.role,
+    token: r.token,
     expiresAt: r.expiresAt.toISOString(),
     createdAt: r.createdAt.toISOString(),
   }))

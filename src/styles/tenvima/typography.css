@@ -1,0 +1,40 @@
+/* ============================================================
+   Tenvima — Typography tokens
+   System-font stack — no webfonts shipped. Density-first:
+   13px base, 1.42 line-height, tight tracking.
+   ============================================================ */
+
+:root {
+  --wd-font-sans:
+    "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    "SF Pro Text", Inter, system-ui, sans-serif;
+  --wd-font-serif: Georgia, "Times New Roman", serif;
+  --wd-font-mono:
+    "SF Mono", "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+  --font-sans: var(--wd-font-sans);
+  --font-serif: var(--wd-font-serif);
+  --font-mono: var(--wd-font-mono);
+
+  --text-page-title: 18px;
+  --text-section: 15px;
+  --text-card-title: 14px;
+  --text-body: 13px;
+  --text-sm: 12.5px;
+  --text-xs: 12px;
+  --text-2xs: 11px;
+  --text-3xs: 10.5px;
+
+  --leading-body: 1.42;
+  --leading-relaxed: 1.55;
+  --leading-prose: 1.65;
+
+  --tracking-tight: -0.2px;
+  --tracking-normal: 0em;
+  --tracking-eyebrow: 0.05em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+}

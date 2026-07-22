@@ -1,14 +1,24 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/')({ component: Home })
+import { fetchSession } from '#/lib/auth-server'
+import { AddressBook } from '#/components/address-book/address-book'
+import { ToastProvider } from '#/components/address-book/toast'
+
+export const Route = createFileRoute('/')({
+  beforeLoad: async () => {
+    const session = await fetchSession()
+    if (!session) throw redirect({ to: '/login' })
+    return { user: session.user }
+  },
+  loader: ({ context }) => ({ user: context.user }),
+  component: Home,
+})
 
 function Home() {
+  const { user } = Route.useLoaderData()
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold">Welcome to TanStack Start</h1>
-      <p className="mt-4 text-lg">
-        Edit <code>src/routes/index.tsx</code> to get started.
-      </p>
-    </div>
+    <ToastProvider>
+      <AddressBook user={user} />
+    </ToastProvider>
   )
 }

@@ -1,0 +1,87 @@
+/* ============================================================
+   Tenvima — Color tokens
+   Light is the default (:root). Dark is a first-class theme,
+   activated by .dark or [data-theme="dark"] on any ancestor.
+   ============================================================ */
+
+:root,
+[data-theme="light"] {
+  --bg-app: #f4f7fb;
+  --bg-chrome: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-sunken: #f5f7fb;
+  --bg-hover: #eef3f9;
+  --bg-active: #e3edfb;
+  --bg-input: #ffffff;
+  --bg-tint: #eef5fe;
+
+  --bd-subtle: #eaedf1;
+  --bd-1: #dadfe6;
+  --bd-2: #c2c9d4;
+  --bd-strong: #97a0ae;
+
+  --fg-1: #0c111d;
+  --fg-2: #3b4250;
+  --fg-3: #636b78;
+  --fg-4: #8a929f;
+  --fg-inv: #ffffff;
+
+  --brand: #2b88f7;
+  --brand-2: #1f6fe0;
+  --brand-soft: #e6f0fe;
+  --brand-line: #b7d4f8;
+  --brand-fg: #ffffff;
+  --brand-gradient: linear-gradient(135deg, #2589f5 0%, #4fb0ff 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #e9f3fe 0%, #eef7ff 100%);
+
+  --s-ok: #237a4b;    --s-ok-bg: #e4f2ea;
+  --s-warn: #b0590e;  --s-warn-bg: #fbeed6;
+  --s-err: #c5342c;   --s-err-bg: #fbe5e3;
+  --s-info: #1f66a7;  --s-info-bg: #e1eef8;
+  --s-neu: #595c61;   --s-neu-bg: #ebecee;
+  --s-plan: #6d3bd1;  --s-plan-bg: #ece6fb;
+  --s-violet: #6a3ea1; --s-violet-bg: #eee4f8;
+
+  --selection-bg: var(--brand-soft);
+}
+
+.dark,
+[data-theme="dark"] {
+  --bg-app: #0a0d14;
+  --bg-chrome: #0f131c;
+  --bg-panel: #131825;
+  --bg-sunken: #10141e;
+  --bg-hover: #1a2030;
+  --bg-active: #213048;
+  --bg-input: #131825;
+  --bg-tint: #111c2e;
+
+  --bd-subtle: #1c2230;
+  --bd-1: #242b3a;
+  --bd-2: #333b4c;
+  --bd-strong: #59616f;
+
+  --fg-1: #e7eaf0;
+  --fg-2: #b4bac6;
+  --fg-3: #868d9b;
+  --fg-4: #656c7a;
+  --fg-inv: #ffffff;
+
+  --brand: #4f9dff;
+  --brand-2: #6fb2ff;
+  --brand-soft: rgba(79, 157, 255, 0.16);
+  --brand-line: rgba(79, 157, 255, 0.34);
+  --brand-fg: #ffffff;
+  --brand-gradient: linear-gradient(135deg, #2589f5 0%, #4fb0ff 100%);
+  --brand-gradient-soft: linear-gradient(135deg, rgba(37, 137, 245, 0.18) 0%, rgba(79, 176, 255, 0.18) 100%);
+
+  --s-ok: #5fbf84;    --s-ok-bg: rgba(95, 191, 132, 0.12);
+  --s-warn: #d9a341;  --s-warn-bg: rgba(217, 163, 65, 0.12);
+  --s-err: #e56b62;   --s-err-bg: rgba(229, 107, 98, 0.12);
+  --s-info: #6fa8de;  --s-info-bg: rgba(111, 168, 222, 0.12);
+  --s-neu: #9aa0a8;   --s-neu-bg: rgba(154, 160, 168, 0.12);
+  --s-plan: #b794f6;  --s-plan-bg: rgba(167, 139, 250, 0.14);
+  --s-violet: #a98adc; --s-violet-bg: rgba(169, 138, 220, 0.12);
+
+  --selection-bg: var(--brand-soft);
+}

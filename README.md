@@ -9,6 +9,10 @@ Im Kern ist rustdesk-book ein Passwort-Tresor. Passwörter liegen ausschließlic
 verschlüsselt in der Datenbank; Klartext gibt es nur auf ausdrückliche,
 protokollierte Anfrage. Details dazu in [SECURITY.md](./SECURITY.md).
 
+![rustdesk-book Screenshot](./docs/screenshot.svg)
+
+<!-- Platzhalter – echter Screenshot folgt. -->
+
 ## Funktionen
 
 - Geräte mit RustDesk-ID, Alias, Kunde, Betriebssystem, Tags und Notizen

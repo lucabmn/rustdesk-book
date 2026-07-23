@@ -3,14 +3,10 @@ import { Dialog } from 'radix-ui'
 import { X } from 'lucide-react'
 
 import { OS_OPTIONS, DEVICE_STATUSES } from '#/lib/device-meta'
+import { statusLabel } from '#/lib/i18n-labels'
+import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
 import type { DeviceInput } from '#/orpc/schema'
-
-const STATUS_LABELS: Record<string, string> = {
-  online: 'Online',
-  away: 'Abwesend',
-  offline: 'Offline',
-}
 
 interface Props {
   open: boolean
@@ -86,11 +82,10 @@ export function DeviceFormDialog({
         <Dialog.Content className="tv-dialog" style={{ maxWidth: 460 }}>
           <div className="tv-dialog__header">
             <Dialog.Title className="tv-dialog__title">
-              {device ? 'Gerät bearbeiten' : 'Gerät hinzufügen'}
+              {device ? m.form_edit_title() : m.form_add_title()}
             </Dialog.Title>
             <Dialog.Description className="tv-dialog__description">
-              RustDesk-Gerät im Adressbuch pflegen. Das Passwort wird verschlüsselt
-              gespeichert.
+              {m.form_description()}
             </Dialog.Description>
           </div>
 
@@ -101,7 +96,7 @@ export function DeviceFormDialog({
               gap: 12,
             }}
           >
-            <Field label="RustDesk-ID *">
+            <Field label={m.form_id_label()}>
               <input
                 className="tv-input mono"
                 value={form.rustdeskId}
@@ -110,23 +105,23 @@ export function DeviceFormDialog({
                 inputMode="numeric"
               />
             </Field>
-            <Field label="Alias / Anzeigename *">
+            <Field label={m.form_alias_label()}>
               <input
                 className="tv-input"
                 value={form.alias}
                 onChange={(e) => set('alias', e.target.value)}
-                placeholder="Empfang-PC"
+                placeholder={m.form_alias_ph()}
               />
             </Field>
-            <Field label="Kunde / Mandant">
+            <Field label={m.form_customer_label()}>
               <input
                 className="tv-input"
                 value={form.customer}
                 onChange={(e) => set('customer', e.target.value)}
-                placeholder="Bäckerei Krause GmbH"
+                placeholder={m.form_customer_ph()}
               />
             </Field>
-            <Field label="Betriebssystem">
+            <Field label={m.form_os_label()}>
               <select
                 className="tv-select"
                 style={{ width: '100%' }}
@@ -140,7 +135,7 @@ export function DeviceFormDialog({
                 ))}
               </select>
             </Field>
-            <Field label="Status">
+            <Field label={m.form_status_label()}>
               <select
                 className="tv-select"
                 style={{ width: '100%' }}
@@ -149,56 +144,56 @@ export function DeviceFormDialog({
               >
                 {DEVICE_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {STATUS_LABELS[s]}
+                    {statusLabel(s)}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Tags (kommagetrennt)">
+            <Field label={m.form_tags_label()}>
               <input
                 className="tv-input"
                 value={form.tags}
                 onChange={(e) => set('tags', e.target.value)}
-                placeholder="Server, Kasse"
+                placeholder={m.form_tags_ph()}
               />
             </Field>
-            <Field label="Passwort" full>
+            <Field label={m.form_password_label()} full>
               <input
                 className="tv-input mono"
                 type="password"
                 value={form.password}
                 onChange={(e) => set('password', e.target.value)}
-                placeholder={device ? '•••••••• (unverändert lassen)' : '••••••••'}
+                placeholder={device ? m.form_password_ph_edit() : m.form_password_ph_new()}
                 autoComplete="new-password"
               />
             </Field>
-            <Field label="Notizen" full>
+            <Field label={m.form_notes_label()} full>
               <textarea
                 className="tv-input"
                 value={form.notes}
                 onChange={(e) => set('notes', e.target.value)}
-                placeholder="z.B. Standort, Ansprechpartner, Zugangshinweise…"
+                placeholder={m.form_notes_ph()}
               />
             </Field>
           </div>
 
           <div className="tv-dialog__footer">
             <Dialog.Close asChild>
-              <button className="tv-btn tv-btn--outline tv-btn--sm">Abbrechen</button>
+              <button className="tv-btn tv-btn--outline tv-btn--sm">{m.common_cancel()}</button>
             </Dialog.Close>
             <button
               className="tv-btn tv-btn--default tv-btn--sm"
               onClick={submit}
               disabled={busy}
             >
-              {device ? 'Speichern' : 'Hinzufügen'}
+              {device ? m.common_save() : m.common_add()}
             </button>
           </div>
 
           <Dialog.Close asChild>
             <button
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-              aria-label="Schließen"
+              aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}
             >
               <X size={16} />

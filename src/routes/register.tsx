@@ -7,6 +7,8 @@ import { authClient } from '#/lib/auth-client'
 import { client, orpc } from '#/orpc/client'
 import { fetchSession } from '#/lib/auth-server'
 import { BrandMark } from '#/components/brand-mark'
+import { LanguageSwitcher } from '#/components/language-switcher'
+import { m } from '#/paraglide/messages'
 
 const searchSchema = z.object({ token: z.string().optional() })
 
@@ -52,12 +54,12 @@ function RegisterPage() {
         password,
       })
       if (signInError) {
-        setError(signInError.message ?? 'Anmeldung fehlgeschlagen.')
+        setError(signInError.message ?? m.auth_signin_error())
         return
       }
       await router.navigate({ to: '/' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registrierung fehlgeschlagen.')
+      setError(err instanceof Error ? err.message : m.auth_register_error())
     } finally {
       setBusy(false)
     }
@@ -69,13 +71,16 @@ function RegisterPage() {
     <div className="tv-auth-wrap">
       <div className="tv-auth-card">
         <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <BrandMark />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <BrandMark />
+            <LanguageSwitcher />
+          </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>Konto anlegen</div>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>{m.auth_register_title()}</div>
             <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
               {inviteQuery.data
-                ? `Einladung für ${inviteQuery.data.email}`
-                : 'Registrierung ist nur mit einer gültigen Einladung möglich.'}
+                ? m.auth_register_invite_for({ email: inviteQuery.data.email })
+                : m.auth_register_need_invite()}
             </div>
           </div>
         </header>
@@ -90,8 +95,7 @@ function RegisterPage() {
               borderRadius: 6,
             }}
           >
-            Diese Einladung ist ungültig oder abgelaufen. Bitte fordere eine neue
-            Einladung an.
+            {m.auth_register_invalid_invite()}
           </div>
         ) : (
           <form
@@ -100,7 +104,7 @@ function RegisterPage() {
           >
             <div className="tv-field">
               <label className="tv-label" htmlFor="name">
-                Name
+                {m.common_name()}
               </label>
               <input
                 id="name"
@@ -113,7 +117,7 @@ function RegisterPage() {
             </div>
             <div className="tv-field">
               <label className="tv-label" htmlFor="password">
-                Passwort
+                {m.common_password()}
               </label>
               <input
                 id="password"
@@ -126,7 +130,7 @@ function RegisterPage() {
                 minLength={10}
               />
               <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-                Mindestens 10 Zeichen.
+                {m.auth_password_hint()}
               </span>
             </div>
 
@@ -149,7 +153,7 @@ function RegisterPage() {
               className="tv-btn tv-btn--default tv-btn--lg tv-btn--block"
               disabled={busy || inviteQuery.isLoading}
             >
-              Konto erstellen & anmelden
+              {m.auth_create_and_signin()}
             </button>
           </form>
         )}

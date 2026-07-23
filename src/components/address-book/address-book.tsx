@@ -33,16 +33,14 @@ import {
 import { applyTheme, getCurrentTheme, type Theme } from '#/lib/theme'
 import type { SessionUser } from '#/lib/auth-server'
 import type { Device, DeviceInput } from '#/orpc/schema'
+import { statusLabel } from '#/lib/i18n-labels'
+import { m } from '#/paraglide/messages'
+import { LanguageSwitcher } from '#/components/language-switcher'
 import { useToast } from './toast'
 import { DeviceFormDialog } from './device-form-dialog'
 import { DeviceDetailDrawer, formatLastSeen } from './device-detail-drawer'
 import { InviteDialog } from './invite-dialog'
 
-const STATUS_LABELS: Record<string, string> = {
-  online: 'Online',
-  away: 'Abwesend',
-  offline: 'Offline',
-}
 type ViewMode = 'table' | 'grouped' | 'cards'
 
 export function AddressBook({ user }: { user: SessionUser }) {
@@ -84,7 +82,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     orpc.devices.create.mutationOptions({
       onSuccess: () => {
         invalidate()
-        toast('Gerät hinzugefügt')
+        toast(m.toast_added())
         setDialogOpen(false)
       },
       onError: (e) => toast(e.message),
@@ -94,7 +92,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     orpc.devices.update.mutationOptions({
       onSuccess: () => {
         invalidate()
-        toast('Gerät aktualisiert')
+        toast(m.toast_updated())
         setDialogOpen(false)
       },
       onError: (e) => toast(e.message),
@@ -104,7 +102,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     orpc.devices.remove.mutationOptions({
       onSuccess: () => {
         invalidate()
-        toast('Gerät gelöscht')
+        toast(m.toast_deleted())
       },
       onError: (e) => toast(e.message),
     }),
@@ -113,9 +111,9 @@ export function AddressBook({ user }: { user: SessionUser }) {
     orpc.devices.importDevices.mutationOptions({
       onSuccess: (r) => {
         invalidate()
-        toast(`${r.imported} Geräte importiert`)
+        toast(m.toast_imported({ count: r.imported }))
       },
-      onError: () => toast('Import fehlgeschlagen – JSON prüfen'),
+      onError: () => toast(m.toast_import_failed()),
     }),
   )
 
@@ -133,7 +131,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     else createMut.mutate(input)
   }
   function onDelete(device: Device) {
-    if (!confirm(`Gerät „${device.alias}" wirklich löschen?`)) return
+    if (!confirm(m.confirm_delete({ alias: device.alias }))) return
     removeMut.mutate({ id: device.id })
     setDetail(null)
   }
@@ -141,9 +139,9 @@ export function AddressBook({ user }: { user: SessionUser }) {
     try {
       const { uri } = await client.devices.connect({ id: device.id })
       window.location.href = uri
-      toast(`Öffne RustDesk-Sitzung zu ${device.alias}`)
+      toast(m.toast_connecting({ alias: device.alias }))
     } catch {
-      toast('Verbindung konnte nicht geöffnet werden')
+      toast(m.toast_connect_failed())
     }
   }
   async function reveal(device: Device): Promise<string> {
@@ -156,7 +154,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     } catch {
       /* clipboard unavailable */
     }
-    toast('RustDesk-ID kopiert')
+    toast(m.toast_id_copied())
   }
   function onExport() {
     // Export is metadata-only — passwords are never included.
@@ -168,9 +166,9 @@ export function AddressBook({ user }: { user: SessionUser }) {
       a.download = 'rustdesk-adressbuch.json'
       a.click()
       setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-      toast(`${devices.length} Geräte als JSON exportiert`)
+      toast(m.toast_exported({ count: devices.length }))
     } catch {
-      toast('Export fehlgeschlagen')
+      toast(m.toast_export_failed())
     }
   }
   function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -181,12 +179,12 @@ export function AddressBook({ user }: { user: SessionUser }) {
       try {
         const arr = JSON.parse(String(r.result))
         if (!Array.isArray(arr)) {
-          toast('Ungültiges Format – JSON-Array erwartet')
+          toast(m.toast_invalid_format())
           return
         }
         importMut.mutate({ devices: arr })
       } catch {
-        toast('Import fehlgeschlagen – JSON prüfen')
+        toast(m.toast_import_failed())
       }
     }
     r.readAsText(file)
@@ -224,7 +222,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const grouped = useMemo(() => {
     const map = new Map<string, Device[]>()
     for (const d of devices) {
-      const key = d.customer || 'Ohne Zuordnung'
+      const key = d.customer || m.unassigned()
       const arr = map.get(key) ?? []
       arr.push(d)
       map.set(key, arr)
@@ -234,7 +232,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
       .map(([name, items]) => ({ name, items }))
   }, [devices])
 
-  const headingLabel = filterCustomer === 'all' ? 'Alle Geräte' : filterCustomer
+  const headingLabel = filterCustomer === 'all' ? m.nav_all_devices() : filterCustomer
   const initials = user.name.slice(0, 2).toUpperCase()
 
   return (
@@ -295,7 +293,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
               className="tv-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Suche nach RustDesk-ID, Alias, Kunde, Tag…"
+              placeholder={m.search_placeholder()}
               style={{ height: 28, paddingLeft: 32 }}
             />
           </div>
@@ -303,13 +301,13 @@ export function AddressBook({ user }: { user: SessionUser }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <button className="tv-btn tv-btn--default tv-btn--sm" onClick={openAdd}>
             <Plus size={14} strokeWidth={1.75} />
-            Gerät hinzufügen
+            {m.device_add()}
           </button>
           <button
             className="tv-btn tv-btn--ghost tv-btn--icon-sm"
             onClick={toggleTheme}
-            title="Design wechseln"
-            aria-label="Design wechseln"
+            title={m.theme_toggle()}
+            aria-label={m.theme_toggle()}
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -353,7 +351,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
               background: 'var(--brand-soft)',
               color: 'var(--brand)',
             }}
-            title="Adressbuch"
+            title={m.nav_title()}
           >
             <span
               style={{
@@ -372,7 +370,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
           {user.role === 'admin' && (
             <button
               className="tv-rail-ico"
-              title="Einladungen"
+              title={m.rail_invites()}
               onClick={() => setInviteOpen(true)}
             >
               <Mail size={17} strokeWidth={1.5} />
@@ -393,9 +391,9 @@ export function AddressBook({ user }: { user: SessionUser }) {
           }}
         >
           <div style={{ padding: '14px 14px 10px' }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Adressbuch</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nav_title()}</div>
             <div style={{ fontSize: 11.5, color: 'var(--fg-3)', marginTop: 2 }}>
-              Selfhosted · RustDesk
+              {m.nav_subtitle()}
             </div>
           </div>
 
@@ -405,11 +403,11 @@ export function AddressBook({ user }: { user: SessionUser }) {
             onClick={() => setFilterCustomer('all')}
           >
             <MonitorDot className="tv-navitem__icon" />
-            <span className="tv-navitem__label">Alle Geräte</span>
+            <span className="tv-navitem__label">{m.nav_all_devices()}</span>
             <span className="tv-navitem__count">{stats?.total ?? '—'}</span>
           </button>
 
-          <SidebarHeading>Kunden / Mandanten</SidebarHeading>
+          <SidebarHeading>{m.section_customers()}</SidebarHeading>
           {stats?.customers.map((c) => (
             <button
               key={c.name}
@@ -425,7 +423,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
             </button>
           ))}
 
-          <SidebarHeading>Tags</SidebarHeading>
+          <SidebarHeading>{m.section_tags()}</SidebarHeading>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 14px 16px' }}>
             {stats?.tags.map((t) => {
               const on = activeTags.includes(t.name)
@@ -480,15 +478,15 @@ export function AddressBook({ user }: { user: SessionUser }) {
             <div className="tv-seg">
               <button data-active={view === 'table'} onClick={() => setView('table')}>
                 <List size={14} />
-                Tabelle
+                {m.view_table()}
               </button>
               <button data-active={view === 'grouped'} onClick={() => setView('grouped')}>
                 <Building2 size={14} />
-                Gruppiert
+                {m.view_grouped()}
               </button>
               <button data-active={view === 'cards'} onClick={() => setView('cards')}>
                 <LayoutGrid size={14} />
-                Karten
+                {m.view_cards()}
               </button>
             </div>
             <span style={{ width: 1, height: 22, background: 'var(--bd-1)' }} />
@@ -497,11 +495,11 @@ export function AddressBook({ user }: { user: SessionUser }) {
               onClick={() => fileRef.current?.click()}
             >
               <Upload size={14} />
-              Import
+              {m.action_import()}
             </button>
             <button className="tv-btn tv-btn--outline tv-btn--sm" onClick={onExport}>
               <Download size={14} />
-              Export
+              {m.action_export()}
             </button>
             <input
               type="file"
@@ -530,17 +528,17 @@ export function AddressBook({ user }: { user: SessionUser }) {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="all">Alle Status</option>
-              <option value="online">Online</option>
-              <option value="away">Abwesend</option>
-              <option value="offline">Offline</option>
+              <option value="all">{m.filter_all_status()}</option>
+              <option value="online">{m.status_online()}</option>
+              <option value="away">{m.status_away()}</option>
+              <option value="offline">{m.status_offline()}</option>
             </select>
             <select
               className="tv-select"
               value={filterOs}
               onChange={(e) => setFilterOs(e.target.value)}
             >
-              <option value="all">Alle OS</option>
+              <option value="all">{m.filter_all_os()}</option>
               {OS_OPTIONS.map((o) => (
                 <option key={o.key} value={o.key}>
                   {o.label}
@@ -552,7 +550,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
               value={filterCustomer}
               onChange={(e) => setFilterCustomer(e.target.value)}
             >
-              <option value="all">Alle Kunden</option>
+              <option value="all">{m.filter_all_customers()}</option>
               {stats?.customers.map((c) => (
                 <option key={c.name} value={c.name}>
                   {c.name}
@@ -566,22 +564,14 @@ export function AddressBook({ user }: { user: SessionUser }) {
                 style={{ color: 'var(--fg-3)' }}
               >
                 <X size={12} />
-                Filter zurücksetzen
+                {m.filter_reset()}
               </button>
             )}
             <div style={{ flex: 1 }} />
             <span style={{ fontSize: 11.5, color: 'var(--fg-3)', display: 'inline-flex', gap: 12 }}>
-              <span>
-                <b className="mono" style={{ color: 'var(--fg-1)' }}>
-                  {stats?.online ?? 0}
-                </b>{' '}
-                online
-              </span>
-              <span>
-                <b className="mono" style={{ color: 'var(--fg-1)' }}>
-                  {stats?.customers.length ?? 0}
-                </b>{' '}
-                Kunden
+              <span className="tnum">{m.stat_online({ count: stats?.online ?? 0 })}</span>
+              <span className="tnum">
+                {m.stat_customers({ count: stats?.customers.length ?? 0 })}
               </span>
             </span>
           </div>
@@ -589,10 +579,10 @@ export function AddressBook({ user }: { user: SessionUser }) {
           {/* Scroll area */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
             {listQuery.isLoading ? (
-              <EmptyState>Lädt…</EmptyState>
+              <EmptyState>{m.loading()}</EmptyState>
             ) : devices.length === 0 ? (
               <div className="tv-card tv-flush">
-                <EmptyState>Keine Geräte gefunden.</EmptyState>
+                <EmptyState>{m.empty_devices()}</EmptyState>
               </div>
             ) : view === 'table' ? (
               <TableView
@@ -633,16 +623,16 @@ export function AddressBook({ user }: { user: SessionUser }) {
         }}
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span className="tv-dot tv-dot--ok" style={{ width: 5, height: 5 }} /> Server
-          verbunden
+          <span className="tv-dot tv-dot--ok" style={{ width: 5, height: 5 }} />{' '}
+          {m.sb_server_connected()}
         </span>
         <span style={{ color: 'var(--fg-3)' }}>
-          Adressbuch · {stats?.total ?? 0} Geräte
+          {m.sb_devices({ count: stats?.total ?? 0 })}
         </span>
-        <span className="mono">rustdesk-book</span>
+        <span className="mono">{m.app_name()}</span>
         <div style={{ flex: 1 }} />
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          Self-hosted
+          {m.sb_selfhosted()}
         </span>
       </div>
 
@@ -723,7 +713,7 @@ function StatusDot({ status }: { status: Device['status'] }) {
     <span
       className={`tv-dot ${STATUS_META[status].dot}`}
       style={{ width: 8, height: 8 }}
-      title={STATUS_LABELS[status]}
+      title={statusLabel(status)}
     />
   )
 }
@@ -738,7 +728,7 @@ function ConnectButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) 
       }}
     >
       <Power size={12} strokeWidth={1.75} />
-      Verbinden
+      {m.common_connect()}
     </button>
   )
 }
@@ -764,7 +754,7 @@ function UserMenu({
         <button
           className="tv-avatar tv-avatar--sm"
           style={{ background: 'var(--brand-soft)', color: 'var(--brand)', fontSize: 11, border: 'none', cursor: 'pointer' }}
-          aria-label="Benutzermenü"
+          aria-label={m.user_menu()}
         >
           {initials}
         </button>
@@ -791,15 +781,27 @@ function UserMenu({
           {isAdmin && (
             <DropdownMenu.Item asChild>
               <button className="tv-menu-item" onClick={onInvite}>
-                <Mail size={14} /> Benutzer einladen
+                <Mail size={14} /> {m.invite_users()}
               </button>
             </DropdownMenu.Item>
           )}
           <DropdownMenu.Item asChild>
             <button className="tv-menu-item" onClick={onSignOut}>
-              <LogOut size={14} /> Abmelden
+              <LogOut size={14} /> {m.sign_out()}
             </button>
           </DropdownMenu.Item>
+          <div style={{ height: 1, background: 'var(--bd-subtle)', margin: '4px 0' }} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '4px 8px',
+            }}
+          >
+            <span style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{m.language()}</span>
+            <LanguageSwitcher />
+          </div>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -840,14 +842,14 @@ function TableView({
           <thead>
             <tr>
               <th style={{ width: 34 }} />
-              <th>RustDesk-ID</th>
-              <th>Alias</th>
-              <th>Kunde</th>
-              <th>Tags</th>
-              <th>OS</th>
-              <th>Letzte Verbindung</th>
-              <th>Passwort</th>
-              <th style={{ textAlign: 'right' }}>Aktion</th>
+              <th>{m.th_id()}</th>
+              <th>{m.th_alias()}</th>
+              <th>{m.th_customer()}</th>
+              <th>{m.th_tags()}</th>
+              <th>{m.th_os()}</th>
+              <th>{m.th_last_seen()}</th>
+              <th>{m.th_password()}</th>
+              <th style={{ textAlign: 'right' }}>{m.th_action()}</th>
             </tr>
           </thead>
           <tbody>
@@ -874,7 +876,7 @@ function TableView({
                     <ConnectButton onClick={() => onConnect(d)} />
                     <button
                       className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                      title="Bearbeiten"
+                      title={m.common_edit()}
                       onClick={(e) => {
                         e.stopPropagation()
                         onEdit(d)
@@ -884,7 +886,7 @@ function TableView({
                     </button>
                     <button
                       className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                      title="Löschen"
+                      title={m.common_delete()}
                       style={{ color: 'var(--s-err)' }}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1018,7 +1020,7 @@ function CardsView({
                 {formatRustdeskId(d.rustdeskId)}
               </div>
             </div>
-            <span className={STATUS_META[d.status].chip}>{STATUS_LABELS[d.status]}</span>
+            <span className={STATUS_META[d.status].chip}>{statusLabel(d.status)}</span>
           </div>
           <div
             style={{
@@ -1030,11 +1032,11 @@ function CardsView({
               color: 'var(--fg-3)',
             }}
           >
-            <span>Kunde</span>
+            <span>{m.label_customer()}</span>
             <span style={{ color: 'var(--fg-2)', textAlign: 'right' }}>{d.customer || '—'}</span>
-            <span>OS</span>
+            <span>{m.label_os()}</span>
             <span style={{ color: 'var(--fg-2)', textAlign: 'right' }}>{osLabel(d.osKey)}</span>
-            <span>Zuletzt</span>
+            <span>{m.label_last()}</span>
             <span style={{ color: 'var(--fg-2)', textAlign: 'right' }}>
               {formatLastSeen(d.lastSeen)}
             </span>
@@ -1061,7 +1063,7 @@ function CardsView({
               }}
             >
               <Power size={14} strokeWidth={1.75} />
-              Verbinden
+              {m.common_connect()}
             </button>
             <button
               className="tv-btn tv-btn--outline tv-btn--icon-sm"

@@ -9,7 +9,9 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { getLocale } from '#/paraglide/runtime'
+import { m } from '#/paraglide/messages'
 import { themeInitScript } from '#/lib/theme'
+import { LocaleProvider } from '#/lib/i18n'
 
 import appCss from '../styles.css?url'
 
@@ -24,12 +26,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'rustdesk-book · Adressbuch' },
-      {
-        name: 'description',
-        content:
-          'Selbstgehostetes RustDesk-Adressbuch mit verschlüsselten Zugangsdaten.',
-      },
+      { title: m.meta_title() },
+      { name: 'description', content: m.meta_description() },
     ],
     links: [{ rel: 'stylesheet', href: appCss }],
   }),
@@ -44,7 +42,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <LocaleProvider>{children}</LocaleProvider>
         <TanStackDevtools
           config={{ position: 'bottom-right' }}
           plugins={[

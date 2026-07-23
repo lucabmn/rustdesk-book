@@ -6,6 +6,8 @@ import { authClient } from '#/lib/auth-client'
 import { client, orpc } from '#/orpc/client'
 import { fetchSession } from '#/lib/auth-server'
 import { BrandMark } from '#/components/brand-mark'
+import { LanguageSwitcher } from '#/components/language-switcher'
+import { m } from '#/paraglide/messages'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
@@ -39,12 +41,12 @@ function LoginPage() {
         password,
       })
       if (signInError) {
-        setError(signInError.message ?? 'Anmeldung fehlgeschlagen.')
+        setError(signInError.message ?? m.auth_signin_error())
         return
       }
       await router.navigate({ to: '/' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten.')
+      setError(err instanceof Error ? err.message : m.auth_generic_error())
     } finally {
       setBusy(false)
     }
@@ -54,15 +56,16 @@ function LoginPage() {
     <div className="tv-auth-wrap">
       <form className="tv-auth-card" onSubmit={onSubmit}>
         <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <BrandMark />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <BrandMark />
+            <LanguageSwitcher />
+          </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600 }}>
-              {needsBootstrap ? 'Administrator einrichten' : 'Anmelden'}
+              {needsBootstrap ? m.auth_admin_title() : m.auth_signin_title()}
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
-              {needsBootstrap
-                ? 'Lege das erste Konto für dieses Adressbuch an.'
-                : 'Melde dich an, um auf das Adressbuch zuzugreifen.'}
+              {needsBootstrap ? m.auth_admin_subtitle() : m.auth_signin_subtitle()}
             </div>
           </div>
         </header>
@@ -70,7 +73,7 @@ function LoginPage() {
         {needsBootstrap && (
           <div className="tv-field">
             <label className="tv-label" htmlFor="name">
-              Name
+              {m.common_name()}
             </label>
             <input
               id="name"
@@ -85,7 +88,7 @@ function LoginPage() {
 
         <div className="tv-field">
           <label className="tv-label" htmlFor="email">
-            E-Mail
+            {m.common_email()}
           </label>
           <input
             id="email"
@@ -100,7 +103,7 @@ function LoginPage() {
 
         <div className="tv-field">
           <label className="tv-label" htmlFor="password">
-            Passwort
+            {m.common_password()}
           </label>
           <input
             id="password"
@@ -114,7 +117,7 @@ function LoginPage() {
           />
           {needsBootstrap && (
             <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-              Mindestens 10 Zeichen.
+              {m.auth_password_hint()}
             </span>
           )}
         </div>
@@ -138,7 +141,7 @@ function LoginPage() {
           className="tv-btn tv-btn--default tv-btn--lg tv-btn--block"
           disabled={busy}
         >
-          {needsBootstrap ? 'Konto erstellen & anmelden' : 'Anmelden'}
+          {needsBootstrap ? m.auth_create_and_signin() : m.auth_signin_title()}
         </button>
       </form>
     </div>

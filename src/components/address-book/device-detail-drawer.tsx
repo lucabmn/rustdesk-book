@@ -7,13 +7,9 @@ import {
   formatRustdeskId,
   osLabel,
 } from '#/lib/device-meta'
+import { statusLabel } from '#/lib/i18n-labels'
+import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
-
-const STATUS_LABELS: Record<string, string> = {
-  online: 'Online',
-  away: 'Abwesend',
-  offline: 'Offline',
-}
 
 interface Props {
   device: Device | null
@@ -112,11 +108,11 @@ export function DeviceDetailDrawer({
                     {formatRustdeskId(device.rustdeskId)}
                   </div>
                 </div>
-                <span className={meta.chip}>{STATUS_LABELS[device.status]}</span>
+                <span className={meta.chip}>{statusLabel(device.status)}</span>
                 <Dialog.Close asChild>
                   <button
                     className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-                    aria-label="Schließen"
+                    aria-label={m.common_close()}
                   >
                     <X size={16} />
                   </button>
@@ -139,7 +135,7 @@ export function DeviceDetailDrawer({
                   onClick={() => onConnect(device)}
                 >
                   <Power size={16} strokeWidth={1.75} />
-                  RustDesk-Sitzung öffnen
+                  {m.drawer_open_session()}
                 </button>
 
                 <div
@@ -150,24 +146,24 @@ export function DeviceDetailDrawer({
                     fontSize: 12.5,
                   }}
                 >
-                  <Meta label="Kunde">{device.customer || '—'}</Meta>
-                  <Meta label="Betriebssystem">{osLabel(device.osKey)}</Meta>
-                  <Meta label="Letzte Verbindung">
+                  <Meta label={m.th_customer()}>{device.customer || '—'}</Meta>
+                  <Meta label={m.drawer_os()}>{osLabel(device.osKey)}</Meta>
+                  <Meta label={m.drawer_last_seen()}>
                     {formatLastSeen(device.lastSeen)}
                   </Meta>
-                  <span style={{ color: 'var(--fg-3)' }}>RustDesk-ID</span>
+                  <span style={{ color: 'var(--fg-3)' }}>{m.th_id()}</span>
                   <span
                     className="mono tv-row-click"
                     style={{ color: 'var(--fg-1)', textAlign: 'right' }}
                     onClick={() => onCopyId(device)}
-                    title="Kopieren"
+                    title={m.drawer_copy()}
                   >
                     {formatRustdeskId(device.rustdeskId)}
                     <Copy size={12} style={{ marginLeft: 6, verticalAlign: -1 }} />
                   </span>
                 </div>
 
-                <Section title="Passwort">
+                <Section title={m.th_password()}>
                   {device.hasPassword ? (
                     <div
                       style={{
@@ -190,20 +186,20 @@ export function DeviceDetailDrawer({
                         className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                         onClick={toggleReveal}
                         disabled={revealing}
-                        aria-label={password ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                        aria-label={password ? m.drawer_hide_password() : m.drawer_show_password()}
                       >
                         {password ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
                     </div>
                   ) : (
                     <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-                      Kein Passwort hinterlegt.
+                      {m.drawer_no_password()}
                     </span>
                   )}
                 </Section>
 
                 {device.tags.length > 0 && (
-                  <Section title="Tags">
+                  <Section title={m.th_tags()}>
                     <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                       {device.tags.map((t) => (
                         <span key={t} className="tv-chip tv-chip--brand">
@@ -215,7 +211,7 @@ export function DeviceDetailDrawer({
                 )}
 
                 {device.notes && (
-                  <Section title="Notizen">
+                  <Section title={m.form_notes_label()}>
                     <div
                       style={{
                         fontSize: 12.5,
@@ -243,14 +239,14 @@ export function DeviceDetailDrawer({
                   onClick={() => onEdit(device)}
                 >
                   <Pencil size={14} />
-                  Bearbeiten
+                  {m.common_edit()}
                 </button>
                 <button
                   className="tv-btn tv-btn--destructive tv-btn--sm"
                   onClick={() => onDelete(device)}
                 >
                   <Trash2 size={14} />
-                  Löschen
+                  {m.common_delete()}
                 </button>
               </div>
             </>
@@ -291,7 +287,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function formatLastSeen(iso: string | null): string {
-  if (!iso) return 'Nie'
+  if (!iso) return m.last_seen_never()
   const d = new Date(iso)
   return d.toLocaleString('de-DE', {
     dateStyle: 'medium',

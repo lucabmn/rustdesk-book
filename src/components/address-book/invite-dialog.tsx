@@ -4,6 +4,8 @@ import { Dialog } from 'radix-ui'
 import { Copy, Trash2, X } from 'lucide-react'
 
 import { orpc } from '#/orpc/client'
+import { roleLabel } from '#/lib/i18n-labels'
+import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
 
 /** Admin-only dialog for creating and managing invitations. */
@@ -31,7 +33,7 @@ export function InviteDialog({
         invalidate()
         setEmail('')
         void copyLink(invite.token)
-        toast('Einladung erstellt – Link kopiert')
+        toast(m.toast_invite_created())
       },
       onError: (e) => toast(e.message),
     }),
@@ -40,7 +42,7 @@ export function InviteDialog({
     orpc.invites.revoke.mutationOptions({
       onSuccess: () => {
         invalidate()
-        toast('Einladung widerrufen')
+        toast(m.toast_invite_revoked())
       },
     }),
   )
@@ -62,17 +64,16 @@ export function InviteDialog({
         <Dialog.Overlay className="tv-dialog-overlay" />
         <Dialog.Content className="tv-dialog" style={{ maxWidth: 480 }}>
           <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">Benutzer einladen</Dialog.Title>
+            <Dialog.Title className="tv-dialog__title">{m.invite_title()}</Dialog.Title>
             <Dialog.Description className="tv-dialog__description">
-              Erstelle einen Einladungslink. Registrierung ist nur mit gültiger
-              Einladung möglich.
+              {m.invite_description()}
             </Dialog.Description>
           </div>
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <div className="tv-field" style={{ flex: 1 }}>
               <label className="tv-label" htmlFor="invite-email">
-                E-Mail-Adresse
+                {m.invite_email_label()}
               </label>
               <input
                 id="invite-email"
@@ -80,31 +81,31 @@ export function InviteDialog({
                 className="tv-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="kollege@firma.de"
+                placeholder={m.invite_email_ph()}
               />
             </div>
             <select
               className="tv-select"
               value={role}
               onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
-              aria-label="Rolle"
+              aria-label={m.invite_role()}
             >
-              <option value="member">Mitglied</option>
-              <option value="admin">Admin</option>
+              <option value="member">{m.common_role_member()}</option>
+              <option value="admin">{m.common_role_admin()}</option>
             </select>
             <button
               className="tv-btn tv-btn--default tv-btn--sm"
               disabled={!email.trim() || createMut.isPending}
               onClick={() => createMut.mutate({ email: email.trim(), role })}
             >
-              Einladen
+              {m.invite_submit()}
             </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {listQuery.data?.length === 0 && (
               <span style={{ fontSize: 12, color: 'var(--fg-4)' }}>
-                Keine offenen Einladungen.
+                {m.invite_none()}
               </span>
             )}
             {listQuery.data?.map((inv) => (
@@ -123,23 +124,22 @@ export function InviteDialog({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 500 }}>{inv.email}</div>
                   <div style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-                    {inv.role === 'admin' ? 'Admin' : 'Mitglied'} · gültig bis{' '}
-                    {new Date(inv.expiresAt).toLocaleDateString('de-DE')}
+                    {m.invite_valid_until({ role: roleLabel(inv.role), date: new Date(inv.expiresAt).toLocaleDateString() })}
                   </div>
                 </div>
                 <button
                   className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                  title="Link kopieren"
+                  title={m.invite_copy_link()}
                   onClick={() => {
                     void copyLink(inv.token)
-                    toast('Link kopiert')
+                    toast(m.toast_link_copied())
                   }}
                 >
                   <Copy size={13} />
                 </button>
                 <button
                   className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                  title="Widerrufen"
+                  title={m.invite_revoke()}
                   style={{ color: 'var(--s-err)' }}
                   onClick={() => revokeMut.mutate({ id: inv.id })}
                 >
@@ -152,7 +152,7 @@ export function InviteDialog({
           <Dialog.Close asChild>
             <button
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-              aria-label="Schließen"
+              aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}
             >
               <X size={16} />

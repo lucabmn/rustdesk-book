@@ -15,7 +15,9 @@ const config = defineConfig({
     paraglideVitePlugin({
       project: './project.inlang',
       outdir: './src/paraglide',
-      strategy: ['url', 'baseLocale'],
+      // Locale is driven deterministically by LocaleProvider (overwriteGetLocale)
+      // so SSR and the first client render always agree; see src/lib/i18n.tsx.
+      strategy: ['baseLocale'],
     }),
     nitro({ rollupConfig: { external: [/^@sentry\//] } }),
     tailwindcss(),

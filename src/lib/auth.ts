@@ -20,6 +20,21 @@ export const auth = betterAuth({
     provider: 'pg',
     schema: { user, session, account, verification },
   }),
+  // Only accept auth requests from the configured public origin. Secure cookies
+  // are derived automatically from an https BETTER_AUTH_URL.
+  trustedOrigins: process.env.BETTER_AUTH_URL
+    ? [process.env.BETTER_AUTH_URL]
+    : [],
+  // Throttle credential endpoints (active in production). Memory-backed, which
+  // is sufficient for a single-container deployment.
+  rateLimit: {
+    window: 60,
+    max: 100,
+    customRules: {
+      '/sign-in/email': { window: 60, max: 10 },
+      '/sign-up/email': { window: 60, max: 5 },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 10,

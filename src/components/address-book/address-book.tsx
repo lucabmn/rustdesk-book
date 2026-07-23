@@ -1092,7 +1092,8 @@ function CardsView({
             }}
           >
             <button
-              className="tv-btn tv-btn--default tv-btn--sm tv-btn--block"
+              className="tv-btn tv-btn--default tv-btn--sm"
+              style={{ flex: 1, minWidth: 0 }}
               onClick={(e) => {
                 e.stopPropagation()
                 onConnect(d)

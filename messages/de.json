@@ -111,6 +111,8 @@
   "form_notes_ph": "z.B. Standort, Ansprechpartner, Zugangshinweise…",
   "form_password_ph_edit": "•••••••• (unverändert lassen)",
   "form_password_ph_new": "••••••••",
+  "combobox_create": "„{name}“ anlegen",
+  "combobox_empty": "Keine Kunden gefunden",
 
   "drawer_open_session": "RustDesk-Sitzung öffnen",
   "drawer_os": "Betriebssystem",

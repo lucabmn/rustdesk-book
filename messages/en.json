@@ -111,6 +111,8 @@
   "form_notes_ph": "e.g. location, contact person, access notes…",
   "form_password_ph_edit": "•••••••• (leave unchanged)",
   "form_password_ph_new": "••••••••",
+  "combobox_create": "Create “{name}”",
+  "combobox_empty": "No customers found",
 
   "drawer_open_session": "Open RustDesk session",
   "drawer_os": "Operating system",

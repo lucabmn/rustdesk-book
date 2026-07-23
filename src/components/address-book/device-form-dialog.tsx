@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Dialog } from 'radix-ui'
 import { X } from 'lucide-react'
 
-import { OS_OPTIONS, DEVICE_STATUSES } from '#/lib/device-meta'
+import { DEVICE_STATUSES, osLabel } from '#/lib/device-meta'
 import { statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
@@ -17,6 +17,8 @@ interface Props {
   device: Device | null
   /** Existing customer names, suggested while typing. */
   customers: string[]
+  /** Existing operating systems, suggested while typing. */
+  operatingSystems: string[]
   onSubmit: (input: DeviceInput) => void
   busy?: boolean
 }
@@ -25,7 +27,7 @@ const empty = {
   rustdeskId: '',
   alias: '',
   customer: '',
-  osKey: 'win11' as string,
+  osKey: '',
   tags: '',
   status: 'offline' as string,
   password: '',
@@ -37,6 +39,7 @@ export function DeviceFormDialog({
   onOpenChange,
   device,
   customers,
+  operatingSystems,
   onSubmit,
   busy,
 }: Props) {
@@ -51,7 +54,7 @@ export function DeviceFormDialog({
             rustdeskId: device.rustdeskId,
             alias: device.alias,
             customer: device.customer ?? '',
-            osKey: device.osKey ?? 'win11',
+            osKey: device.osKey ? osLabel(device.osKey) : '',
             tags: device.tags.join(', '),
             status: device.status,
             password: '',
@@ -69,7 +72,7 @@ export function DeviceFormDialog({
       rustdeskId: form.rustdeskId.trim(),
       alias: form.alias.trim(),
       customer: form.customer.trim(),
-      osKey: form.osKey as DeviceInput['osKey'],
+      osKey: form.osKey.trim() || undefined,
       tags: form.tags
         .split(',')
         .map((t) => t.trim())
@@ -130,18 +133,15 @@ export function DeviceFormDialog({
               />
             </Field>
             <Field label={m.form_os_label()}>
-              <select
-                className="tv-select"
-                style={{ width: '100%' }}
+              <CustomerCombobox
                 value={form.osKey}
-                onChange={(e) => set('osKey', e.target.value)}
-              >
-                {OS_OPTIONS.map((o) => (
-                  <option key={o.key} value={o.key}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => set('osKey', v)}
+                options={operatingSystems}
+                placeholder={m.form_os_ph()}
+                commitMode="change"
+                allowCreate
+                aria-label={m.form_os_label()}
+              />
             </Field>
             <Field label={m.form_status_label()}>
               <select

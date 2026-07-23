@@ -82,6 +82,14 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const devices = listQuery.data ?? []
   const stats = statsQuery.data
   const customerNames = stats?.customers.map((c) => c.name) ?? []
+  // OS suggestions: the built-in presets merged with any custom values already
+  // stored, deduped and sorted — so known systems are found and new ones added.
+  const osNames = [
+    ...new Set([
+      ...OS_OPTIONS.map((o) => o.label),
+      ...(stats?.operatingSystems.map((o) => o.name) ?? []),
+    ]),
+  ].sort((a, b) => a.localeCompare(b, 'de'))
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: orpc.devices.key() })
@@ -556,18 +564,17 @@ export function AddressBook({ user }: { user: SessionUser }) {
               <option value="away">{m.status_away()}</option>
               <option value="offline">{m.status_offline()}</option>
             </select>
-            <select
-              className="tv-select"
-              value={filterOs}
-              onChange={(e) => setFilterOs(e.target.value)}
-            >
-              <option value="all">{m.filter_all_os()}</option>
-              {OS_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <div style={{ width: 200 }}>
+              <CustomerCombobox
+                value={filterOs === 'all' ? '' : filterOs}
+                onChange={(v) => setFilterOs(v || 'all')}
+                options={osNames}
+                placeholder={m.filter_all_os()}
+                commitMode="select"
+                clearLabel={m.filter_all_os()}
+                aria-label={m.filter_all_os()}
+              />
+            </div>
             <div style={{ width: 200 }}>
               <CustomerCombobox
                 value={filterCustomer === 'all' ? '' : filterCustomer}
@@ -663,6 +670,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
         onOpenChange={setDialogOpen}
         device={editing}
         customers={customerNames}
+        operatingSystems={osNames}
         onSubmit={submitForm}
         busy={createMut.isPending || updateMut.isPending}
       />

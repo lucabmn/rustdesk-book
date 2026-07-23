@@ -8,7 +8,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import type { db as Database } from '#/db'
 import { devices } from '#/db/schema'
 import type { Device, DeviceListFilterSchema } from '#/orpc/schema'
-import type { DeviceStatus } from '#/lib/device-meta'
+import { osLabel, type DeviceStatus } from '#/lib/device-meta'
 import type { z } from 'zod'
 
 type DeviceRow = typeof devices.$inferSelect
@@ -43,7 +43,6 @@ export async function queryDevices(
 ): Promise<DeviceRow[]> {
   const conditions = []
   if (filter.status) conditions.push(eq(devices.status, filter.status))
-  if (filter.osKey) conditions.push(eq(devices.osKey, filter.osKey))
   if (filter.customer) conditions.push(eq(devices.customer, filter.customer))
 
   let rows = await db
@@ -51,6 +50,13 @@ export async function queryDevices(
     .from(devices)
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(devices.updatedAt))
+
+  // OS is matched on its display label so legacy keys ('win11') and free-text
+  // values ('Windows 11') filter identically.
+  if (filter.osKey) {
+    const wanted = filter.osKey
+    rows = rows.filter((d) => osLabel(d.osKey) === wanted)
+  }
 
   const q = filter.search?.trim().toLowerCase()
   if (q) {

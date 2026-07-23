@@ -9,6 +9,7 @@ import {
   DeviceSchema,
 } from '#/orpc/schema'
 import { queryDevices, toPublicDevice } from '#/lib/device-service'
+import { osLabel } from '#/lib/device-meta'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
 import { auditLog, devices } from '#/db/schema'
 import type { AuditAction } from '#/db/schema'
@@ -50,12 +51,18 @@ export const get = authed
 export const stats = authed.handler(async ({ context }) => {
   const rows = await queryDevices(context.db, {})
   const customers = new Map<string, number>()
+  const operatingSystems = new Map<string, number>()
   const tags = new Map<string, number>()
   let online = 0
   for (const d of rows) {
     if (d.status === 'online') online++
     const c = d.customer?.trim()
     if (c) customers.set(c, (customers.get(c) ?? 0) + 1)
+    const os = d.osKey?.trim()
+    if (os) {
+      const label = osLabel(os)
+      operatingSystems.set(label, (operatingSystems.get(label) ?? 0) + 1)
+    }
     for (const t of d.tags ?? []) tags.set(t, (tags.get(t) ?? 0) + 1)
   }
   const sortByName = (a: { name: string }, b: { name: string }) =>
@@ -64,6 +71,9 @@ export const stats = authed.handler(async ({ context }) => {
     total: rows.length,
     online,
     customers: [...customers.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort(sortByName),
+    operatingSystems: [...operatingSystems.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort(sortByName),
     tags: [...tags.entries()]

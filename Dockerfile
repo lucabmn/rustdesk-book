@@ -14,11 +14,10 @@ WORKDIR /app
 RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# A valid-shaped key so any build-time module evaluation succeeds. This is not
-# a secret and is never used at runtime — the real key is provided then.
-ENV APP_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-# Nitro server bundle -> .output ; standalone migrator -> .output/migrate.mjs
-RUN pnpm build \
+# Nitro server bundle -> .output ; standalone migrator -> .output/migrate.mjs.
+# A valid-shaped key is provided only for this build step (build-time module
+# evaluation); it is not a secret and never reaches the runtime image.
+RUN APP_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= pnpm build \
  && pnpm exec esbuild scripts/migrate.mjs \
       --bundle --platform=node --format=esm \
       --external:pg-native \

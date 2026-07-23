@@ -12,3 +12,10 @@ export function statusLabel(status: DeviceStatus): string {
 export function roleLabel(role: string): string {
   return role === 'admin' ? m.common_role_admin() : m.common_role_member()
 }
+
+/** Localized audit-action label. */
+export function auditActionLabel(action: string): string {
+  return action === 'connect'
+    ? m.audit_action_connect()
+    : m.audit_action_reveal_password()
+}

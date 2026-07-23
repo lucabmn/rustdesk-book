@@ -32,5 +32,15 @@ const requireAuth = base.middleware(async ({ context, next }) => {
 /** Base procedure for anything that requires a signed-in user. */
 export const authed = base.use(requireAuth)
 
+/** Rejects the call with FORBIDDEN unless the user has the admin role. */
+export const adminProcedure = authed.use(async ({ context, next }) => {
+  if ((context.user as { role?: string }).role !== 'admin') {
+    throw new ORPCError('FORBIDDEN', {
+      message: 'Administratorrechte erforderlich.',
+    })
+  }
+  return next({})
+})
+
 /** Base procedure for public endpoints (bootstrap, invite acceptance). */
 export const publicProcedure = base

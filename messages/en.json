@@ -133,5 +133,17 @@
   "invite_revoke": "Revoke",
   "toast_invite_created": "Invitation created – link copied",
   "toast_invite_revoked": "Invitation revoked",
-  "toast_link_copied": "Link copied"
+  "toast_link_copied": "Link copied",
+
+  "audit_menu": "Audit log",
+  "audit_title": "Audit log",
+  "audit_description": "Who revealed or connected which device, and when. Passwords are never logged.",
+  "audit_action_reveal_password": "Password revealed",
+  "audit_action_connect": "Connected",
+  "audit_th_time": "Time",
+  "audit_th_device": "Device",
+  "audit_th_user": "User",
+  "audit_none": "No audit entries.",
+
+  "delete_title": "Delete device"
 }

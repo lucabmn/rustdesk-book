@@ -133,5 +133,17 @@
   "invite_revoke": "Widerrufen",
   "toast_invite_created": "Einladung erstellt – Link kopiert",
   "toast_invite_revoked": "Einladung widerrufen",
-  "toast_link_copied": "Link kopiert"
+  "toast_link_copied": "Link kopiert",
+
+  "audit_menu": "Audit-Log",
+  "audit_title": "Audit-Log",
+  "audit_description": "Wer hat wann welches Gerät angezeigt oder verbunden. Passwörter werden nie protokolliert.",
+  "audit_action_reveal_password": "Passwort angezeigt",
+  "audit_action_connect": "Verbunden",
+  "audit_th_time": "Zeit",
+  "audit_th_device": "Gerät",
+  "audit_th_user": "Benutzer",
+  "audit_none": "Keine Audit-Einträge.",
+
+  "delete_title": "Gerät löschen"
 }

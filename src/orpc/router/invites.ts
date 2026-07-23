@@ -1,23 +1,14 @@
 import { randomBytes } from 'node:crypto'
 
-import { ORPCError } from '@orpc/server'
 import { desc, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { authed } from '#/orpc/context'
+import { adminProcedure } from '#/orpc/context'
 import { invitation } from '#/db/schema'
 
 const INVITE_TTL_DAYS = 7
 
-/** Admin-only guard layered on top of the authenticated procedure. */
-const adminOnly = authed.use(async ({ context, next }) => {
-  if ((context.user as { role?: string }).role !== 'admin') {
-    throw new ORPCError('FORBIDDEN', {
-      message: 'Nur Administratoren dürfen Einladungen verwalten.',
-    })
-  }
-  return next({})
-})
+const adminOnly = adminProcedure
 
 export const create = adminOnly
   .input(

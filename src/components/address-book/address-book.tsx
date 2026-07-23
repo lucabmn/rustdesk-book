@@ -5,6 +5,7 @@ import { DropdownMenu } from 'radix-ui'
 import {
   Building2,
   Download,
+  History,
   LayoutGrid,
   List,
   LogOut,
@@ -40,6 +41,8 @@ import { useToast } from './toast'
 import { DeviceFormDialog } from './device-form-dialog'
 import { DeviceDetailDrawer, formatLastSeen } from './device-detail-drawer'
 import { InviteDialog } from './invite-dialog'
+import { AuditDialog } from './audit-dialog'
+import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 
 type ViewMode = 'table' | 'grouped' | 'cards'
 
@@ -60,7 +63,10 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [editing, setEditing] = useState<Device | null>(null)
   const [detail, setDetail] = useState<Device | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [auditOpen, setAuditOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Device | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const isAdmin = user.role === 'admin'
 
   const listInput = {
     search: search.trim() || undefined,
@@ -131,8 +137,11 @@ export function AddressBook({ user }: { user: SessionUser }) {
     else createMut.mutate(input)
   }
   function onDelete(device: Device) {
-    if (!confirm(m.confirm_delete({ alias: device.alias }))) return
+    setPendingDelete(device)
+  }
+  function confirmDelete(device: Device) {
     removeMut.mutate({ id: device.id })
+    setPendingDelete(null)
     setDetail(null)
   }
   async function onConnect(device: Device) {
@@ -316,8 +325,9 @@ export function AddressBook({ user }: { user: SessionUser }) {
             initials={initials}
             name={user.name}
             email={user.email}
-            isAdmin={user.role === 'admin'}
+            isAdmin={isAdmin}
             onInvite={() => setInviteOpen(true)}
+            onAudit={() => setAuditOpen(true)}
             onSignOut={signOut}
           />
         </div>
@@ -367,14 +377,23 @@ export function AddressBook({ user }: { user: SessionUser }) {
             <Monitor size={17} strokeWidth={1.75} />
           </div>
           <div style={{ flex: 1 }} />
-          {user.role === 'admin' && (
-            <button
-              className="tv-rail-ico"
-              title={m.rail_invites()}
-              onClick={() => setInviteOpen(true)}
-            >
-              <Mail size={17} strokeWidth={1.5} />
-            </button>
+          {isAdmin && (
+            <>
+              <button
+                className="tv-rail-ico"
+                title={m.audit_menu()}
+                onClick={() => setAuditOpen(true)}
+              >
+                <History size={17} strokeWidth={1.5} />
+              </button>
+              <button
+                className="tv-rail-ico"
+                title={m.rail_invites()}
+                onClick={() => setInviteOpen(true)}
+              >
+                <Mail size={17} strokeWidth={1.5} />
+              </button>
+            </>
           )}
         </div>
 
@@ -653,6 +672,12 @@ export function AddressBook({ user }: { user: SessionUser }) {
         reveal={reveal}
       />
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <AuditDialog open={auditOpen} onOpenChange={setAuditOpen} />
+      <ConfirmDeleteDialog
+        device={pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
@@ -739,6 +764,7 @@ function UserMenu({
   email,
   isAdmin,
   onInvite,
+  onAudit,
   onSignOut,
 }: {
   initials: string
@@ -746,6 +772,7 @@ function UserMenu({
   email: string
   isAdmin: boolean
   onInvite: () => void
+  onAudit: () => void
   onSignOut: () => void
 }) {
   return (
@@ -779,11 +806,18 @@ function UserMenu({
           </div>
           <div style={{ height: 1, background: 'var(--bd-subtle)', margin: '4px 0' }} />
           {isAdmin && (
-            <DropdownMenu.Item asChild>
-              <button className="tv-menu-item" onClick={onInvite}>
-                <Mail size={14} /> {m.invite_users()}
-              </button>
-            </DropdownMenu.Item>
+            <>
+              <DropdownMenu.Item asChild>
+                <button className="tv-menu-item" onClick={onInvite}>
+                  <Mail size={14} /> {m.invite_users()}
+                </button>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <button className="tv-menu-item" onClick={onAudit}>
+                  <History size={14} /> {m.audit_menu()}
+                </button>
+              </DropdownMenu.Item>
+            </>
           )}
           <DropdownMenu.Item asChild>
             <button className="tv-menu-item" onClick={onSignOut}>

@@ -9,6 +9,7 @@
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "build": "vite build",
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
@@ -69,7 +70,8 @@
     "dotenv": "^17.3.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.10"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

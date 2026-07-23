@@ -39,6 +39,7 @@ import { m } from '#/paraglide/messages'
 import { LanguageSwitcher } from '#/components/language-switcher'
 import { useToast } from './toast'
 import { DeviceFormDialog } from './device-form-dialog'
+import { CustomerCombobox } from './customer-combobox'
 import { DeviceDetailDrawer, formatLastSeen } from './device-detail-drawer'
 import { InviteDialog } from './invite-dialog'
 import { AuditDialog } from './audit-dialog'
@@ -80,6 +81,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const statsQuery = useQuery(orpc.devices.stats.queryOptions({ input: {} }))
   const devices = listQuery.data ?? []
   const stats = statsQuery.data
+  const customerNames = stats?.customers.map((c) => c.name) ?? []
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: orpc.devices.key() })
@@ -566,18 +568,17 @@ export function AddressBook({ user }: { user: SessionUser }) {
                 </option>
               ))}
             </select>
-            <select
-              className="tv-select"
-              value={filterCustomer}
-              onChange={(e) => setFilterCustomer(e.target.value)}
-            >
-              <option value="all">{m.filter_all_customers()}</option>
-              {stats?.customers.map((c) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <div style={{ width: 200 }}>
+              <CustomerCombobox
+                value={filterCustomer === 'all' ? '' : filterCustomer}
+                onChange={(v) => setFilterCustomer(v || 'all')}
+                options={customerNames}
+                placeholder={m.filter_all_customers()}
+                commitMode="select"
+                clearLabel={m.filter_all_customers()}
+                aria-label={m.filter_all_customers()}
+              />
+            </div>
             {hasActiveFilters && (
               <button
                 className="tv-btn tv-btn--ghost tv-btn--xs"
@@ -661,6 +662,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         device={editing}
+        customers={customerNames}
         onSubmit={submitForm}
         busy={createMut.isPending || updateMut.isPending}
       />

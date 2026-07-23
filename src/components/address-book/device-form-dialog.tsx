@@ -8,11 +8,15 @@ import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
 import type { DeviceInput } from '#/orpc/schema'
 
+import { CustomerCombobox } from './customer-combobox'
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** Device being edited, or null when adding. */
   device: Device | null
+  /** Existing customer names, suggested while typing. */
+  customers: string[]
   onSubmit: (input: DeviceInput) => void
   busy?: boolean
 }
@@ -32,6 +36,7 @@ export function DeviceFormDialog({
   open,
   onOpenChange,
   device,
+  customers,
   onSubmit,
   busy,
 }: Props) {
@@ -114,11 +119,14 @@ export function DeviceFormDialog({
               />
             </Field>
             <Field label={m.form_customer_label()}>
-              <input
-                className="tv-input"
+              <CustomerCombobox
                 value={form.customer}
-                onChange={(e) => set('customer', e.target.value)}
+                onChange={(v) => set('customer', v)}
+                options={customers}
                 placeholder={m.form_customer_ph()}
+                commitMode="change"
+                allowCreate
+                aria-label={m.form_customer_label()}
               />
             </Field>
             <Field label={m.form_os_label()}>

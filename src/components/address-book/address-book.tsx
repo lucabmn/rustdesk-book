@@ -872,7 +872,7 @@ function TableView({
                   {d.hasPassword ? '••••••••' : '—'}
                 </td>
                 <td>
-                  <span style={{ display: 'inline-flex', gap: 4, justifyContent: 'flex-end' }}>
+                  <span style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                     <ConnectButton onClick={() => onConnect(d)} />
                     <button
                       className="tv-btn tv-btn--ghost tv-btn--icon-xs"

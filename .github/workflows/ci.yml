@@ -27,6 +27,9 @@ jobs:
       - name: Generate route tree
         run: pnpm generate-routes
 
+      - name: Compile i18n messages
+        run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/paraglide
+
       - name: Typecheck
         run: pnpm typecheck
 

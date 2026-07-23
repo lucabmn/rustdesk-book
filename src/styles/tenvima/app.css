@@ -47,6 +47,24 @@
 
 .tv-row-click { cursor: pointer; }
 
+/* Radix renders Dialog.Overlay and Dialog.Content as portal siblings, so the
+   dialog can't be centered by the overlay (as the source markup did). Make the
+   dialog self-center as a fixed element and sit above the overlay. */
+.tv-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: max-content;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  z-index: 51;
+  animation: tvDialogIn 0.14s ease;
+}
+@keyframes tvDialogIn {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 /* App rail icon buttons */
 .tv-rail-ico {
   width: 34px;

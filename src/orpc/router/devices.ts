@@ -162,6 +162,13 @@ export const connect = authed
       const password = decryptSecret(row.passwordCipher)
       uri += `?password=${encodeURIComponent(password)}`
     }
+    // An address-book-triggered connect is a manual "last seen" signal:
+    // stamp lastSeen now. status is left untouched — it stays a
+    // deliberately manual field.
+    await context.db
+      .update(devices)
+      .set({ lastSeen: new Date() })
+      .where(eq(devices.id, row.id))
     await audit(context.db, 'connect', row.id, context.user.id)
     return { uri }
   })

@@ -147,6 +147,8 @@ export function AddressBook({ user }: { user: SessionUser }) {
   async function onConnect(device: Device) {
     try {
       const { uri } = await client.devices.connect({ id: device.id })
+      // Server stamped lastSeen — refetch so the list/cards/drawer show it.
+      invalidate()
       window.location.href = uri
       toast(m.toast_connecting({ alias: device.alias }))
     } catch {

@@ -16,7 +16,7 @@ export const DeviceInputSchema = z.object({
   rustdeskId: RustdeskIdSchema,
   alias: z.string().trim().min(1).max(120),
   customer: z.string().trim().max(160).optional().default(''),
-  osKey: OsKeySchema.optional(),
+  osKey: z.string().trim().max(120).optional(),
   tags: z.array(z.string().trim().min(1).max(40)).max(24).default([]),
   status: DeviceStatusSchema.default('offline'),
   notes: z.string().trim().max(2000).optional().default(''),

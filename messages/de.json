@@ -101,6 +101,7 @@
   "form_alias_label": "Alias / Anzeigename *",
   "form_customer_label": "Kunde / Mandant",
   "form_os_label": "Betriebssystem",
+  "form_os_ph": "Windows 11",
   "form_status_label": "Status",
   "form_tags_label": "Tags (kommagetrennt)",
   "form_password_label": "Passwort",

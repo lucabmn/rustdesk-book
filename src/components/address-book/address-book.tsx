@@ -20,6 +20,7 @@ import {
   Sun,
   Trash2,
   Upload,
+  Users,
   X,
 } from 'lucide-react'
 
@@ -42,6 +43,7 @@ import { DeviceFormDialog } from './device-form-dialog'
 import { CustomerCombobox } from './customer-combobox'
 import { DeviceDetailDrawer, formatLastSeen } from './device-detail-drawer'
 import { InviteDialog } from './invite-dialog'
+import { UsersDialog } from './users-dialog'
 import { AuditDialog } from './audit-dialog'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 
@@ -64,6 +66,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [editing, setEditing] = useState<Device | null>(null)
   const [detail, setDetail] = useState<Device | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [usersOpen, setUsersOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Device | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -339,6 +342,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
             email={user.email}
             isAdmin={isAdmin}
             onInvite={() => setInviteOpen(true)}
+            onUsers={() => setUsersOpen(true)}
             onAudit={() => setAuditOpen(true)}
             onSignOut={signOut}
           />
@@ -391,6 +395,13 @@ export function AddressBook({ user }: { user: SessionUser }) {
           <div style={{ flex: 1 }} />
           {isAdmin && (
             <>
+              <button
+                className="tv-rail-ico"
+                title={m.users_menu()}
+                onClick={() => setUsersOpen(true)}
+              >
+                <Users size={17} strokeWidth={1.5} />
+              </button>
               <button
                 className="tv-rail-ico"
                 title={m.audit_menu()}
@@ -684,6 +695,11 @@ export function AddressBook({ user }: { user: SessionUser }) {
         reveal={reveal}
       />
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <UsersDialog
+        open={usersOpen}
+        onOpenChange={setUsersOpen}
+        currentUserId={user.id}
+      />
       <AuditDialog open={auditOpen} onOpenChange={setAuditOpen} />
       <ConfirmDeleteDialog
         device={pendingDelete}
@@ -776,6 +792,7 @@ function UserMenu({
   email,
   isAdmin,
   onInvite,
+  onUsers,
   onAudit,
   onSignOut,
 }: {
@@ -784,6 +801,7 @@ function UserMenu({
   email: string
   isAdmin: boolean
   onInvite: () => void
+  onUsers: () => void
   onAudit: () => void
   onSignOut: () => void
 }) {
@@ -819,6 +837,11 @@ function UserMenu({
           <div style={{ height: 1, background: 'var(--bd-subtle)', margin: '4px 0' }} />
           {isAdmin && (
             <>
+              <DropdownMenu.Item asChild>
+                <button className="tv-menu-item" onClick={onUsers}>
+                  <Users size={14} /> {m.users_menu()}
+                </button>
+              </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
                 <button className="tv-menu-item" onClick={onInvite}>
                   <Mail size={14} /> {m.invite_users()}

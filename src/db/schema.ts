@@ -22,6 +22,11 @@ export const user = pgTable('user', {
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
   role: text('role').notNull().default('member'), // 'admin' | 'member'
+  // Ban state. A banned user is locked out at sign-in (auth hook) and rejected
+  // by authed procedures; their existing sessions are revoked at ban time.
+  banned: boolean('banned').notNull().default(false),
+  banReason: text('ban_reason'),
+  bannedAt: timestamp('banned_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

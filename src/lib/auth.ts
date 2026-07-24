@@ -47,9 +47,39 @@ export const auth = betterAuth({
         defaultValue: 'member',
         input: false,
       },
+      banned: {
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
+      banReason: {
+        type: 'string',
+        required: false,
+        input: false,
+      },
     },
   },
   databaseHooks: {
+    // Lock banned users out at the source: reject any new session before it is
+    // created. Combined with revoking existing sessions at ban time, this makes
+    // the lockout airtight — a banned user can neither stay in nor sign back in.
+    session: {
+      create: {
+        before: async (newSession) => {
+          const [target] = await db
+            .select({ banned: user.banned })
+            .from(user)
+            .where(eq(user.id, newSession.userId))
+            .limit(1)
+          if (target?.banned) {
+            throw new APIError('FORBIDDEN', {
+              message: 'Dieses Konto wurde gesperrt.',
+            })
+          }
+        },
+      },
+    },
     user: {
       create: {
         before: async (newUser) => {

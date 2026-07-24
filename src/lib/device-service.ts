@@ -6,13 +6,16 @@
 import { and, desc, eq } from 'drizzle-orm'
 
 import type { db as Database } from '#/db'
-import { devices } from '#/db/schema'
+import { customers, devices } from '#/db/schema'
 import type { Device, DeviceListFilterSchema } from '#/orpc/schema'
 import { osLabel, type DeviceStatus } from '#/lib/device-meta'
 import type { z } from 'zod'
 
 type DeviceRow = typeof devices.$inferSelect
 type DeviceFilter = z.infer<typeof DeviceListFilterSchema>
+
+/** A device row joined with its customer's display name (null if unassigned). */
+export type DeviceRowView = DeviceRow & { customerName: string | null }
 
 /**
  * Row → safe public projection. Password ciphertext is reduced to a boolean.
@@ -22,12 +25,14 @@ type DeviceFilter = z.infer<typeof DeviceListFilterSchema>
 export function toPublicDevice(
   row: DeviceRow,
   favoriteIds?: ReadonlySet<string>,
+  customerName: string | null = null,
 ): Device {
   return {
     id: row.id,
     rustdeskId: row.rustdeskId,
     alias: row.alias,
-    customer: row.customer,
+    customer: customerName,
+    customerId: row.customerId,
     osKey: row.osKey,
     tags: row.tags ?? [],
     status: row.status as DeviceStatus,
@@ -48,16 +53,23 @@ export function toPublicDevice(
 export async function queryDevices(
   db: typeof Database,
   filter: DeviceFilter = {},
-): Promise<DeviceRow[]> {
+): Promise<DeviceRowView[]> {
   const conditions = []
   if (filter.status) conditions.push(eq(devices.status, filter.status))
-  if (filter.customer) conditions.push(eq(devices.customer, filter.customer))
+  // Customer is filtered by its (now canonical) display name via the join.
+  if (filter.customer) conditions.push(eq(customers.name, filter.customer))
 
-  let rows = await db
-    .select()
+  const joined = await db
+    .select({ device: devices, customerName: customers.name })
     .from(devices)
+    .leftJoin(customers, eq(customers.id, devices.customerId))
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(devices.updatedAt))
+
+  let rows: DeviceRowView[] = joined.map((r) => ({
+    ...r.device,
+    customerName: r.customerName,
+  }))
 
   // OS is matched on its display label so legacy keys ('win11') and free-text
   // values ('Windows 11') filter identically.
@@ -72,7 +84,7 @@ export async function queryDevices(
       const hay = [
         d.rustdeskId,
         d.alias,
-        d.customer ?? '',
+        d.customerName ?? '',
         d.notes ?? '',
         (d.tags ?? []).join(' '),
       ]

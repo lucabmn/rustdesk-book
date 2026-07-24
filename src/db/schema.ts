@@ -97,6 +97,24 @@ export const invitation = pgTable(
 )
 
 /* ------------------------------------------------------------------ *
+ * Customers / tenants — a first-class entity. Previously a free-text
+ * string on each device; now a shared table so a customer can be renamed
+ * once, carry contact metadata, and never diverge through typos.
+ * ------------------------------------------------------------------ */
+
+export const customers = pgTable(
+  'customers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    contact: text('contact'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('customers_name_idx').on(t.name)],
+)
+
+/* ------------------------------------------------------------------ *
  * Devices — the address book itself.
  * The password is stored ONLY as an AES-256-GCM ciphertext. It is never
  * selected into list/detail responses; cleartext is exposed exclusively
@@ -109,7 +127,9 @@ export const devices = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     rustdeskId: text('rustdesk_id').notNull(),
     alias: text('alias').notNull(),
-    customer: text('customer'),
+    customerId: uuid('customer_id').references(() => customers.id, {
+      onDelete: 'set null',
+    }),
     osKey: text('os_key'),
     tags: jsonb('tags').$type<string[]>().notNull().default([]),
     status: text('status').notNull().default('offline'),
@@ -125,7 +145,7 @@ export const devices = pgTable(
   },
   (t) => [
     index('devices_rustdesk_id_idx').on(t.rustdeskId),
-    index('devices_customer_idx').on(t.customer),
+    index('devices_customer_id_idx').on(t.customerId),
   ],
 )
 
@@ -214,5 +234,9 @@ export const devicesRelations = relations(devices, ({ one }) => ({
   creator: one(user, {
     fields: [devices.createdBy],
     references: [user.id],
+  }),
+  customer: one(customers, {
+    fields: [devices.customerId],
+    references: [customers.id],
   }),
 }))

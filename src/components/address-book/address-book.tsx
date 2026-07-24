@@ -17,6 +17,7 @@ import {
   Plus,
   Power,
   Search,
+  Settings2,
   Star,
   Sun,
   Trash2,
@@ -48,6 +49,7 @@ import { UsersDialog } from './users-dialog'
 import { AuditDialog } from './audit-dialog'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 import { GroupSidebar } from './group-sidebar'
+import { CustomersDialog } from './customers-dialog'
 
 type ViewMode = 'table' | 'grouped' | 'cards'
 
@@ -72,6 +74,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [usersOpen, setUsersOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
+  const [customersOpen, setCustomersOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Device | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const isAdmin = user.role === 'admin'
@@ -488,7 +491,34 @@ export function AddressBook({ user }: { user: SessionUser }) {
             <span className="tv-navitem__label">{m.nav_favorites()}</span>
           </button>
 
-          <SidebarHeading>{m.section_customers()}</SidebarHeading>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 14px 6px',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 600,
+                letterSpacing: '.05em',
+                textTransform: 'uppercase',
+                color: 'var(--fg-4)',
+              }}
+            >
+              {m.section_customers()}
+            </span>
+            <button
+              className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+              title={m.customers_manage()}
+              aria-label={m.customers_manage()}
+              onClick={() => setCustomersOpen(true)}
+            >
+              <Settings2 size={14} />
+            </button>
+          </div>
           {stats?.customers.map((c) => (
             <button
               key={c.name}
@@ -738,6 +768,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
         onToggleFavorite={toggleFavorite}
         reveal={reveal}
       />
+      <CustomersDialog open={customersOpen} onOpenChange={setCustomersOpen} />
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <UsersDialog
         open={usersOpen}

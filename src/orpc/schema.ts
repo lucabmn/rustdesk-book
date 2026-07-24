@@ -33,6 +33,7 @@ export const DeviceSchema = z.object({
   rustdeskId: z.string(),
   alias: z.string(),
   customer: z.string().nullable(),
+  customerId: z.string().uuid().nullable(),
   osKey: z.string().nullable(),
   tags: z.array(z.string()),
   status: DeviceStatusSchema,

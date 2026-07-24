@@ -4,6 +4,7 @@ import * as invites from './invites'
 import * as audit from './audit'
 import * as users from './users'
 import * as groups from './groups'
+import * as customers from './customers'
 
 export default {
   devices,
@@ -12,4 +13,5 @@ export default {
   audit,
   users,
   groups,
+  customers,
 }

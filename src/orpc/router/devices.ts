@@ -12,10 +12,57 @@ import { queryDevices, toPublicDevice } from '#/lib/device-service'
 import { groupMemberIds } from '#/lib/group-service'
 import { osLabel } from '#/lib/device-meta'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
-import { auditLog, deviceFavorites, devices } from '#/db/schema'
+import { auditLog, customers, deviceFavorites, devices } from '#/db/schema'
 import type { AuditAction } from '#/db/schema'
 
 const IdInput = z.object({ id: z.string().uuid() })
+
+/**
+ * Resolve a free-text customer name to a customer id, creating the customer
+ * on first use. Empty/whitespace clears the assignment (null). This keeps the
+ * device form's name-based combobox working while customers live in their own
+ * table — one canonical row per name.
+ */
+async function resolveCustomerId(
+  db: typeof import('#/db').db,
+  name: string | null | undefined,
+): Promise<string | null> {
+  const trimmed = name?.trim()
+  if (!trimmed) return null
+  const [existing] = await db
+    .select({ id: customers.id })
+    .from(customers)
+    .where(eq(customers.name, trimmed))
+    .limit(1)
+  if (existing) return existing.id
+  const [created] = await db
+    .insert(customers)
+    .values({ name: trimmed })
+    .onConflictDoNothing()
+    .returning({ id: customers.id })
+  if (created) return created.id
+  // Lost a race — the row now exists, fetch it.
+  const [row] = await db
+    .select({ id: customers.id })
+    .from(customers)
+    .where(eq(customers.name, trimmed))
+    .limit(1)
+  return row?.id ?? null
+}
+
+/** Fetch a customer's display name by id (null id → null). */
+async function customerNameOf(
+  db: typeof import('#/db').db,
+  id: string | null,
+): Promise<string | null> {
+  if (!id) return null
+  const [row] = await db
+    .select({ name: customers.name })
+    .from(customers)
+    .where(eq(customers.id, id))
+    .limit(1)
+  return row?.name ?? null
+}
 
 /** Set of device ids the given user has starred. */
 async function favoriteIdsFor(
@@ -59,7 +106,7 @@ export const list = authed
       )
       rows = rows.filter((r) => members.has(r.id))
     }
-    return rows.map((row) => toPublicDevice(row, favoriteIds))
+    return rows.map((row) => toPublicDevice(row, favoriteIds, row.customerName))
   })
 
 export const get = authed
@@ -68,7 +115,8 @@ export const get = authed
   .handler(async ({ input, context }) => {
     const row = await loadDeviceRow(context.db, input.id)
     const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
-    return toPublicDevice(row, favoriteIds)
+    const customerName = await customerNameOf(context.db, row.customerId)
+    return toPublicDevice(row, favoriteIds, customerName)
   })
 
 /** Star / unstar a device for the current user. Idempotent. */
@@ -103,7 +151,7 @@ export const stats = authed.handler(async ({ context }) => {
   let online = 0
   for (const d of rows) {
     if (d.status === 'online') online++
-    const c = d.customer?.trim()
+    const c = d.customerName?.trim()
     if (c) customers.set(c, (customers.get(c) ?? 0) + 1)
     const os = d.osKey?.trim()
     if (os) {
@@ -133,12 +181,13 @@ export const create = authed
   .input(DeviceInputSchema)
   .output(DeviceSchema)
   .handler(async ({ input, context }) => {
+    const customerId = await resolveCustomerId(context.db, input.customer)
     const [row] = await context.db
       .insert(devices)
       .values({
         rustdeskId: input.rustdeskId,
         alias: input.alias,
-        customer: input.customer || null,
+        customerId,
         osKey: input.osKey ?? null,
         tags: input.tags,
         status: input.status,
@@ -147,7 +196,7 @@ export const create = authed
         createdBy: context.user.id,
       })
       .returning()
-    return toPublicDevice(row)
+    return toPublicDevice(row, undefined, input.customer?.trim() || null)
   })
 
 export const update = authed
@@ -160,13 +209,14 @@ export const update = authed
     const passwordCipher = data.password
       ? encryptSecret(data.password)
       : existing.passwordCipher
+    const customerId = await resolveCustomerId(context.db, data.customer)
 
     const [row] = await context.db
       .update(devices)
       .set({
         rustdeskId: data.rustdeskId,
         alias: data.alias,
-        customer: data.customer || null,
+        customerId,
         osKey: data.osKey ?? null,
         tags: data.tags,
         status: data.status,
@@ -176,7 +226,7 @@ export const update = authed
       })
       .where(eq(devices.id, input.id))
       .returning()
-    return toPublicDevice(row)
+    return toPublicDevice(row, undefined, data.customer?.trim() || null)
   })
 
 export const remove = authed
@@ -235,19 +285,20 @@ export const importDevices = authed
   .input(z.object({ devices: z.array(DeviceInputSchema.partial()) }))
   .output(z.object({ imported: z.number() }))
   .handler(async ({ input, context }) => {
-    const rows = input.devices
-      .filter((d) => d.rustdeskId && d.alias)
-      .map((d) => ({
+    const valid = input.devices.filter((d) => d.rustdeskId && d.alias)
+    const rows = await Promise.all(
+      valid.map(async (d) => ({
         rustdeskId: d.rustdeskId!,
         alias: d.alias!,
-        customer: d.customer || null,
+        customerId: await resolveCustomerId(context.db, d.customer),
         osKey: d.osKey ?? null,
         tags: d.tags ?? [],
         status: d.status ?? 'offline',
         notes: d.notes || null,
         passwordCipher: d.password ? encryptSecret(d.password) : null,
         createdBy: context.user.id,
-      }))
+      })),
+    )
     if (rows.length) await context.db.insert(devices).values(rows)
     return { imported: rows.length }
   })

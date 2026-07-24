@@ -1,0 +1,73 @@
+{
+  "runId": "d25820ca",
+  "agent": "reviewer",
+  "task": "Finaler kurzer Check der drei Anforderungen nach Fixes: Token-Löschen sperrt bei aktivem Claim und behält Geräte; Revocation lässt bestehende Claims finalisieren; permanente Skripte erneut mit verschlüsseltem Token und Legacy-Rotation unter Row-Lock; Kundenliste kommt aus customers.list und Enrollment nutzt CustomerCombobox. Nur Blocker/hohe Fehler, nichts ändern.",
+  "exitCode": 0,
+  "usage": {
+    "input": 37164,
+    "output": 1434,
+    "cacheRead": 81920,
+    "cacheWrite": 0,
+    "cost": 0.26980000000000004,
+    "turns": 6
+  },
+  "model": "openai-codex/gpt-5.6-sol:high",
+  "attemptedModels": [
+    "openai-codex/gpt-5.6-sol:high"
+  ],
+  "modelAttempts": [
+    {
+      "model": "openai-codex/gpt-5.6-sol:high",
+      "success": true,
+      "exitCode": 0,
+      "usage": {
+        "input": 37164,
+        "output": 1434,
+        "cacheRead": 81920,
+        "cacheWrite": 0,
+        "cost": 0.26980000000000004,
+        "turns": 6
+      }
+    }
+  ],
+  "durationMs": 41221,
+  "toolCount": 22,
+  "acceptance": {
+    "status": "not-required",
+    "explicit": true,
+    "effectiveAcceptance": {
+      "level": "none",
+      "explicit": true,
+      "inferredReason": [
+        "read-only/reviewer-style agent"
+      ],
+      "criteria": [
+        {
+          "id": "criterion-1",
+          "must": "Return concrete findings with file paths and severity when applicable",
+          "evidence": [],
+          "severity": "required"
+        }
+      ],
+      "evidence": [],
+      "verify": [],
+      "stopRules": [],
+      "reason": "disabled by deprecated false shorthand"
+    },
+    "inferredReason": [
+      "read-only/reviewer-style agent"
+    ],
+    "criteria": [
+      {
+        "id": "criterion-1",
+        "must": "Return concrete findings with file paths and severity when applicable",
+        "evidence": [],
+        "severity": "required"
+      }
+    ],
+    "runtimeChecks": [],
+    "verifyRuns": []
+  },
+  "transcriptPath": "/Users/luca/code/private/rustdesk-book/.pi-subagents/artifacts/d25820ca_reviewer_0_transcript.jsonl",
+  "timestamp": 1784930420520
+}

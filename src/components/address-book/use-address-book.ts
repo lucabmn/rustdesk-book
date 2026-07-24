@@ -51,7 +51,9 @@ export function useAddressBook() {
     orpc.devices.list.queryOptions({ input: buildListInput(filters) }),
   )
   const statsQuery = useQuery(orpc.devices.stats.queryOptions({ input: {} }))
-  const customersQuery = useQuery(orpc.customers.list.queryOptions({ input: {} }))
+  const customersQuery = useQuery(
+    orpc.customers.list.queryOptions({ input: {} }),
+  )
   const syncInfoQuery = useQuery(
     orpc.devices.syncInfo.queryOptions({ input: {} }),
   )
@@ -133,7 +135,9 @@ export function useAddressBook() {
       const favorite = !device.isFavorite
       favoriteMut.mutate({ id: device.id, favorite })
       // Keep the open drawer's star in sync — it holds its own snapshot.
-      setDetail((d) => (d && d.id === device.id ? { ...d, isFavorite: favorite } : d))
+      setDetail((d) =>
+        d && d.id === device.id ? { ...d, isFavorite: favorite } : d,
+      )
     },
     openAdd() {
       setEditing(null)
@@ -165,7 +169,9 @@ export function useAddressBook() {
       }
     },
     async reveal(device: Device): Promise<string> {
-      const { password } = await client.devices.revealPassword({ id: device.id })
+      const { password } = await client.devices.revealPassword({
+        id: device.id,
+      })
       return password
     },
     copyId(device: Device) {
@@ -195,7 +201,9 @@ export function useAddressBook() {
       const reader = new FileReader()
       reader.onload = () => {
         try {
-          importMut.mutate({ devices: parseDeviceImport(String(reader.result)) })
+          importMut.mutate({
+            devices: parseDeviceImport(String(reader.result)),
+          })
         } catch {
           toast(m.toast_invalid_format())
         }

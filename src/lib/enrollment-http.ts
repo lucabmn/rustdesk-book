@@ -19,7 +19,8 @@ export function enrollmentJson(body: unknown, status = 200) {
 export function bearerToken(request: Request): string {
   const authorization = request.headers.get('authorization') ?? ''
   const match = authorization.match(/^Bearer\s+(.+)$/i)
-  if (!match) throw new EnrollmentError(401, 'missing_token', 'Bearer token required.')
+  if (!match)
+    throw new EnrollmentError(401, 'missing_token', 'Bearer token required.')
   return match[1].trim()
 }
 
@@ -29,7 +30,10 @@ export function enforceEnrollmentRateLimit(request: Request) {
   const forwarded = trustProxy
     ? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     : null
-  const key = forwarded || (trustProxy ? request.headers.get('x-real-ip') : null) || 'global'
+  const key =
+    forwarded ||
+    (trustProxy ? request.headers.get('x-real-ip') : null) ||
+    'global'
   const now = Date.now()
   const bucket = rateBuckets.get(key)
   if (!bucket || bucket.resetAt <= now) {
@@ -39,14 +43,22 @@ export function enforceEnrollmentRateLimit(request: Request) {
     }
     rateBuckets.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS })
   } else if (++bucket.count > RATE_LIMIT) {
-    throw new EnrollmentError(429, 'rate_limited', 'Too many enrollment attempts.')
+    throw new EnrollmentError(
+      429,
+      'rate_limited',
+      'Too many enrollment attempts.',
+    )
   }
 }
 
 async function readLimitedBody(request: Request): Promise<string> {
   const declaredLength = Number(request.headers.get('content-length') ?? 0)
   if (declaredLength > MAX_BODY_BYTES) {
-    throw new EnrollmentError(413, 'payload_too_large', 'Enrollment payload is too large.')
+    throw new EnrollmentError(
+      413,
+      'payload_too_large',
+      'Enrollment payload is too large.',
+    )
   }
   if (!request.body) return ''
 
@@ -59,7 +71,11 @@ async function readLimitedBody(request: Request): Promise<string> {
     total += value.byteLength
     if (total > MAX_BODY_BYTES) {
       await reader.cancel()
-      throw new EnrollmentError(413, 'payload_too_large', 'Enrollment payload is too large.')
+      throw new EnrollmentError(
+        413,
+        'payload_too_large',
+        'Enrollment payload is too large.',
+      )
     }
     chunks.push(value)
   }
@@ -73,7 +89,9 @@ async function readLimitedBody(request: Request): Promise<string> {
   return new TextDecoder().decode(combined)
 }
 
-export async function parseEnrollmentPayload(request: Request): Promise<unknown> {
+export async function parseEnrollmentPayload(
+  request: Request,
+): Promise<unknown> {
   const body = await readLimitedBody(request)
   const contentType = request.headers.get('content-type')?.toLowerCase() ?? ''
   if (contentType.includes('application/json')) return JSON.parse(body)
@@ -89,13 +107,22 @@ export async function parseEnrollmentPayload(request: Request): Promise<unknown>
 
 export function enrollmentErrorResponse(error: unknown): Response {
   if (error instanceof EnrollmentError) {
-    return enrollmentJson({ error: error.code, message: error.message }, error.status)
+    return enrollmentJson(
+      { error: error.code, message: error.message },
+      error.status,
+    )
   }
   if (error instanceof SyntaxError) {
-    return enrollmentJson({ error: 'invalid_json', message: 'Invalid JSON payload.' }, 400)
+    return enrollmentJson(
+      { error: 'invalid_json', message: 'Invalid JSON payload.' },
+      400,
+    )
   }
   if (error && typeof error === 'object' && 'issues' in error) {
-    return enrollmentJson({ error: 'invalid_payload', message: 'Invalid enrollment payload.' }, 400)
+    return enrollmentJson(
+      { error: 'invalid_payload', message: 'Invalid enrollment payload.' },
+      400,
+    )
   }
   console.error('Device enrollment failed:', error)
   return enrollmentJson({ error: 'enrollment_failed' }, 500)

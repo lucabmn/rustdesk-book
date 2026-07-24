@@ -147,7 +147,10 @@ describe('enrollmentErrorResponse', () => {
       new EnrollmentError(409, 'device_exists', 'nope'),
     )
     expect(res.status).toBe(409)
-    expect(await res.json()).toEqual({ error: 'device_exists', message: 'nope' })
+    expect(await res.json()).toEqual({
+      error: 'device_exists',
+      message: 'nope',
+    })
   })
 
   it('maps malformed JSON to 400', async () => {

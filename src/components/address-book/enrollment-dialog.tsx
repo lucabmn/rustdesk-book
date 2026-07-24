@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Dialog } from 'radix-ui'
-import { Copy, Download, Laptop, Plus, ShieldOff, Trash2, X } from 'lucide-react'
+import {
+  Copy,
+  Download,
+  Laptop,
+  Plus,
+  ShieldOff,
+  Trash2,
+  X,
+} from 'lucide-react'
 
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
@@ -151,7 +159,10 @@ export function EnrollmentDialog({
     >
       <Dialog.Portal>
         <Dialog.Overlay className="tv-dialog-overlay" />
-        <Dialog.Content className="tv-dialog" style={{ maxWidth: 760, maxHeight: '90vh' }}>
+        <Dialog.Content
+          className="tv-dialog"
+          style={{ maxWidth: 760, maxHeight: '90vh' }}
+        >
           <div className="tv-dialog__header">
             <Dialog.Title className="tv-dialog__title">
               {m.enrollment_title()}
@@ -162,13 +173,21 @@ export function EnrollmentDialog({
           </div>
 
           {created ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                minHeight: 0,
+              }}
+            >
               <div
                 style={{
                   padding: '10px 12px',
                   borderRadius: 6,
                   border: '1px solid var(--s-warn)',
-                  background: 'color-mix(in srgb, var(--s-warn) 10%, transparent)',
+                  background:
+                    'color-mix(in srgb, var(--s-warn) 10%, transparent)',
                   fontSize: 12,
                 }}
               >
@@ -185,6 +204,7 @@ export function EnrollmentDialog({
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {PLATFORMS.map((item) => (
                   <button
+                    type="button"
                     key={item.id}
                     className={`tv-btn tv-btn--sm ${platform === item.id ? 'tv-btn--default' : 'tv-btn--ghost'}`}
                     onClick={() => setPlatform(item.id)}
@@ -193,10 +213,18 @@ export function EnrollmentDialog({
                   </button>
                 ))}
                 <span style={{ flex: 1 }} />
-                <button className="tv-btn tv-btn--ghost tv-btn--sm" onClick={copyScript}>
+                <button
+                  type="button"
+                  className="tv-btn tv-btn--ghost tv-btn--sm"
+                  onClick={copyScript}
+                >
                   <Copy size={13} /> {m.enrollment_copy_script()}
                 </button>
-                <button className="tv-btn tv-btn--ghost tv-btn--sm" onClick={downloadScript}>
+                <button
+                  type="button"
+                  className="tv-btn tv-btn--ghost tv-btn--sm"
+                  onClick={downloadScript}
+                >
                   <Download size={13} /> {m.enrollment_download_script()}
                 </button>
               </div>
@@ -220,7 +248,11 @@ export function EnrollmentDialog({
                   ? m.enrollment_run_windows()
                   : m.enrollment_run_unix()}
               </div>
-              <button className="tv-btn tv-btn--default tv-btn--sm" onClick={() => setCreated(null)}>
+              <button
+                type="button"
+                className="tv-btn tv-btn--default tv-btn--sm"
+                onClick={() => setCreated(null)}
+              >
                 <Plus size={13} /> {m.enrollment_create_another()}
               </button>
             </div>
@@ -253,10 +285,14 @@ export function EnrollmentDialog({
                     id="enrollment-kind"
                     className="tv-select"
                     value={kind}
-                    onChange={(event) => setKind(event.target.value as typeof kind)}
+                    onChange={(event) =>
+                      setKind(event.target.value as typeof kind)
+                    }
                   >
                     <option value="single">{m.enrollment_type_single()}</option>
-                    <option value="permanent">{m.enrollment_type_permanent()}</option>
+                    <option value="permanent">
+                      {m.enrollment_type_permanent()}
+                    </option>
                   </select>
                 </div>
                 <div className="tv-field">
@@ -314,11 +350,19 @@ export function EnrollmentDialog({
                   <input
                     type="checkbox"
                     checked={installIfMissing}
-                    onChange={(event) => setInstallIfMissing(event.target.checked)}
+                    onChange={(event) =>
+                      setInstallIfMissing(event.target.checked)
+                    }
                   />
                   <span>
                     <strong>{m.enrollment_install_missing()}</strong>
-                    <span style={{ display: 'block', fontSize: 11, color: 'var(--fg-4)' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 11,
+                        color: 'var(--fg-4)',
+                      }}
+                    >
                       {m.enrollment_install_missing_hint()}
                     </span>
                   </span>
@@ -326,6 +370,7 @@ export function EnrollmentDialog({
               </div>
 
               <button
+                type="button"
                 className="tv-btn tv-btn--default tv-btn--sm"
                 disabled={!name.trim() || createMut.isPending}
                 onClick={createToken}
@@ -334,18 +379,23 @@ export function EnrollmentDialog({
                 <Laptop size={14} /> {m.enrollment_create()}
               </button>
 
-              <div style={{ borderTop: '1px solid var(--bd-1)', paddingTop: 12 }}>
+              <div
+                style={{ borderTop: '1px solid var(--bd-1)', paddingTop: 12 }}
+              >
                 <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
                   {m.enrollment_existing()}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div
+                  style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+                >
                   {listQuery.data?.length === 0 && (
                     <span style={{ fontSize: 12, color: 'var(--fg-4)' }}>
                       {m.enrollment_none()}
                     </span>
                   )}
                   {listQuery.data?.map((token) => {
-                    const inactive = Boolean(token.revokedAt) ||
+                    const inactive =
+                      Boolean(token.revokedAt) ||
                       (token.kind === 'single' && token.useCount > 0)
                     return (
                       <div
@@ -362,22 +412,38 @@ export function EnrollmentDialog({
                         }}
                       >
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-                            <strong style={{ fontSize: 12.5 }}>{token.name}</strong>
+                          <div
+                            style={{
+                              display: 'flex',
+                              gap: 7,
+                              alignItems: 'center',
+                            }}
+                          >
+                            <strong style={{ fontSize: 12.5 }}>
+                              {token.name}
+                            </strong>
                             <span className="tv-chip">
                               {token.kind === 'single'
                                 ? m.enrollment_type_single_short()
                                 : m.enrollment_type_permanent_short()}
                             </span>
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 2 }}>
-                            {token.tokenPrefix} · {m.enrollment_uses({ count: token.useCount })}
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: 'var(--fg-4)',
+                              marginTop: 2,
+                            }}
+                          >
+                            {token.tokenPrefix} ·{' '}
+                            {m.enrollment_uses({ count: token.useCount })}
                             {token.customer ? ` · ${token.customer}` : ''}
                             {inactive ? ` · ${m.enrollment_inactive()}` : ''}
                           </div>
                         </div>
                         {token.kind === 'permanent' && !token.revokedAt && (
                           <button
+                            type="button"
                             className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                             title={m.enrollment_download_again()}
                             aria-label={m.enrollment_download_again()}
@@ -394,6 +460,7 @@ export function EnrollmentDialog({
                         )}
                         {!token.revokedAt && (
                           <button
+                            type="button"
                             className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                             title={m.enrollment_revoke()}
                             aria-label={m.enrollment_revoke()}
@@ -404,13 +471,20 @@ export function EnrollmentDialog({
                           </button>
                         )}
                         <button
+                          type="button"
                           className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                           title={m.enrollment_delete()}
                           aria-label={m.enrollment_delete()}
                           style={{ color: 'var(--s-err)' }}
                           disabled={removeMut.isPending}
                           onClick={() => {
-                            if (window.confirm(m.enrollment_delete_confirm({ name: token.name }))) {
+                            if (
+                              window.confirm(
+                                m.enrollment_delete_confirm({
+                                  name: token.name,
+                                }),
+                              )
+                            ) {
                               removeMut.mutate({ id: token.id })
                             }
                           }}
@@ -427,6 +501,7 @@ export function EnrollmentDialog({
 
           <Dialog.Close asChild>
             <button
+              type="button"
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
               aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}

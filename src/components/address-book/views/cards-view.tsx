@@ -5,7 +5,7 @@ import { statusLabel } from '#/lib/i18n-labels'
 import type { Device } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
 import { formatLastSeen } from '../device-detail-drawer'
-import { DeviceTags, FavoriteButton } from '../ui-bits'
+import { activatable, DeviceTags, FavoriteButton } from '../ui-bits'
 
 export interface CardsViewProps {
   devices: Device[]
@@ -35,7 +35,7 @@ export function CardsView({
         <div
           key={d.id}
           className="tv-card tv-row-click"
-          onClick={() => onOpen(d)}
+          {...activatable(() => onOpen(d))}
           style={{ gap: 10, padding: '14px 0' }}
         >
           <div
@@ -64,7 +64,10 @@ export function CardsView({
               >
                 {d.alias}
               </div>
-              <div className="mono" style={{ fontSize: 11.5, color: 'var(--fg-3)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 11.5, color: 'var(--fg-3)' }}
+              >
                 {formatRustdeskId(d.rustdeskId)}
               </div>
             </div>
@@ -121,6 +124,7 @@ export function CardsView({
             }}
           >
             <button
+              type="button"
               className="tv-btn tv-btn--default tv-btn--sm"
               style={{ flex: 1, minWidth: 0 }}
               onClick={(e) => {
@@ -132,6 +136,7 @@ export function CardsView({
               {m.common_connect()}
             </button>
             <button
+              type="button"
               className="tv-btn tv-btn--outline tv-btn--icon-sm"
               onClick={(e) => {
                 e.stopPropagation()

@@ -24,14 +24,12 @@ export const DEVICE_STATUSES = ['online', 'away', 'offline'] as const
 export type DeviceStatus = (typeof DEVICE_STATUSES)[number]
 
 /** Per-status presentation: i18n label key + Tenvima dot/chip classes. */
-export const STATUS_META: Record<
-  DeviceStatus,
-  { dot: string; chip: string }
-> = {
-  online: { dot: 'tv-dot--ok', chip: 'tv-chip tv-chip--ok' },
-  away: { dot: 'tv-dot--warn', chip: 'tv-chip tv-chip--warn' },
-  offline: { dot: 'tv-dot--neutral', chip: 'tv-chip tv-chip--neutral' },
-}
+export const STATUS_META: Record<DeviceStatus, { dot: string; chip: string }> =
+  {
+    online: { dot: 'tv-dot--ok', chip: 'tv-chip tv-chip--ok' },
+    away: { dot: 'tv-dot--warn', chip: 'tv-chip tv-chip--warn' },
+    offline: { dot: 'tv-dot--neutral', chip: 'tv-chip tv-chip--neutral' },
+  }
 
 /** Formats a RustDesk id for display: 123456789 -> "123 456 789". */
 export function formatRustdeskId(id: string): string {

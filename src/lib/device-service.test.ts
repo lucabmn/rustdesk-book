@@ -33,7 +33,9 @@ describe('toPublicDevice', () => {
   })
 
   it('reports hasPassword=false when no secret is stored', () => {
-    expect(toPublicDevice({ ...row, passwordCipher: null }).hasPassword).toBe(false)
+    expect(toPublicDevice({ ...row, passwordCipher: null }).hasPassword).toBe(
+      false,
+    )
   })
 
   it('serializes timestamps to ISO strings', () => {
@@ -44,9 +46,9 @@ describe('toPublicDevice', () => {
 
   it('projects the resolved customer name and id', () => {
     expect(toPublicDevice(row).customer).toBe(null)
-    expect(toPublicDevice(row, undefined, 'Bäckerei Krause GmbH').customer).toBe(
-      'Bäckerei Krause GmbH',
-    )
+    expect(
+      toPublicDevice(row, undefined, 'Bäckerei Krause GmbH').customer,
+    ).toBe('Bäckerei Krause GmbH')
     expect(toPublicDevice(row).customerId).toBe(row.customerId)
   })
 

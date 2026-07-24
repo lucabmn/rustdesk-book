@@ -1,10 +1,4 @@
-import {
-  Fragment,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from 'react'
+import { Fragment, createContext, useContext, useEffect, useState } from 'react'
 
 import {
   assertIsLocale,
@@ -65,10 +59,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   // locale immediately, on both server and client.
   overwriteGetLocale(() => assertIsLocale(locale))
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot detection on mount; re-running on every locale change would undo a manual switch
   useEffect(() => {
     const initial = detectInitialLocale()
     if (initial && initial !== locale) setLocaleState(initial)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

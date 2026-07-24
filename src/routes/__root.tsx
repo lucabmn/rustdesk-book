@@ -38,6 +38,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang={getLocale()} data-theme="light">
       <head>
+        {/* Applies the stored theme before first paint; the content is a
+            module-local constant, never user input.
+            biome-ignore lint/security/noDangerouslySetInnerHtml: static, build-time constant */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>

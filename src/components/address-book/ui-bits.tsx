@@ -7,9 +7,30 @@ import { m } from '#/paraglide/messages'
 
 /** Small presentational pieces shared by the address-book shell and its views. */
 
+/**
+ * Props that turn a non-interactive container (a card, a row) into something a
+ * keyboard user can operate: it takes focus, announces itself as a button and
+ * activates on Enter/Space just like a click.
+ */
+export function activatable(onActivate: () => void) {
+  return {
+    role: 'button' as const,
+    tabIndex: 0,
+    onClick: onActivate,
+    onKeyDown: (event: React.KeyboardEvent) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return
+      // Space would otherwise scroll the list out from under the user.
+      event.preventDefault()
+      onActivate()
+    },
+  }
+}
+
 export function BrandLogo() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+    <div
+      style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+    >
       <span
         style={{
           display: 'inline-flex',
@@ -24,7 +45,9 @@ export function BrandLogo() {
       >
         <MonitorDot size={14} strokeWidth={2} />
       </span>
-      <span style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '-0.01em' }}>
+      <span
+        style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '-0.01em' }}
+      >
         rustdesk<span style={{ color: 'var(--brand)' }}>·</span>book
       </span>
     </div>
@@ -51,7 +74,12 @@ export function SidebarHeading({ children }: { children: React.ReactNode }) {
 export function EmptyState({ children }: { children: React.ReactNode }) {
   return (
     <div
-      style={{ padding: 40, textAlign: 'center', color: 'var(--fg-4)', fontSize: 13 }}
+      style={{
+        padding: 40,
+        textAlign: 'center',
+        color: 'var(--fg-4)',
+        fontSize: 13,
+      }}
     >
       {children}
     </div>
@@ -77,6 +105,7 @@ export function FavoriteButton({
 }) {
   return (
     <button
+      type="button"
       className="tv-btn tv-btn--ghost tv-btn--icon-xs"
       title={active ? m.favorite_remove() : m.favorite_add()}
       aria-label={active ? m.favorite_remove() : m.favorite_add()}
@@ -99,6 +128,7 @@ export function ConnectButton({
 }) {
   return (
     <button
+      type="button"
       className="tv-btn tv-btn--default tv-btn--xs"
       onClick={(e) => {
         e.stopPropagation()

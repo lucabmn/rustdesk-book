@@ -35,7 +35,9 @@ function describe(row: Awaited<ReturnType<typeof queryDevices>>[number]) {
 }
 
 function jsonResult(data: unknown) {
-  return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] }
+  return {
+    content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+  }
 }
 
 server.registerTool(
@@ -80,7 +82,8 @@ server.registerTool(
   'get_device',
   {
     title: 'Gerät abrufen',
-    description: 'Ruft ein einzelnes Gerät anhand seiner RustDesk-ID oder seines Alias ab.',
+    description:
+      'Ruft ein einzelnes Gerät anhand seiner RustDesk-ID oder seines Alias ab.',
     inputSchema: {
       idOrAlias: z.string().describe('RustDesk-ID oder Alias des Geräts'),
     },
@@ -90,8 +93,7 @@ server.registerTool(
     const rows = await queryDevices(db, {})
     const match = rows.find(
       (d) =>
-        d.rustdeskId === idOrAlias.trim() ||
-        d.alias.toLowerCase() === needle,
+        d.rustdeskId === idOrAlias.trim() || d.alias.toLowerCase() === needle,
     )
     if (!match) return jsonResult({ found: false })
     return jsonResult({ found: true, device: describe(match) })
@@ -102,7 +104,8 @@ server.registerTool(
   'list_customers',
   {
     title: 'Kunden auflisten',
-    description: 'Listet alle Kunden/Mandanten mit der jeweiligen Anzahl an Geräten.',
+    description:
+      'Listet alle Kunden/Mandanten mit der jeweiligen Anzahl an Geräten.',
     inputSchema: {},
   },
   async () => {

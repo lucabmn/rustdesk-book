@@ -52,16 +52,23 @@ export function TableView({
                 <td>
                   <StatusDot status={d.status} />
                 </td>
-                <td className="mono" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+                <td
+                  className="mono"
+                  style={{ fontSize: 12, color: 'var(--fg-2)' }}
+                >
                   {formatRustdeskId(d.rustdeskId)}
                 </td>
-                <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{d.alias}</td>
+                <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>
+                  {d.alias}
+                </td>
                 <td style={{ color: 'var(--fg-2)' }}>{d.customer || '—'}</td>
                 <td>
                   <DeviceTags tags={d.tags} />
                 </td>
                 <td style={{ color: 'var(--fg-2)' }}>{osLabel(d.osKey)}</td>
-                <td style={{ color: 'var(--fg-3)' }}>{formatLastSeen(d.lastSeen)}</td>
+                <td style={{ color: 'var(--fg-3)' }}>
+                  {formatLastSeen(d.lastSeen)}
+                </td>
                 <td
                   className="mono"
                   style={{ color: 'var(--fg-4)', letterSpacing: 1 }}
@@ -70,7 +77,11 @@ export function TableView({
                 </td>
                 <td>
                   <span
-                    style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}
+                    style={{
+                      display: 'flex',
+                      gap: 4,
+                      justifyContent: 'flex-end',
+                    }}
                   >
                     <FavoriteButton
                       active={d.isFavorite}
@@ -78,6 +89,7 @@ export function TableView({
                     />
                     <ConnectButton onClick={() => onConnect(d)} />
                     <button
+                      type="button"
                       className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                       title={m.common_edit()}
                       onClick={(e) => {
@@ -88,6 +100,7 @@ export function TableView({
                       <Pencil size={12} />
                     </button>
                     <button
+                      type="button"
                       className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                       title={m.common_delete()}
                       style={{ color: 'var(--s-err)' }}

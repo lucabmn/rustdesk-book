@@ -78,9 +78,9 @@ describe('create', () => {
   })
 
   it('refuses a plaintext base URL that is not loopback', async () => {
-    await expect(create({ baseUrl: 'http://book.example.com' })).rejects.toThrow(
-      /HTTPS/,
-    )
+    await expect(
+      create({ baseUrl: 'http://book.example.com' }),
+    ).rejects.toThrow(/HTTPS/)
     await expect(
       create({ baseUrl: 'http://localhost:3000' }),
     ).resolves.toBeDefined()

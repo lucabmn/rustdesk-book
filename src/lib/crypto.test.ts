@@ -4,7 +4,13 @@ import { decryptSecret, encryptSecret, safeEqual } from './crypto'
 
 describe('crypto', () => {
   it('round-trips secrets including special and unicode characters', () => {
-    for (const s of ['kR7#m@2p!x', 'Datev!77x', 'n@s_backup9', '', 'ünïcödeЫ 🔐']) {
+    for (const s of [
+      'kR7#m@2p!x',
+      'Datev!77x',
+      'n@s_backup9',
+      '',
+      'ünïcödeЫ 🔐',
+    ]) {
       expect(decryptSecret(encryptSecret(s))).toBe(s)
     }
   })

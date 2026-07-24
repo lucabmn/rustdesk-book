@@ -116,10 +116,14 @@ describe('membership', () => {
 
     await set(true)
     await set(true)
-    expect(await callRpc(devicesRouter.list, { groupId: group.id })).toHaveLength(1)
+    expect(
+      await callRpc(devicesRouter.list, { groupId: group.id }),
+    ).toHaveLength(1)
     await set(false)
     await set(false)
-    expect(await callRpc(devicesRouter.list, { groupId: group.id })).toHaveLength(0)
+    expect(
+      await callRpc(devicesRouter.list, { groupId: group.id }),
+    ).toHaveLength(0)
   })
 
   it('filters the device list down to the group', async () => {

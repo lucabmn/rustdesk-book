@@ -3,11 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Dialog } from 'radix-ui'
 import { Copy, Eye, EyeOff, Pencil, Power, Star, Trash2, X } from 'lucide-react'
 
-import {
-  STATUS_META,
-  formatRustdeskId,
-  osLabel,
-} from '#/lib/device-meta'
+import { STATUS_META, formatRustdeskId, osLabel } from '#/lib/device-meta'
 import { orpc } from '#/orpc/client'
 import { auditActionLabel, statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
@@ -47,6 +43,7 @@ export function DeviceDetailDrawer({
   const history = historyQuery.data ?? []
 
   // Forget any revealed secret when the drawer target changes or closes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the device id only — a new object identity for the same device must not re-hide a revealed secret
   useEffect(() => {
     setPassword(null)
     setRevealing(false)
@@ -73,7 +70,12 @@ export function DeviceDetailDrawer({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay
-          style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,.12)' }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 40,
+            background: 'rgba(0,0,0,.12)',
+          }}
         />
         <Dialog.Content
           aria-describedby={undefined}
@@ -104,7 +106,10 @@ export function DeviceDetailDrawer({
                   borderBottom: '1px solid var(--bd-1)',
                 }}
               >
-                <span className={`tv-dot ${meta.dot}`} style={{ width: 9, height: 9 }} />
+                <span
+                  className={`tv-dot ${meta.dot}`}
+                  style={{ width: 9, height: 9 }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Dialog.Title
                     style={{
@@ -117,26 +122,39 @@ export function DeviceDetailDrawer({
                   >
                     {device.alias}
                   </Dialog.Title>
-                  <div className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }}>
+                  <div
+                    className="mono"
+                    style={{ fontSize: 12, color: 'var(--fg-3)' }}
+                  >
                     {formatRustdeskId(device.rustdeskId)}
                   </div>
                 </div>
                 <span className={meta.chip}>{statusLabel(device.status)}</span>
                 <button
+                  type="button"
                   className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-                  title={device.isFavorite ? m.favorite_remove() : m.favorite_add()}
-                  aria-label={device.isFavorite ? m.favorite_remove() : m.favorite_add()}
+                  title={
+                    device.isFavorite ? m.favorite_remove() : m.favorite_add()
+                  }
+                  aria-label={
+                    device.isFavorite ? m.favorite_remove() : m.favorite_add()
+                  }
                   aria-pressed={device.isFavorite}
-                  style={device.isFavorite ? { color: 'var(--brand)' } : undefined}
+                  style={
+                    device.isFavorite ? { color: 'var(--brand)' } : undefined
+                  }
                   onClick={() => onToggleFavorite(device)}
                 >
                   <Star
                     size={16}
-                    style={device.isFavorite ? { fill: 'currentColor' } : undefined}
+                    style={
+                      device.isFavorite ? { fill: 'currentColor' } : undefined
+                    }
                   />
                 </button>
                 <Dialog.Close asChild>
                   <button
+                    type="button"
                     className="tv-btn tv-btn--ghost tv-btn--icon-sm"
                     aria-label={m.common_close()}
                   >
@@ -156,6 +174,7 @@ export function DeviceDetailDrawer({
                 }}
               >
                 <button
+                  type="button"
                   className="tv-btn tv-btn--default tv-btn--block"
                   style={{ height: 34 }}
                   onClick={() => onConnect(device)}
@@ -178,15 +197,28 @@ export function DeviceDetailDrawer({
                     {formatLastSeen(device.lastSeen)}
                   </Meta>
                   <span style={{ color: 'var(--fg-3)' }}>{m.th_id()}</span>
-                  <span
+                  <button
+                    type="button"
                     className="mono tv-row-click"
-                    style={{ color: 'var(--fg-1)', textAlign: 'right' }}
+                    style={{
+                      color: 'var(--fg-1)',
+                      textAlign: 'right',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      font: 'inherit',
+                      cursor: 'pointer',
+                    }}
                     onClick={() => onCopyId(device)}
                     title={m.drawer_copy()}
+                    aria-label={m.drawer_copy()}
                   >
                     {formatRustdeskId(device.rustdeskId)}
-                    <Copy size={12} style={{ marginLeft: 6, verticalAlign: -1 }} />
-                  </span>
+                    <Copy
+                      size={12}
+                      style={{ marginLeft: 6, verticalAlign: -1 }}
+                    />
+                  </button>
                 </div>
 
                 <Section title={m.th_password()}>
@@ -204,15 +236,24 @@ export function DeviceDetailDrawer({
                     >
                       <span
                         className="mono"
-                        style={{ flex: 1, letterSpacing: 1, color: 'var(--fg-1)' }}
+                        style={{
+                          flex: 1,
+                          letterSpacing: 1,
+                          color: 'var(--fg-1)',
+                        }}
                       >
                         {password ?? '••••••••'}
                       </span>
                       <button
+                        type="button"
                         className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                         onClick={toggleReveal}
                         disabled={revealing}
-                        aria-label={password ? m.drawer_hide_password() : m.drawer_show_password()}
+                        aria-label={
+                          password
+                            ? m.drawer_hide_password()
+                            : m.drawer_show_password()
+                        }
                       >
                         {password ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
@@ -261,7 +302,13 @@ export function DeviceDetailDrawer({
                       {m.drawer_history_none()}
                     </span>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                      }}
+                    >
                       {history.map((h) => (
                         <div
                           key={h.id}
@@ -281,10 +328,21 @@ export function DeviceDetailDrawer({
                           >
                             {auditActionLabel(h.action)}
                           </span>
-                          <span style={{ color: 'var(--fg-2)', flex: 1, minWidth: 0 }}>
+                          <span
+                            style={{
+                              color: 'var(--fg-2)',
+                              flex: 1,
+                              minWidth: 0,
+                            }}
+                          >
                             {h.userName ?? h.userEmail ?? '—'}
                           </span>
-                          <span style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              color: 'var(--fg-4)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             {formatLastSeen(h.createdAt)}
                           </span>
                         </div>
@@ -303,6 +361,7 @@ export function DeviceDetailDrawer({
                 }}
               >
                 <button
+                  type="button"
                   className="tv-btn tv-btn--outline tv-btn--sm tv-btn--block"
                   onClick={() => onEdit(device)}
                 >
@@ -310,6 +369,7 @@ export function DeviceDetailDrawer({
                   {m.common_edit()}
                 </button>
                 <button
+                  type="button"
                   className="tv-btn tv-btn--destructive tv-btn--sm"
                   onClick={() => onDelete(device)}
                 >
@@ -325,16 +385,30 @@ export function DeviceDetailDrawer({
   )
 }
 
-function Meta({ label, children }: { label: string; children: React.ReactNode }) {
+function Meta({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
   return (
     <>
       <span style={{ color: 'var(--fg-3)' }}>{label}</span>
-      <span style={{ color: 'var(--fg-1)', textAlign: 'right' }}>{children}</span>
+      <span style={{ color: 'var(--fg-1)', textAlign: 'right' }}>
+        {children}
+      </span>
     </>
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
   return (
     <div>
       <div

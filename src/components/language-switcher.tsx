@@ -5,7 +5,7 @@ import { m } from '#/paraglide/messages'
 export function LanguageSwitcher() {
   const { locale, setLocale } = useLocale()
   return (
-    <div className="tv-seg" role="group" aria-label={m.language()}>
+    <div className="tv-seg" role="toolbar" aria-label={m.language()}>
       {availableLocales.map((l) => (
         <button
           key={l}

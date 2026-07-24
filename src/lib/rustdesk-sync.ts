@@ -99,12 +99,10 @@ async function fetchPeers(cfg: SyncConfig): Promise<LivePeer[]> {
   const arr = Array.isArray(data)
     ? data
     : ((data as Record<string, unknown>)?.peers ??
-        (data as Record<string, unknown>)?.data ??
-        [])
+      (data as Record<string, unknown>)?.data ??
+      [])
   if (!Array.isArray(arr)) return []
-  return arr
-    .map(normalizePeer)
-    .filter((p): p is LivePeer => p !== null)
+  return arr.map(normalizePeer).filter((p): p is LivePeer => p !== null)
 }
 
 /** Apply live statuses to the devices table. Returns the number updated. */

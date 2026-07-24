@@ -66,7 +66,9 @@ describe('buildListInput', () => {
   })
 
   it('treats a whitespace-only search as no search', () => {
-    expect(buildListInput({ ...EMPTY_FILTERS, search: '   ' }).search).toBeUndefined()
+    expect(
+      buildListInput({ ...EMPTY_FILTERS, search: '   ' }).search,
+    ).toBeUndefined()
   })
 })
 
@@ -103,7 +105,9 @@ describe('mergeOsOptions', () => {
     const merged = mergeOsOptions(['Windows 11', 'AlmaLinux 9'])
     expect(merged).toContain('AlmaLinux 9')
     expect(merged.filter((o) => o === 'Windows 11')).toHaveLength(1)
-    expect([...merged]).toEqual([...merged].sort((a, b) => a.localeCompare(b, 'de')))
+    expect([...merged]).toEqual(
+      [...merged].sort((a, b) => a.localeCompare(b, 'de')),
+    )
   })
 
   it('falls back to the presets alone', () => {

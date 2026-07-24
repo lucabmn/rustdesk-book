@@ -2,7 +2,7 @@ import { Building2 } from 'lucide-react'
 
 import { formatRustdeskId, osLabel } from '#/lib/device-meta'
 import type { Device } from '#/orpc/schema'
-import { ConnectButton, DeviceTags, StatusDot } from '../ui-bits'
+import { activatable, ConnectButton, DeviceTags, StatusDot } from '../ui-bits'
 
 export interface DeviceGroup {
   name: string
@@ -36,13 +36,15 @@ export function GroupedView({ groups, onOpen, onConnect }: GroupedViewProps) {
               style={{ color: 'var(--fg-3)' }}
             />
             <span style={{ fontWeight: 600, fontSize: 13 }}>{g.name}</span>
-            <span className="tv-badge tv-badge--secondary">{g.items.length}</span>
+            <span className="tv-badge tv-badge--secondary">
+              {g.items.length}
+            </span>
           </div>
           {g.items.map((d) => (
             <div
               key={d.id}
               className="tv-row-click"
-              onClick={() => onOpen(d)}
+              {...activatable(() => onOpen(d))}
               style={{
                 display: 'flex',
                 alignItems: 'center',

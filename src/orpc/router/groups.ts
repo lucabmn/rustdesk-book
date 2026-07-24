@@ -18,7 +18,8 @@ async function loadOwnedGroup(
     .from(deviceGroups)
     .where(and(eq(deviceGroups.id, id), eq(deviceGroups.userId, userId)))
     .limit(1)
-  if (!row) throw new ORPCError('NOT_FOUND', { message: 'Gruppe nicht gefunden.' })
+  if (!row)
+    throw new ORPCError('NOT_FOUND', { message: 'Gruppe nicht gefunden.' })
   return row
 }
 
@@ -34,7 +35,9 @@ export const list = authed
       .select({
         id: deviceGroups.id,
         name: deviceGroups.name,
-        count: sql<number>`count(${deviceGroupMembers.deviceId})`.mapWith(Number),
+        count: sql<number>`count(${deviceGroupMembers.deviceId})`.mapWith(
+          Number,
+        ),
       })
       .from(deviceGroups)
       .leftJoin(
@@ -98,10 +101,7 @@ export const forDevice = authed
     const rows = await context.db
       .select({ groupId: deviceGroupMembers.groupId })
       .from(deviceGroupMembers)
-      .innerJoin(
-        deviceGroups,
-        eq(deviceGroups.id, deviceGroupMembers.groupId),
-      )
+      .innerJoin(deviceGroups, eq(deviceGroups.id, deviceGroupMembers.groupId))
       .where(
         and(
           eq(deviceGroups.userId, context.user.id),

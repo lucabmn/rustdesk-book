@@ -63,18 +63,27 @@ export function Toolbar({
       </div>
       <div style={{ flex: 1 }} />
       <div className="tv-seg">
-        <button data-active={view === 'table'} onClick={() => onView('table')}>
+        <button
+          type="button"
+          data-active={view === 'table'}
+          onClick={() => onView('table')}
+        >
           <List size={14} />
           {m.view_table()}
         </button>
         <button
+          type="button"
           data-active={view === 'grouped'}
           onClick={() => onView('grouped')}
         >
           <Building2 size={14} />
           {m.view_grouped()}
         </button>
-        <button data-active={view === 'cards'} onClick={() => onView('cards')}>
+        <button
+          type="button"
+          data-active={view === 'cards'}
+          onClick={() => onView('cards')}
+        >
           <LayoutGrid size={14} />
           {m.view_cards()}
         </button>
@@ -82,6 +91,7 @@ export function Toolbar({
       <span style={{ width: 1, height: 22, background: 'var(--bd-1)' }} />
       {syncEnabled && (
         <button
+          type="button"
           className="tv-btn tv-btn--outline tv-btn--sm"
           onClick={onSyncNow}
           disabled={syncPending}
@@ -99,13 +109,18 @@ export function Toolbar({
         </button>
       )}
       <button
+        type="button"
         className="tv-btn tv-btn--outline tv-btn--sm"
         onClick={() => fileRef.current?.click()}
       >
         <Upload size={14} />
         {m.action_import()}
       </button>
-      <button className="tv-btn tv-btn--outline tv-btn--sm" onClick={onExport}>
+      <button
+        type="button"
+        className="tv-btn tv-btn--outline tv-btn--sm"
+        onClick={onExport}
+      >
         <Download size={14} />
         {m.action_export()}
       </button>
@@ -194,6 +209,7 @@ export function FilterBar({
       </div>
       {hasActiveFilters && (
         <button
+          type="button"
           className="tv-btn tv-btn--ghost tv-btn--xs"
           onClick={onReset}
           style={{ color: 'var(--fg-3)' }}
@@ -212,7 +228,9 @@ export function FilterBar({
         }}
       >
         <span className="tnum">{m.stat_online({ count: onlineCount })}</span>
-        <span className="tnum">{m.stat_customers({ count: customerCount })}</span>
+        <span className="tnum">
+          {m.stat_customers({ count: customerCount })}
+        </span>
       </span>
     </div>
   )

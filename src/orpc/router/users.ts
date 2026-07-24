@@ -90,7 +90,8 @@ export const update = adminProcedure
     if (demotingAdmin) {
       if (input.id === context.user.id) {
         throw new ORPCError('FORBIDDEN', {
-          message: 'Du kannst dir nicht selbst die Administratorrechte entziehen.',
+          message:
+            'Du kannst dir nicht selbst die Administratorrechte entziehen.',
         })
       }
       if ((await adminCount(context.db)) <= 1) {

@@ -16,13 +16,15 @@ const credentials = {
   password: 'a-long-password',
 }
 
-async function insertInvite(overrides: Partial<{
-  email: string
-  token: string
-  role: string
-  expiresAt: Date
-  acceptedAt: Date | null
-}> = {}) {
+async function insertInvite(
+  overrides: Partial<{
+    email: string
+    token: string
+    role: string
+    expiresAt: Date
+    acceptedAt: Date | null
+  }> = {},
+) {
   const [row] = await db
     .insert(invitation)
     .values({
@@ -91,14 +93,14 @@ describe('getInvite', () => {
   })
 
   it('rejects unknown, accepted and expired invites', async () => {
-    await expect(
-      callRpc(account.getInvite, { token: 'nope' }),
-    ).rejects.toThrow(/ungültig oder abgelaufen/)
+    await expect(callRpc(account.getInvite, { token: 'nope' })).rejects.toThrow(
+      /ungültig oder abgelaufen/,
+    )
 
     await insertInvite({ token: 'used', acceptedAt: new Date() })
-    await expect(
-      callRpc(account.getInvite, { token: 'used' }),
-    ).rejects.toThrow(/ungültig oder abgelaufen/)
+    await expect(callRpc(account.getInvite, { token: 'used' })).rejects.toThrow(
+      /ungültig oder abgelaufen/,
+    )
 
     await insertInvite({
       token: 'stale',

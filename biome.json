@@ -3,13 +3,12 @@
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "includes": [
-      "**",
-      "!src/paraglide/**",
-      "!src/routeTree.gen.ts",
-      "!drizzle/**",
-      "!.output/**",
-      "!.tanstack/**",
-      "!pnpm-lock.yaml"
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "scripts/**/*.ts",
+      "*.ts",
+      "!src/paraglide",
+      "!src/routeTree.gen.ts"
     ]
   },
   "formatter": {
@@ -37,10 +36,16 @@
       },
       "suspicious": {
         "noExplicitAny": "error",
-        "noConsole": { "level": "error", "options": { "allow": ["warn", "error"] } }
+        "noConsole": {
+          "level": "error",
+          "options": { "allow": ["warn", "error"] }
+        }
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": { "level": "warn", "options": { "maxAllowedComplexity": 20 } }
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": { "maxAllowedComplexity": 20 }
+        }
       },
       "correctness": {
         "noUnusedImports": "error",
@@ -48,5 +53,27 @@
       }
     }
   },
-  "assist": { "actions": { "source": { "organizeImports": "off" } } }
+  "assist": { "actions": { "source": { "organizeImports": "off" } } },
+  "overrides": [
+    {
+      "includes": ["src/lib/deployment/**", "src/lib/deployment-script.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
 }

@@ -17,9 +17,19 @@ export const fetchSession = createServerFn({ method: 'GET' }).handler(
       headers: new Headers(getRequestHeaders() as HeadersInit),
     })
     if (!session) return null
-    const u = session.user as { id: string; name: string; email: string; role?: string }
+    const u = session.user as {
+      id: string
+      name: string
+      email: string
+      role?: string
+    }
     return {
-      user: { id: u.id, name: u.name, email: u.email, role: u.role ?? 'member' },
+      user: {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role ?? 'member',
+      },
     }
   },
 )

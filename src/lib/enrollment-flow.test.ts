@@ -45,7 +45,11 @@ async function seedToken(
 }
 
 /** Claim + finalize in one step, the way a deployment script runs. */
-async function enroll(token: string, input = claimInput, password = 'pw-123456') {
+async function enroll(
+  token: string,
+  input = claimInput,
+  password = 'pw-123456',
+) {
   const claim = await claimEnrollment(db as never, token, input)
   if (claim.alreadyEnrolled) return { claim, result: null }
   const result = await finalizeEnrollment(db as never, claim.claimToken, {

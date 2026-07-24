@@ -55,6 +55,7 @@ export function FilterSidebar({
       </div>
 
       <button
+        type="button"
         className="tv-navitem"
         data-active={allActive}
         onClick={() => patch({ customer: ANY, favorite: false, groupId: null })}
@@ -65,6 +66,7 @@ export function FilterSidebar({
       </button>
 
       <button
+        type="button"
         className="tv-navitem"
         data-active={filters.favorite}
         onClick={() => patch({ favorite: !filters.favorite })}
@@ -97,6 +99,7 @@ export function FilterSidebar({
         </span>
         {isAdmin && (
           <button
+            type="button"
             className="tv-btn tv-btn--ghost tv-btn--icon-xs"
             title={m.customers_manage()}
             aria-label={m.customers_manage()}
@@ -108,6 +111,7 @@ export function FilterSidebar({
       </div>
       {customers.map((c) => (
         <button
+          type="button"
           key={c.name}
           className="tv-navitem"
           data-active={filters.customer === c.name}
@@ -134,6 +138,7 @@ export function FilterSidebar({
           const on = filters.tags.includes(t.name)
           return (
             <button
+              type="button"
               key={t.name}
               onClick={() => onToggleTag(t.name)}
               style={{

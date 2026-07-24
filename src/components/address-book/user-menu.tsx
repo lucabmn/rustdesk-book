@@ -32,6 +32,7 @@ export function UserMenu({
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button
+          type="button"
           className="tv-avatar tv-avatar--sm"
           style={{
             background: 'var(--brand-soft)',
@@ -64,39 +65,63 @@ export function UserMenu({
             <div style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{email}</div>
           </div>
           <div
-            style={{ height: 1, background: 'var(--bd-subtle)', margin: '4px 0' }}
+            style={{
+              height: 1,
+              background: 'var(--bd-subtle)',
+              margin: '4px 0',
+            }}
           />
           <DropdownMenu.Item asChild>
-            <button className="tv-menu-item" onClick={onEnrollment}>
+            <button
+              type="button"
+              className="tv-menu-item"
+              onClick={onEnrollment}
+            >
               <Rocket size={14} /> {m.enrollment_menu()}
             </button>
           </DropdownMenu.Item>
           {isAdmin && (
             <>
               <DropdownMenu.Item asChild>
-                <button className="tv-menu-item" onClick={onUsers}>
+                <button
+                  type="button"
+                  className="tv-menu-item"
+                  onClick={onUsers}
+                >
                   <Users size={14} /> {m.users_menu()}
                 </button>
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
-                <button className="tv-menu-item" onClick={onInvite}>
+                <button
+                  type="button"
+                  className="tv-menu-item"
+                  onClick={onInvite}
+                >
                   <Mail size={14} /> {m.invite_users()}
                 </button>
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
-                <button className="tv-menu-item" onClick={onAudit}>
+                <button
+                  type="button"
+                  className="tv-menu-item"
+                  onClick={onAudit}
+                >
                   <History size={14} /> {m.audit_menu()}
                 </button>
               </DropdownMenu.Item>
             </>
           )}
           <DropdownMenu.Item asChild>
-            <button className="tv-menu-item" onClick={onSignOut}>
+            <button type="button" className="tv-menu-item" onClick={onSignOut}>
               <LogOut size={14} /> {m.sign_out()}
             </button>
           </DropdownMenu.Item>
           <div
-            style={{ height: 1, background: 'var(--bd-subtle)', margin: '4px 0' }}
+            style={{
+              height: 1,
+              background: 'var(--bd-subtle)',
+              margin: '4px 0',
+            }}
           />
           <div
             style={{

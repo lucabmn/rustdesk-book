@@ -1,0 +1,3 @@
+# Task for reviewer
+
+Reviewe die neuesten Änderungen am RustDesk-Enrollment gegen genau diese Anforderungen: (1) bestehende Tokens vollständig löschen, enrollte Geräte behalten; (2) Skripte permanenter Tokens erneut herunterladen; (3) Kunden-Combobox wie beim manuellen Geräteformular. Prüfe besonders Secret-Storage, Legacy-Permanent-Tokens, Autorisierung, Lösch-FKs, Nebenläufigkeit und UI-Verhalten. Nur Blocker/hohe Findings melden, nichts ändern.

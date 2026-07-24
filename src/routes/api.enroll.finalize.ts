@@ -16,7 +16,9 @@ async function post({ request }: { request: Request }) {
   try {
     enforceEnrollmentRateLimit(request)
     const claimToken = bearerToken(request)
-    const input = EnrollmentFinalizeSchema.parse(await parseEnrollmentPayload(request))
+    const input = EnrollmentFinalizeSchema.parse(
+      await parseEnrollmentPayload(request),
+    )
     const result = await finalizeEnrollment(db, claimToken, input)
     return enrollmentJson({ ok: true, ...result }, result.created ? 201 : 200)
   } catch (error) {

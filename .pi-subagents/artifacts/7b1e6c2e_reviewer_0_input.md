@@ -1,0 +1,3 @@
+# Task for reviewer
+
+Letzter Release-Blocker-Check der uncommitteten RustDesk-OSS-Enrollment-Implementierung nach den jüngsten Fixes: Recovery speichert Claim-Ablauf und erneuert abgelaufene Claims unter Wiederverwendung des bereits gesetzten Passworts; PowerShell nutzt RNG.Create/GetBytes; aktive Claims reservieren RustDesk-ID global über Tokens; Lockreihenfolge Token→Claim; Shell-Zeilenfortsetzungen sind einfach. Suche ausschließlich nach Blockern/hohen Correctness- oder Security-Fehlern. Nichts ändern. Antworte knapp.

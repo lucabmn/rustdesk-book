@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { filterCustomers, shouldOfferCreate } from './customer-suggest'
 
 describe('filterCustomers', () => {
-  const all = ['Bäckerei Krause GmbH', 'Sanitätshaus Baumann', 'Acme Bakery Ltd.']
+  const all = [
+    'Bäckerei Krause GmbH',
+    'Sanitätshaus Baumann',
+    'Acme Bakery Ltd.',
+  ]
 
   it('returns every option for an empty query', () => {
     expect(filterCustomers(all, '')).toEqual(all)

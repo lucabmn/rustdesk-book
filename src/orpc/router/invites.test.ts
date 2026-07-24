@@ -47,9 +47,7 @@ describe('create', () => {
 
   it('is admin-only', async () => {
     signIn({ role: 'member' })
-    await expect(create('x@example.com')).rejects.toThrow(
-      /Administratorrechte/,
-    )
+    await expect(create('x@example.com')).rejects.toThrow(/Administratorrechte/)
   })
 })
 

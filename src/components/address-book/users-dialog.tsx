@@ -73,7 +73,9 @@ export function UsersDialog({
         <Dialog.Overlay className="tv-dialog-overlay" />
         <Dialog.Content className="tv-dialog" style={{ maxWidth: 760 }}>
           <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">{m.users_title()}</Dialog.Title>
+            <Dialog.Title className="tv-dialog__title">
+              {m.users_title()}
+            </Dialog.Title>
             <Dialog.Description className="tv-dialog__description">
               {m.users_description()}
             </Dialog.Description>
@@ -91,7 +93,9 @@ export function UsersDialog({
                     <th>{m.users_th_user()}</th>
                     <th>{m.users_th_role()}</th>
                     <th>{m.users_th_status()}</th>
-                    <th style={{ textAlign: 'right' }}>{m.users_th_devices()}</th>
+                    <th style={{ textAlign: 'right' }}>
+                      {m.users_th_devices()}
+                    </th>
                     <th>{m.users_th_joined()}</th>
                     <th style={{ textAlign: 'right' }}>{m.th_action()}</th>
                   </tr>
@@ -102,15 +106,32 @@ export function UsersDialog({
                     return (
                       <tr key={u.id}>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                            }}
+                          >
                             <span
                               className="tv-avatar tv-avatar--sm"
-                              style={{ background: 'var(--brand-soft)', color: 'var(--brand)', fontSize: 11 }}
+                              style={{
+                                background: 'var(--brand-soft)',
+                                color: 'var(--brand)',
+                                fontSize: 11,
+                              }}
                             >
                               {u.name.slice(0, 2).toUpperCase()}
                             </span>
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div
+                                style={{
+                                  fontWeight: 600,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                }}
+                              >
                                 {u.name}
                                 {isSelf && (
                                   <span className="tv-badge tv-badge--secondary">
@@ -118,7 +139,11 @@ export function UsersDialog({
                                   </span>
                                 )}
                               </div>
-                              <div style={{ fontSize: 11.5, color: 'var(--fg-3)' }}>{u.email}</div>
+                              <div
+                                style={{ fontSize: 11.5, color: 'var(--fg-3)' }}
+                              >
+                                {u.email}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -130,7 +155,9 @@ export function UsersDialog({
                                 : 'tv-chip tv-chip--neutral'
                             }
                           >
-                            {u.role === 'admin' && <ShieldCheck size={11} strokeWidth={2} />}
+                            {u.role === 'admin' && (
+                              <ShieldCheck size={11} strokeWidth={2} />
+                            )}
                             {roleLabel(u.role)}
                           </span>
                         </td>
@@ -138,23 +165,43 @@ export function UsersDialog({
                           {u.banned ? (
                             <span
                               className="tv-chip tv-chip--warn"
-                              title={u.banReason ? m.users_banned_reason({ reason: u.banReason }) : undefined}
+                              title={
+                                u.banReason
+                                  ? m.users_banned_reason({
+                                      reason: u.banReason,
+                                    })
+                                  : undefined
+                              }
                             >
                               {m.users_status_banned()}
                             </span>
                           ) : (
-                            <span className="tv-chip tv-chip--ok">{m.users_status_active()}</span>
+                            <span className="tv-chip tv-chip--ok">
+                              {m.users_status_active()}
+                            </span>
                           )}
                         </td>
-                        <td className="mono tnum" style={{ textAlign: 'right', color: 'var(--fg-2)' }}>
+                        <td
+                          className="mono tnum"
+                          style={{ textAlign: 'right', color: 'var(--fg-2)' }}
+                        >
                           {u.deviceCount}
                         </td>
-                        <td style={{ color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>
+                        <td
+                          style={{ color: 'var(--fg-3)', whiteSpace: 'nowrap' }}
+                        >
                           {new Date(u.createdAt).toLocaleDateString()}
                         </td>
                         <td>
-                          <span style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                          <span
+                            style={{
+                              display: 'flex',
+                              gap: 4,
+                              justifyContent: 'flex-end',
+                            }}
+                          >
                             <button
+                              type="button"
                               className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                               title={m.users_edit()}
                               onClick={() => setEditing(u)}
@@ -163,6 +210,7 @@ export function UsersDialog({
                             </button>
                             {u.banned ? (
                               <button
+                                type="button"
                                 className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                                 title={m.users_unban()}
                                 onClick={() => unbanMut.mutate({ id: u.id })}
@@ -171,20 +219,26 @@ export function UsersDialog({
                               </button>
                             ) : (
                               <button
+                                type="button"
                                 className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                                 title={m.users_ban()}
                                 disabled={isSelf}
-                                style={{ color: isSelf ? undefined : 'var(--s-warn)' }}
+                                style={{
+                                  color: isSelf ? undefined : 'var(--s-warn)',
+                                }}
                                 onClick={() => setBanning(u)}
                               >
                                 <Ban size={13} />
                               </button>
                             )}
                             <button
+                              type="button"
                               className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                               title={m.common_delete()}
                               disabled={isSelf}
-                              style={{ color: isSelf ? undefined : 'var(--s-err)' }}
+                              style={{
+                                color: isSelf ? undefined : 'var(--s-err)',
+                              }}
                               onClick={() => setDeleting(u)}
                             >
                               <Trash2 size={13} />
@@ -201,6 +255,7 @@ export function UsersDialog({
 
           <Dialog.Close asChild>
             <button
+              type="button"
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
               aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}
@@ -230,7 +285,10 @@ export function UsersDialog({
           setBanning(null)
         }}
       />
-      <AlertDialog.Root open={deleting !== null} onOpenChange={(o) => !o && setDeleting(null)}>
+      <AlertDialog.Root
+        open={deleting !== null}
+        onOpenChange={(o) => !o && setDeleting(null)}
+      >
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="tv-dialog-overlay" />
           <AlertDialog.Content className="tv-dialog" style={{ maxWidth: 400 }}>
@@ -239,17 +297,23 @@ export function UsersDialog({
                 {m.users_delete_title()}
               </AlertDialog.Title>
               <AlertDialog.Description className="tv-dialog__description">
-                {deleting ? m.users_delete_confirm({ name: deleting.name }) : ''}
+                {deleting
+                  ? m.users_delete_confirm({ name: deleting.name })
+                  : ''}
               </AlertDialog.Description>
             </div>
             <div className="tv-dialog__footer">
               <AlertDialog.Cancel asChild>
-                <button className="tv-btn tv-btn--outline tv-btn--sm">
+                <button
+                  type="button"
+                  className="tv-btn tv-btn--outline tv-btn--sm"
+                >
                   {m.common_cancel()}
                 </button>
               </AlertDialog.Cancel>
               <AlertDialog.Action asChild>
                 <button
+                  type="button"
                   className="tv-btn tv-btn--destructive tv-btn--sm"
                   disabled={removeMut.isPending}
                   onClick={(e) => {
@@ -306,14 +370,18 @@ function EditUserDialog({
         <Dialog.Overlay className="tv-dialog-overlay" />
         <Dialog.Content className="tv-dialog" style={{ maxWidth: 420 }}>
           <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">{m.users_edit_title()}</Dialog.Title>
+            <Dialog.Title className="tv-dialog__title">
+              {m.users_edit_title()}
+            </Dialog.Title>
             <Dialog.Description className="tv-dialog__description">
               {m.users_edit_description()}
             </Dialog.Description>
           </div>
 
           <div className="tv-field">
-            <label className="tv-label" htmlFor="user-name">{m.common_name()}</label>
+            <label className="tv-label" htmlFor="user-name">
+              {m.common_name()}
+            </label>
             <input
               id="user-name"
               className="tv-input"
@@ -322,11 +390,20 @@ function EditUserDialog({
             />
           </div>
           <div className="tv-field">
-            <label className="tv-label" htmlFor="user-email">{m.common_email()}</label>
-            <input id="user-email" className="tv-input" value={user?.email ?? ''} disabled />
+            <label className="tv-label" htmlFor="user-email">
+              {m.common_email()}
+            </label>
+            <input
+              id="user-email"
+              className="tv-input"
+              value={user?.email ?? ''}
+              disabled
+            />
           </div>
           <div className="tv-field">
-            <label className="tv-label" htmlFor="user-role">{m.users_role_label()}</label>
+            <label className="tv-label" htmlFor="user-role">
+              {m.users_role_label()}
+            </label>
             <select
               id="user-role"
               className="tv-select"
@@ -341,13 +418,20 @@ function EditUserDialog({
 
           <div className="tv-dialog__footer">
             <Dialog.Close asChild>
-              <button className="tv-btn tv-btn--outline tv-btn--sm">{m.common_cancel()}</button>
+              <button
+                type="button"
+                className="tv-btn tv-btn--outline tv-btn--sm"
+              >
+                {m.common_cancel()}
+              </button>
             </Dialog.Close>
             <button
+              type="button"
               className="tv-btn tv-btn--default tv-btn--sm"
               disabled={!name.trim() || updateMut.isPending}
               onClick={() =>
-                user && updateMut.mutate({ id: user.id, name: name.trim(), role })
+                user &&
+                updateMut.mutate({ id: user.id, name: name.trim(), role })
               }
             >
               {m.common_save()}
@@ -356,6 +440,7 @@ function EditUserDialog({
 
           <Dialog.Close asChild>
             <button
+              type="button"
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
               aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}
@@ -400,14 +485,18 @@ function BanUserDialog({
         <Dialog.Overlay className="tv-dialog-overlay" />
         <Dialog.Content className="tv-dialog" style={{ maxWidth: 420 }}>
           <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">{m.users_ban_title()}</Dialog.Title>
+            <Dialog.Title className="tv-dialog__title">
+              {m.users_ban_title()}
+            </Dialog.Title>
             <Dialog.Description className="tv-dialog__description">
               {user ? m.users_ban_description({ name: user.name }) : ''}
             </Dialog.Description>
           </div>
 
           <div className="tv-field">
-            <label className="tv-label" htmlFor="ban-reason">{m.users_ban_reason_label()}</label>
+            <label className="tv-label" htmlFor="ban-reason">
+              {m.users_ban_reason_label()}
+            </label>
             <input
               id="ban-reason"
               className="tv-input"
@@ -419,13 +508,23 @@ function BanUserDialog({
 
           <div className="tv-dialog__footer">
             <Dialog.Close asChild>
-              <button className="tv-btn tv-btn--outline tv-btn--sm">{m.common_cancel()}</button>
+              <button
+                type="button"
+                className="tv-btn tv-btn--outline tv-btn--sm"
+              >
+                {m.common_cancel()}
+              </button>
             </Dialog.Close>
             <button
+              type="button"
               className="tv-btn tv-btn--destructive tv-btn--sm"
               disabled={banMut.isPending}
               onClick={() =>
-                user && banMut.mutate({ id: user.id, reason: reason.trim() || undefined })
+                user &&
+                banMut.mutate({
+                  id: user.id,
+                  reason: reason.trim() || undefined,
+                })
               }
             >
               <Ban size={13} />

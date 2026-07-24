@@ -74,9 +74,9 @@ describe('resolveSignUpRole', () => {
       { email: 'invited@example.com', role: 'admin' },
       async () => {
         // Case differences must not defeat the match.
-        expect(await resolveSignUpRole(db as never, 'Invited@Example.com')).toBe(
-          'admin',
-        )
+        expect(
+          await resolveSignUpRole(db as never, 'Invited@Example.com'),
+        ).toBe('admin')
       },
     )
   })
@@ -103,7 +103,9 @@ describe('consumeInvitations', () => {
 describe('assertNotBanned', () => {
   it('passes for an active account and an unknown id', async () => {
     await seedUser()
-    await expect(assertNotBanned(db as never, 'user-1')).resolves.toBeUndefined()
+    await expect(
+      assertNotBanned(db as never, 'user-1'),
+    ).resolves.toBeUndefined()
     await expect(assertNotBanned(db as never, 'ghost')).resolves.toBeUndefined()
   })
 

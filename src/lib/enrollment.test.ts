@@ -34,7 +34,11 @@ describe('enrollment tokens', () => {
 
   it('rejects malformed IDs and weak passwords', () => {
     const base = { rustdeskId: '123456789', alias: 'PC' }
-    expect(() => EnrollmentClaimSchema.parse({ ...base, rustdeskId: 'abc' })).toThrow()
-    expect(() => EnrollmentFinalizeSchema.parse({ password: 'short' })).toThrow()
+    expect(() =>
+      EnrollmentClaimSchema.parse({ ...base, rustdeskId: 'abc' }),
+    ).toThrow()
+    expect(() =>
+      EnrollmentFinalizeSchema.parse({ password: 'short' }),
+    ).toThrow()
   })
 })

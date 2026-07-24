@@ -82,8 +82,13 @@ async function favoriteIdsFor(
 }
 
 async function loadDeviceRow(db: typeof import('#/db').db, id: string) {
-  const [row] = await db.select().from(devices).where(eq(devices.id, id)).limit(1)
-  if (!row) throw new ORPCError('NOT_FOUND', { message: 'Gerät nicht gefunden.' })
+  const [row] = await db
+    .select()
+    .from(devices)
+    .where(eq(devices.id, id))
+    .limit(1)
+  if (!row)
+    throw new ORPCError('NOT_FOUND', { message: 'Gerät nicht gefunden.' })
   return row
 }
 

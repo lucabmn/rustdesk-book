@@ -22,7 +22,9 @@ const BaseUrlSchema = z.object({ baseUrl: z.string().url() })
 function deploymentOrigin(inputBaseUrl: string): string {
   const baseUrl = process.env.BETTER_AUTH_URL?.trim() || inputBaseUrl
   const publicUrl = new URL(baseUrl)
-  const isLoopback = ['localhost', '127.0.0.1', '::1'].includes(publicUrl.hostname)
+  const isLoopback = ['localhost', '127.0.0.1', '::1'].includes(
+    publicUrl.hostname,
+  )
   if (publicUrl.protocol !== 'https:' && !isLoopback) {
     throw new ORPCError('BAD_REQUEST', {
       message: 'Deployment scripts require a public HTTPS URL.',
@@ -38,10 +40,7 @@ function accessibleToken(
 ) {
   return role === 'admin'
     ? eq(enrollmentTokens.id, id)
-    : and(
-        eq(enrollmentTokens.id, id),
-        eq(enrollmentTokens.createdBy, userId),
-      )
+    : and(eq(enrollmentTokens.id, id), eq(enrollmentTokens.createdBy, userId))
 }
 
 const CreateEnrollmentSchema = z.object({
@@ -58,7 +57,9 @@ export const create = authed
   .input(CreateEnrollmentSchema)
   .handler(async ({ input, context }) => {
     const token = generateEnrollmentToken()
-    const tags = [...new Set(input.tags.map((tag) => tag.trim()).filter(Boolean))]
+    const tags = [
+      ...new Set(input.tags.map((tag) => tag.trim()).filter(Boolean)),
+    ]
     const rustdeskVersion = DEFAULT_RUSTDESK_VERSION
     const origin = deploymentOrigin(input.baseUrl)
 
@@ -133,9 +134,7 @@ export const scripts = authed
       const [row] = await tx
         .select()
         .from(enrollmentTokens)
-        .where(
-          accessibleToken(input.id, context.user.id, context.user.role),
-        )
+        .where(accessibleToken(input.id, context.user.id, context.user.role))
         .limit(1)
         .for('update')
 
@@ -147,7 +146,8 @@ export const scripts = authed
       }
       if (row.revokedAt) {
         throw new ORPCError('BAD_REQUEST', {
-          message: 'Revoked tokens cannot be used to generate deployment scripts.',
+          message:
+            'Revoked tokens cannot be used to generate deployment scripts.',
         })
       }
 
@@ -192,9 +192,7 @@ export const remove = authed
       const [token] = await tx
         .select({ id: enrollmentTokens.id })
         .from(enrollmentTokens)
-        .where(
-          accessibleToken(input.id, context.user.id, context.user.role),
-        )
+        .where(accessibleToken(input.id, context.user.id, context.user.role))
         .limit(1)
         .for('update')
       if (!token) return { ok: false }
@@ -217,9 +215,7 @@ export const remove = authed
         })
       }
 
-      await tx
-        .delete(enrollmentTokens)
-        .where(eq(enrollmentTokens.id, token.id))
+      await tx.delete(enrollmentTokens).where(eq(enrollmentTokens.id, token.id))
       return { ok: true }
     }),
   )
@@ -230,9 +226,7 @@ export const revoke = authed
     const [row] = await context.db
       .update(enrollmentTokens)
       .set({ revokedAt: new Date() })
-      .where(
-        accessibleToken(input.id, context.user.id, context.user.role),
-      )
+      .where(accessibleToken(input.id, context.user.id, context.user.role))
       .returning({ id: enrollmentTokens.id })
     return { ok: Boolean(row) }
   })

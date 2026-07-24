@@ -151,7 +151,10 @@ export const enrollmentTokens = pgTable(
   (t) => [
     uniqueIndex('enrollment_tokens_hash_idx').on(t.tokenHash),
     index('enrollment_tokens_created_by_idx').on(t.createdBy),
-    check('enrollment_tokens_kind_check', sql`${t.kind} in ('single', 'permanent')`),
+    check(
+      'enrollment_tokens_kind_check',
+      sql`${t.kind} in ('single', 'permanent')`,
+    ),
     check('enrollment_tokens_use_count_check', sql`${t.useCount} >= 0`),
   ],
 )

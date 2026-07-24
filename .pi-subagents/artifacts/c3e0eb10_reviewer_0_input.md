@@ -1,0 +1,3 @@
+# Task for reviewer
+
+Finaler fokussierter Review der aktuellen uncommitteten RustDesk-OSS-Enrollment-Änderungen. Prüfe nur noch Release-Blocker/hohe Fehler: Claim/Finalize-Lockreihenfolge und Single-use, parallele Deployments desselben und verschiedener Geräte mit permanentem Token, Recovery-Dateien, generierte Shell-/PowerShell-Skripte, Downloadverifikation und öffentliche Endpunkte. Vorherige Findings zu doppelten Shell-Backslashes, Claim-Ersetzung, Deadlock, Windows-ACL und unbeschränktem Rate-Map wurden behoben. Nichts ändern. Antworte knapp mit verbleibenden Blockern/hohen Findings oder 'keine'.

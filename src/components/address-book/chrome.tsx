@@ -86,11 +86,16 @@ export function TopBar({
       <div
         style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
       >
-        <button className="tv-btn tv-btn--default tv-btn--sm" onClick={onAdd}>
+        <button
+          type="button"
+          className="tv-btn tv-btn--default tv-btn--sm"
+          onClick={onAdd}
+        >
           <Plus size={14} strokeWidth={1.75} />
           {m.device_add()}
         </button>
         <button
+          type="button"
           className="tv-btn tv-btn--ghost tv-btn--icon-sm"
           onClick={onToggleTheme}
           title={m.theme_toggle()}
@@ -170,6 +175,7 @@ export function AppRail({
       </div>
       <div style={{ flex: 1 }} />
       <button
+        type="button"
         className="tv-rail-ico"
         title={m.enrollment_menu()}
         onClick={onEnrollment}
@@ -178,13 +184,24 @@ export function AppRail({
       </button>
       {isAdmin && (
         <>
-          <button className="tv-rail-ico" title={m.users_menu()} onClick={onUsers}>
+          <button
+            type="button"
+            className="tv-rail-ico"
+            title={m.users_menu()}
+            onClick={onUsers}
+          >
             <Users size={17} strokeWidth={1.5} />
           </button>
-          <button className="tv-rail-ico" title={m.audit_menu()} onClick={onAudit}>
+          <button
+            type="button"
+            className="tv-rail-ico"
+            title={m.audit_menu()}
+            onClick={onAudit}
+          >
             <History size={17} strokeWidth={1.5} />
           </button>
           <button
+            type="button"
             className="tv-rail-ico"
             title={m.rail_invites()}
             onClick={onInvite}
@@ -218,7 +235,9 @@ export function StatusBar({ total }: { total: number }) {
         <span className="tv-dot tv-dot--ok" style={{ width: 5, height: 5 }} />{' '}
         {m.sb_server_connected()}
       </span>
-      <span style={{ color: 'var(--fg-3)' }}>{m.sb_devices({ count: total })}</span>
+      <span style={{ color: 'var(--fg-3)' }}>
+        {m.sb_devices({ count: total })}
+      </span>
       <span className="mono">{m.app_name()}</span>
       <div style={{ flex: 1 }} />
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

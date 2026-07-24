@@ -30,10 +30,7 @@ async function createAccount(
 export const status = publicProcedure
   .output(z.object({ needsBootstrap: z.boolean() }))
   .handler(async ({ context }) => {
-    const [first] = await context.db
-      .select({ id: user.id })
-      .from(user)
-      .limit(1)
+    const [first] = await context.db.select({ id: user.id }).from(user).limit(1)
     return { needsBootstrap: !first }
   })
 
@@ -42,13 +39,11 @@ export const bootstrap = publicProcedure
   .input(CredentialsSchema)
   .output(z.object({ ok: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const [first] = await context.db
-      .select({ id: user.id })
-      .from(user)
-      .limit(1)
+    const [first] = await context.db.select({ id: user.id }).from(user).limit(1)
     if (first) {
       throw new ORPCError('FORBIDDEN', {
-        message: 'Es existiert bereits ein Konto. Registrierung ist nur per Einladung möglich.',
+        message:
+          'Es existiert bereits ein Konto. Registrierung ist nur per Einladung möglich.',
       })
     }
     await createAccount(context.headers, input)

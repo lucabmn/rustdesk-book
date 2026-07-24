@@ -4,7 +4,12 @@ import { and, eq, isNull, lt, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { db as Database } from '#/db'
-import { customers, devices, enrollmentClaims, enrollmentTokens } from '#/db/schema'
+import {
+  customers,
+  devices,
+  enrollmentClaims,
+  enrollmentTokens,
+} from '#/db/schema'
 import { encryptSecret } from '#/lib/crypto'
 
 const RustdeskIdSchema = z
@@ -90,7 +95,11 @@ export async function claimEnrollment(
       .for('update')
 
     if (!token || token.revokedAt) {
-      throw new EnrollmentError(401, 'invalid_token', 'Invalid or revoked enrollment token.')
+      throw new EnrollmentError(
+        401,
+        'invalid_token',
+        'Invalid or revoked enrollment token.',
+      )
     }
 
     await lockRustdeskId(tx, input.rustdeskId)
@@ -120,7 +129,10 @@ export async function claimEnrollment(
     }
 
     const activeForDevice = await tx
-      .select({ id: enrollmentClaims.id, expiresAt: enrollmentClaims.expiresAt })
+      .select({
+        id: enrollmentClaims.id,
+        expiresAt: enrollmentClaims.expiresAt,
+      })
       .from(enrollmentClaims)
       .where(
         and(
@@ -212,7 +224,11 @@ export async function finalizeEnrollment(
       .limit(1)
 
     if (!claimRef) {
-      throw new EnrollmentError(401, 'invalid_claim', 'Invalid or expired enrollment claim.')
+      throw new EnrollmentError(
+        401,
+        'invalid_claim',
+        'Invalid or expired enrollment claim.',
+      )
     }
 
     // Lock in the same token → claim order used by claimEnrollment to avoid
@@ -233,7 +249,11 @@ export async function finalizeEnrollment(
     // Revocation blocks new claims, but a claim that already changed the
     // device password must still be allowed to finalize until it expires.
     if (!token || !claim) {
-      throw new EnrollmentError(401, 'invalid_token', 'Invalid enrollment token.')
+      throw new EnrollmentError(
+        401,
+        'invalid_token',
+        'Invalid enrollment token.',
+      )
     }
     if (claim.finalizedAt && claim.deviceId) {
       return {
@@ -243,7 +263,11 @@ export async function finalizeEnrollment(
       }
     }
     if (claim.expiresAt <= now) {
-      throw new EnrollmentError(401, 'invalid_claim', 'Invalid or expired enrollment claim.')
+      throw new EnrollmentError(
+        401,
+        'invalid_claim',
+        'Invalid or expired enrollment claim.',
+      )
     }
 
     await lockRustdeskId(tx, claim.rustdeskId)

@@ -49,13 +49,17 @@ describe('deployment scripts', () => {
 
     expect(enabled).toContain('$InstallIfMissing = $true')
     expect(disabled).toContain('$InstallIfMissing = $false')
-    expect(disabled).toContain("if (-not $InstallIfMissing)")
+    expect(disabled).toContain('if (-not $InstallIfMissing)')
   })
 
   it('uses a pinned and checksum-verified official RustDesk OSS release', () => {
     const scripts = buildDeploymentScripts(options)
-    expect(scripts.linux).toContain(`RUSTDESK_VERSION='${DEFAULT_RUSTDESK_VERSION}'`)
-    expect(scripts.linux).toContain('github.com/rustdesk/rustdesk/releases/download')
+    expect(scripts.linux).toContain(
+      `RUSTDESK_VERSION='${DEFAULT_RUSTDESK_VERSION}'`,
+    )
+    expect(scripts.linux).toContain(
+      'github.com/rustdesk/rustdesk/releases/download',
+    )
     expect(scripts.linux).toContain('verify_sha256')
     expect(scripts.windows).toContain('Get-FileHash')
     expect(scripts.windows).toContain('Get-AuthenticodeSignature')
@@ -65,7 +69,9 @@ describe('deployment scripts', () => {
   it('claims before changing the password and keeps recovery data until finalize succeeds', () => {
     const scripts = buildDeploymentScripts(options)
     for (const script of Object.values(scripts)) {
-      expect(script.indexOf('/api/enroll/claim')).toBeLessThan(script.indexOf('--password'))
+      expect(script.indexOf('/api/enroll/claim')).toBeLessThan(
+        script.indexOf('--password'),
+      )
       expect(script).toContain('recovery')
       expect(script).toContain('/api/enroll/finalize')
     }

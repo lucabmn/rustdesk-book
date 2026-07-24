@@ -70,6 +70,7 @@ export function CustomersDialog({
               }}
             />
             <button
+              type="button"
               className="tv-btn tv-btn--default tv-btn--sm"
               disabled={!newName.trim() || createMut.isPending}
               onClick={() => createMut.mutate({ name: newName.trim() })}
@@ -84,7 +85,15 @@ export function CustomersDialog({
               {m.customers_none()}
             </span>
           ) : (
-            <div style={{ maxHeight: '55vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div
+              style={{
+                maxHeight: '55vh',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
               {customers.map((c) => (
                 <CustomerRow key={c.id} customer={c} onChanged={invalidate} />
               ))}
@@ -93,6 +102,7 @@ export function CustomersDialog({
 
           <Dialog.Close asChild>
             <button
+              type="button"
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
               aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}
@@ -162,10 +172,14 @@ function CustomerRow({
           aria-label={m.common_name()}
           style={{ flex: 1 }}
         />
-        <span className="tv-badge tv-badge--secondary" title={m.customers_device_count()}>
+        <span
+          className="tv-badge tv-badge--secondary"
+          title={m.customers_device_count()}
+        >
           {customer.count}
         </span>
         <button
+          type="button"
           className="tv-btn tv-btn--default tv-btn--icon-sm"
           disabled={!dirty || !name.trim() || updateMut.isPending}
           title={m.common_save()}
@@ -182,6 +196,7 @@ function CustomerRow({
           <Save size={14} />
         </button>
         <button
+          type="button"
           className="tv-btn tv-btn--ghost tv-btn--icon-sm"
           title={m.common_delete()}
           aria-label={m.common_delete()}

@@ -158,7 +158,9 @@ describe('maybeSyncStatuses', () => {
     expect(sync.lastSyncedAt()).toBeGreaterThan(0)
     // The manual statuses survive the failed poll.
     const rows = await db.select().from(devices)
-    expect(rows.find((r) => r.rustdeskId === '222222222')?.status).toBe('online')
+    expect(rows.find((r) => r.rustdeskId === '222222222')?.status).toBe(
+      'online',
+    )
   })
 
   it('leaves untouched devices alone when nothing changed', async () => {

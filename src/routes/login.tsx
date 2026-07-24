@@ -56,7 +56,13 @@ function LoginPage() {
     <div className="tv-auth-wrap">
       <form className="tv-auth-card" onSubmit={onSubmit}>
         <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <BrandMark />
             <LanguageSwitcher />
           </div>
@@ -65,7 +71,9 @@ function LoginPage() {
               {needsBootstrap ? m.auth_admin_title() : m.auth_signin_title()}
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
-              {needsBootstrap ? m.auth_admin_subtitle() : m.auth_signin_subtitle()}
+              {needsBootstrap
+                ? m.auth_admin_subtitle()
+                : m.auth_signin_subtitle()}
             </div>
           </div>
         </header>

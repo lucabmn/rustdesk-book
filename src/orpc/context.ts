@@ -1,7 +1,7 @@
 import { ORPCError, os } from '@orpc/server'
 
 import { auth } from '#/lib/auth'
-import { db } from '#/db'
+import type { db } from '#/db'
 
 /**
  * Every oRPC call carries the incoming request headers and the database
@@ -22,7 +22,9 @@ const requireAuth = base.middleware(async ({ context, next }) => {
     throw new ORPCError('UNAUTHORIZED', { message: 'Authentication required.' })
   }
   if ((session.user as { banned?: boolean }).banned) {
-    throw new ORPCError('FORBIDDEN', { message: 'Dieses Konto wurde gesperrt.' })
+    throw new ORPCError('FORBIDDEN', {
+      message: 'Dieses Konto wurde gesperrt.',
+    })
   }
   return next({
     context: {

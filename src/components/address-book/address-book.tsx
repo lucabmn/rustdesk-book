@@ -16,6 +16,7 @@ import {
   Pencil,
   Plus,
   Power,
+  RefreshCw,
   Search,
   Settings2,
   Star,
@@ -91,6 +92,8 @@ export function AddressBook({ user }: { user: SessionUser }) {
 
   const listQuery = useQuery(orpc.devices.list.queryOptions({ input: listInput }))
   const statsQuery = useQuery(orpc.devices.stats.queryOptions({ input: {} }))
+  const syncInfoQuery = useQuery(orpc.devices.syncInfo.queryOptions({ input: {} }))
+  const syncEnabled = syncInfoQuery.data?.enabled ?? false
   const devices = listQuery.data ?? []
   const stats = statsQuery.data
   const customerNames = stats?.customers.map((c) => c.name) ?? []
@@ -151,6 +154,17 @@ export function AddressBook({ user }: { user: SessionUser }) {
       onError: (e) => toast(e.message),
     }),
   )
+  const syncMut = useMutation(
+    orpc.devices.syncNow.mutationOptions({
+      onSuccess: (r) => {
+        invalidate()
+        queryClient.invalidateQueries({ queryKey: orpc.devices.syncInfo.key() })
+        if (r.enabled) toast(m.toast_synced({ count: r.updated }))
+      },
+      onError: (e) => toast(e.message),
+    }),
+  )
+
   function toggleFavorite(device: Device) {
     const favorite = !device.isFavorite
     favoriteMut.mutate({ id: device.id, favorite })
@@ -603,6 +617,24 @@ export function AddressBook({ user }: { user: SessionUser }) {
               </button>
             </div>
             <span style={{ width: 1, height: 22, background: 'var(--bd-1)' }} />
+            {syncEnabled && (
+              <button
+                className="tv-btn tv-btn--outline tv-btn--sm"
+                onClick={() => syncMut.mutate({})}
+                disabled={syncMut.isPending}
+                title={m.sync_now()}
+              >
+                <RefreshCw
+                  size={14}
+                  style={
+                    syncMut.isPending
+                      ? { animation: 'tv-spin 0.8s linear infinite' }
+                      : undefined
+                  }
+                />
+                {m.sync_now()}
+              </button>
+            )}
             <button
               className="tv-btn tv-btn--outline tv-btn--sm"
               onClick={() => fileRef.current?.click()}

@@ -73,6 +73,8 @@
   "view_cards": "Cards",
   "action_import": "Import",
   "action_export": "Export",
+  "sync_now": "Refresh status",
+  "toast_synced": "{count} device statuses updated",
   "filter_all_status": "All statuses",
   "filter_all_os": "All OS",
   "filter_all_customers": "All customers",

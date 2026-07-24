@@ -10,6 +10,11 @@ import {
 } from '#/orpc/schema'
 import { queryDevices, toPublicDevice } from '#/lib/device-service'
 import { groupMemberIds } from '#/lib/group-service'
+import {
+  isSyncEnabled,
+  lastSyncedAt,
+  maybeSyncStatuses,
+} from '#/lib/rustdesk-sync'
 import { osLabel } from '#/lib/device-meta'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
 import { auditLog, customers, deviceFavorites, devices } from '#/db/schema'
@@ -95,6 +100,9 @@ export const list = authed
   .input(DeviceListFilterSchema.partial())
   .output(z.array(DeviceSchema))
   .handler(async ({ input, context }) => {
+    // Refresh live statuses from the configured RustDesk server (no-op and
+    // instant when sync is disabled or within the TTL window).
+    await maybeSyncStatuses(context.db)
     const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
     let rows = await queryDevices(context.db, input)
     if (input.favorite) rows = rows.filter((r) => favoriteIds.has(r.id))
@@ -140,6 +148,23 @@ export const setFavorite = authed
         )
     }
     return { favorite: input.favorite }
+  })
+
+/** Whether live-status sync is configured, and when it last ran. */
+export const syncInfo = authed
+  .output(z.object({ enabled: z.boolean(), lastSyncedAt: z.number() }))
+  .handler(async () => ({
+    enabled: isSyncEnabled(),
+    lastSyncedAt: lastSyncedAt(),
+  }))
+
+/** Force an immediate live-status poll (bypasses the TTL). */
+export const syncNow = authed
+  .output(z.object({ enabled: z.boolean(), updated: z.number() }))
+  .handler(async ({ context }) => {
+    if (!isSyncEnabled()) return { enabled: false, updated: 0 }
+    const updated = await maybeSyncStatuses(context.db, true)
+    return { enabled: true, updated }
   })
 
 /** Sidebar / filter facets, aggregated from the whole address book. */

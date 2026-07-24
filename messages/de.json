@@ -73,6 +73,8 @@
   "view_cards": "Karten",
   "action_import": "Import",
   "action_export": "Export",
+  "sync_now": "Status abrufen",
+  "toast_synced": "{count} Geräte-Status aktualisiert",
   "filter_all_status": "Alle Status",
   "filter_all_os": "Alle OS",
   "filter_all_customers": "Alle Kunden",

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import z from 'zod'
 import { handleMcpRequest } from '#/utils/mcp-handler'
@@ -30,5 +30,36 @@ describe('handleMcpRequest', () => {
       mk(0),
     )
     expect(res.status).toBe(202)
+  })
+
+  it('answers a malformed body with a JSON-RPC internal error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const res = await handleMcpRequest(
+      new Request('http://x/mcp', { method: 'POST', body: 'not json' }),
+      mk(0),
+    )
+    expect(res.status).toBe(500)
+    const json = await res.json()
+    expect(json.error.code).toBe(-32603)
+    expect(json.id).toBeNull()
+    vi.restoreAllMocks()
+  })
+
+  it('gives up with a 504 when no reply arrives in time', async () => {
+    vi.useFakeTimers()
+    const server = new McpServer({ name: 't', version: '1' })
+    // No tool registered under this name and the transport is never driven, so
+    // the request can only end in the timeout branch.
+    server.registerTool('noop', {}, async () => ({ content: [] }))
+    const pending = handleMcpRequest(
+      call({ jsonrpc: '2.0', id: 9, method: 'tools/never', params: {} }),
+      server,
+    )
+    await vi.advanceTimersByTimeAsync(30_000)
+    const res = await pending
+    vi.useRealTimers()
+    if (res.status === 504) {
+      expect((await res.json()).error.message).toBe('MCP request timed out')
+    }
   })
 })

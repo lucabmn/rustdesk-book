@@ -2,18 +2,26 @@ import { betterAuth } from 'better-auth'
 import { APIError } from 'better-auth/api'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { and, eq, isNull } from 'drizzle-orm'
 
 import { db } from '#/db'
-import { account, invitation, session, user, verification } from '#/db/schema'
-import { invitedRegistration } from '#/lib/registration-context'
+import { account, session, user, verification } from '#/db/schema'
+import {
+  assertNotBanned,
+  consumeInvitations,
+  resolveSignUpRole,
+} from '#/lib/auth-policy'
+
+/** Surface a policy error as better-auth's FORBIDDEN, keeping its message. */
+function forbidden(error: unknown, fallback: string): never {
+  throw new APIError('FORBIDDEN', {
+    message: error instanceof Error ? error.message : fallback,
+  })
+}
 
 /**
- * Registration policy: invite-only, with a bootstrap exception for the very
- * first account. The public sign-up route stays reachable, but this hook
- * rejects any sign-up that is neither the first user nor backed by a valid,
- * unexpired invitation for that email address. `role` is server-assigned and
- * never accepted from client input.
+ * better-auth wiring only. The registration and lockout rules themselves live
+ * in `auth-policy.ts`; the hooks below just translate them into better-auth's
+ * contract. `role` is server-assigned and never accepted from client input.
  */
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -61,21 +69,13 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
-    // Lock banned users out at the source: reject any new session before it is
-    // created. Combined with revoking existing sessions at ban time, this makes
-    // the lockout airtight — a banned user can neither stay in nor sign back in.
     session: {
       create: {
         before: async (newSession) => {
-          const [target] = await db
-            .select({ banned: user.banned })
-            .from(user)
-            .where(eq(user.id, newSession.userId))
-            .limit(1)
-          if (target?.banned) {
-            throw new APIError('FORBIDDEN', {
-              message: 'Dieses Konto wurde gesperrt.',
-            })
+          try {
+            await assertNotBanned(db, newSession.userId)
+          } catch (error) {
+            forbidden(error, 'Dieses Konto wurde gesperrt.')
           }
         },
       },
@@ -84,41 +84,15 @@ export const auth = betterAuth({
       create: {
         before: async (newUser) => {
           const email = newUser.email.toLowerCase()
-
-          const [firstUser] = await db
-            .select({ id: user.id })
-            .from(user)
-            .limit(1)
-
-          // Bootstrap: the first account ever created becomes the admin.
-          if (!firstUser) {
-            return { data: { ...newUser, email, role: 'admin' } }
+          try {
+            const role = await resolveSignUpRole(db, email)
+            return { data: { ...newUser, email, role } }
+          } catch (error) {
+            forbidden(error, 'Registration is invite-only.')
           }
-
-          // Otherwise the sign-up must originate from acceptInvite, which only
-          // enters this context after validating the invite TOKEN. The public
-          // sign-up route never sets it, so a known email alone is rejected.
-          const invited = invitedRegistration.getStore()
-          if (invited && invited.email === email) {
-            return { data: { ...newUser, email, role: invited.role } }
-          }
-
-          throw new APIError('FORBIDDEN', {
-            message:
-              'Registration is invite-only. Ask an administrator for an invitation.',
-          })
         },
         after: async (createdUser) => {
-          // Consume any pending invitations for this email.
-          await db
-            .update(invitation)
-            .set({ acceptedAt: new Date() })
-            .where(
-              and(
-                eq(invitation.email, createdUser.email.toLowerCase()),
-                isNull(invitation.acceptedAt),
-              ),
-            )
+          await consumeInvitations(db, createdUser.email)
         },
       },
     },

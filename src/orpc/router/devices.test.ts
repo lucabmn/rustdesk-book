@@ -16,7 +16,7 @@ const input = {
   customer: 'Acme',
   osKey: 'win11',
   tags: ['office'],
-  status: 'online' as const,
+  status: 'online' as 'online' | 'away' | 'offline',
   notes: 'front desk',
   password: 's3cret',
 }

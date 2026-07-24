@@ -80,6 +80,31 @@ describe('deployment scripts', () => {
     }
   })
 
+  it('handles a missing config and disabled installation on every platform', () => {
+    const scripts = buildDeploymentScripts({
+      ...options,
+      rustdeskConfig: null,
+      installIfMissing: false,
+    })
+
+    expect(scripts.windows).toContain("$RustDeskConfig = ''")
+    expect(scripts.windows).toContain('$InstallIfMissing = $false')
+    for (const script of [scripts.linux, scripts.macos]) {
+      expect(script).toContain("RUSTDESK_CONFIG=''")
+      expect(script).toContain('INSTALL_IF_MISSING=0')
+    }
+  })
+
+  it('normalizes any base URL down to its origin', () => {
+    const script = buildDeploymentScript('linux', {
+      ...options,
+      baseUrl: 'https://book.example.test:8443/deep/path?x=1#frag',
+      rustdeskConfig: undefined,
+    })
+    expect(script).toContain('https://book.example.test:8443/api/enroll/claim')
+    expect(script).not.toContain('/deep/path')
+  })
+
   it('quotes config values for PowerShell and POSIX shells', () => {
     const scripts = buildDeploymentScripts(options)
     expect(scripts.windows).toContain("key=it''s-public")

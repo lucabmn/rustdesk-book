@@ -4,6 +4,7 @@ import {
   index,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -147,6 +148,28 @@ export const auditLog = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (t) => [index('audit_log_device_idx').on(t.deviceId)],
+)
+
+/* ------------------------------------------------------------------ *
+ * Favorites — per-user starred devices. A join table (not a flag on
+ * `devices`) so each technician has their own favorites, private to them.
+ * ------------------------------------------------------------------ */
+
+export const deviceFavorites = pgTable(
+  'device_favorites',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    deviceId: uuid('device_id')
+      .notNull()
+      .references(() => devices.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.deviceId] }),
+    index('device_favorites_user_idx').on(t.userId),
+  ],
 )
 
 export const devicesRelations = relations(devices, ({ one }) => ({

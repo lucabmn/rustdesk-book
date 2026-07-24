@@ -14,8 +14,15 @@ import type { z } from 'zod'
 type DeviceRow = typeof devices.$inferSelect
 type DeviceFilter = z.infer<typeof DeviceListFilterSchema>
 
-/** Row → safe public projection. Password ciphertext is reduced to a boolean. */
-export function toPublicDevice(row: DeviceRow): Device {
+/**
+ * Row → safe public projection. Password ciphertext is reduced to a boolean.
+ * `favoriteIds` is the set of device ids the current user has starred; when
+ * omitted (e.g. the user-less MCP surface) every device reads as not favorite.
+ */
+export function toPublicDevice(
+  row: DeviceRow,
+  favoriteIds?: ReadonlySet<string>,
+): Device {
   return {
     id: row.id,
     rustdeskId: row.rustdeskId,
@@ -26,6 +33,7 @@ export function toPublicDevice(row: DeviceRow): Device {
     status: row.status as DeviceStatus,
     lastSeen: row.lastSeen ? row.lastSeen.toISOString() : null,
     hasPassword: Boolean(row.passwordCipher),
+    isFavorite: favoriteIds?.has(row.id) ?? false,
     notes: row.notes,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

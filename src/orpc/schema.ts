@@ -38,6 +38,7 @@ export const DeviceSchema = z.object({
   status: DeviceStatusSchema,
   lastSeen: z.string().nullable(),
   hasPassword: z.boolean(),
+  isFavorite: z.boolean(),
   notes: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -50,4 +51,8 @@ export const DeviceListFilterSchema = z.object({
   osKey: z.string().optional(),
   customer: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  /** When true, restrict to the current user's favorites. */
+  favorite: z.boolean().optional(),
+  /** When set, restrict to devices in this (current user's) group. */
+  groupId: z.string().uuid().optional(),
 })

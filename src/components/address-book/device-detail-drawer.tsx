@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Dialog } from 'radix-ui'
-import { Copy, Eye, EyeOff, Pencil, Power, Trash2, X } from 'lucide-react'
+import { Copy, Eye, EyeOff, Pencil, Power, Star, Trash2, X } from 'lucide-react'
 
 import {
   STATUS_META,
@@ -20,6 +20,7 @@ interface Props {
   onEdit: (device: Device) => void
   onDelete: (device: Device) => void
   onCopyId: (device: Device) => void
+  onToggleFavorite: (device: Device) => void
   reveal: (device: Device) => Promise<string>
 }
 
@@ -30,6 +31,7 @@ export function DeviceDetailDrawer({
   onEdit,
   onDelete,
   onCopyId,
+  onToggleFavorite,
   reveal,
 }: Props) {
   const [password, setPassword] = useState<string | null>(null)
@@ -119,6 +121,19 @@ export function DeviceDetailDrawer({
                   </div>
                 </div>
                 <span className={meta.chip}>{statusLabel(device.status)}</span>
+                <button
+                  className="tv-btn tv-btn--ghost tv-btn--icon-sm"
+                  title={device.isFavorite ? m.favorite_remove() : m.favorite_add()}
+                  aria-label={device.isFavorite ? m.favorite_remove() : m.favorite_add()}
+                  aria-pressed={device.isFavorite}
+                  style={device.isFavorite ? { color: 'var(--brand)' } : undefined}
+                  onClick={() => onToggleFavorite(device)}
+                >
+                  <Star
+                    size={16}
+                    style={device.isFavorite ? { fill: 'currentColor' } : undefined}
+                  />
+                </button>
                 <Dialog.Close asChild>
                   <button
                     className="tv-btn tv-btn--ghost tv-btn--icon-sm"

@@ -17,6 +17,7 @@ import {
   Plus,
   Power,
   Search,
+  Star,
   Sun,
   Trash2,
   Upload,
@@ -58,6 +59,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterOs, setFilterOs] = useState('all')
   const [filterCustomer, setFilterCustomer] = useState('all')
+  const [filterFavorite, setFilterFavorite] = useState(false)
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [view, setView] = useState<ViewMode>('table')
   const [theme, setTheme] = useState<Theme>(getCurrentTheme())
@@ -78,6 +80,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     osKey: filterOs !== 'all' ? filterOs : undefined,
     customer: filterCustomer !== 'all' ? filterCustomer : undefined,
     tags: activeTags.length ? activeTags : undefined,
+    favorite: filterFavorite || undefined,
   }
 
   const listQuery = useQuery(orpc.devices.list.queryOptions({ input: listInput }))
@@ -135,6 +138,19 @@ export function AddressBook({ user }: { user: SessionUser }) {
       onError: () => toast(m.toast_import_failed()),
     }),
   )
+
+  const favoriteMut = useMutation(
+    orpc.devices.setFavorite.mutationOptions({
+      onSuccess: () => invalidate(),
+      onError: (e) => toast(e.message),
+    }),
+  )
+  function toggleFavorite(device: Device) {
+    const favorite = !device.isFavorite
+    favoriteMut.mutate({ id: device.id, favorite })
+    // Keep the open drawer's star in sync — it holds its own device snapshot.
+    setDetail((d) => (d && d.id === device.id ? { ...d, isFavorite: favorite } : d))
+  }
 
   function openAdd() {
     setEditing(null)
@@ -229,6 +245,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     setFilterStatus('all')
     setFilterOs('all')
     setFilterCustomer('all')
+    setFilterFavorite(false)
     setActiveTags([])
   }
   async function signOut() {
@@ -241,6 +258,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     filterStatus !== 'all' ||
     filterOs !== 'all' ||
     filterCustomer !== 'all' ||
+    filterFavorite ||
     activeTags.length > 0
 
   const grouped = useMemo(() => {
@@ -441,12 +459,27 @@ export function AddressBook({ user }: { user: SessionUser }) {
 
           <button
             className="tv-navitem"
-            data-active={filterCustomer === 'all'}
-            onClick={() => setFilterCustomer('all')}
+            data-active={filterCustomer === 'all' && !filterFavorite}
+            onClick={() => {
+              setFilterCustomer('all')
+              setFilterFavorite(false)
+            }}
           >
             <MonitorDot className="tv-navitem__icon" />
             <span className="tv-navitem__label">{m.nav_all_devices()}</span>
             <span className="tv-navitem__count">{stats?.total ?? '—'}</span>
+          </button>
+
+          <button
+            className="tv-navitem"
+            data-active={filterFavorite}
+            onClick={() => setFilterFavorite((v) => !v)}
+          >
+            <Star
+              className="tv-navitem__icon"
+              style={filterFavorite ? { fill: 'currentColor' } : undefined}
+            />
+            <span className="tv-navitem__label">{m.nav_favorites()}</span>
           </button>
 
           <SidebarHeading>{m.section_customers()}</SidebarHeading>
@@ -631,6 +664,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
                 onConnect={onConnect}
                 onEdit={openEdit}
                 onDelete={onDelete}
+                onToggleFavorite={toggleFavorite}
               />
             ) : view === 'grouped' ? (
               <GroupedView groups={grouped} onOpen={setDetail} onConnect={onConnect} />
@@ -640,6 +674,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
                 onOpen={setDetail}
                 onConnect={onConnect}
                 onEdit={openEdit}
+                onToggleFavorite={toggleFavorite}
               />
             )}
           </div>
@@ -692,6 +727,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
         onEdit={openEdit}
         onDelete={onDelete}
         onCopyId={copyId}
+        onToggleFavorite={toggleFavorite}
         reveal={reveal}
       />
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
@@ -768,6 +804,30 @@ function StatusDot({ status }: { status: Device['status'] }) {
       style={{ width: 8, height: 8 }}
       title={statusLabel(status)}
     />
+  )
+}
+
+function FavoriteButton({
+  active,
+  onToggle,
+}: {
+  active: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+      title={active ? m.favorite_remove() : m.favorite_add()}
+      aria-label={active ? m.favorite_remove() : m.favorite_add()}
+      aria-pressed={active}
+      style={active ? { color: 'var(--brand)' } : undefined}
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+    >
+      <Star size={13} style={active ? { fill: 'currentColor' } : undefined} />
+    </button>
   )
 }
 
@@ -897,12 +957,14 @@ function TableView({
   onConnect,
   onEdit,
   onDelete,
+  onToggleFavorite,
 }: {
   devices: Device[]
   onOpen: (d: Device) => void
   onConnect: (d: Device) => void
   onEdit: (d: Device) => void
   onDelete: (d: Device) => void
+  onToggleFavorite: (d: Device) => void
 }) {
   return (
     <div className="tv-card tv-flush">
@@ -942,6 +1004,10 @@ function TableView({
                 </td>
                 <td>
                   <span style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                    <FavoriteButton
+                      active={d.isFavorite}
+                      onToggle={() => onToggleFavorite(d)}
+                    />
                     <ConnectButton onClick={() => onConnect(d)} />
                     <button
                       className="tv-btn tv-btn--ghost tv-btn--icon-xs"
@@ -1045,11 +1111,13 @@ function CardsView({
   onOpen,
   onConnect,
   onEdit,
+  onToggleFavorite,
 }: {
   devices: Device[]
   onOpen: (d: Device) => void
   onConnect: (d: Device) => void
   onEdit: (d: Device) => void
+  onToggleFavorite: (d: Device) => void
 }) {
   return (
     <div
@@ -1089,6 +1157,10 @@ function CardsView({
                 {formatRustdeskId(d.rustdeskId)}
               </div>
             </div>
+            <FavoriteButton
+              active={d.isFavorite}
+              onToggle={() => onToggleFavorite(d)}
+            />
             <span className={STATUS_META[d.status].chip}>{statusLabel(d.status)}</span>
           </div>
           <div

@@ -1,5 +1,5 @@
 import { ORPCError } from '@orpc/server'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { authed } from '#/orpc/context'
@@ -11,10 +11,22 @@ import {
 import { queryDevices, toPublicDevice } from '#/lib/device-service'
 import { osLabel } from '#/lib/device-meta'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
-import { auditLog, devices } from '#/db/schema'
+import { auditLog, deviceFavorites, devices } from '#/db/schema'
 import type { AuditAction } from '#/db/schema'
 
 const IdInput = z.object({ id: z.string().uuid() })
+
+/** Set of device ids the given user has starred. */
+async function favoriteIdsFor(
+  db: typeof import('#/db').db,
+  userId: string,
+): Promise<Set<string>> {
+  const rows = await db
+    .select({ deviceId: deviceFavorites.deviceId })
+    .from(deviceFavorites)
+    .where(eq(deviceFavorites.userId, userId))
+  return new Set(rows.map((r) => r.deviceId))
+}
 
 async function loadDeviceRow(db: typeof import('#/db').db, id: string) {
   const [row] = await db.select().from(devices).where(eq(devices.id, id)).limit(1)
@@ -35,8 +47,10 @@ export const list = authed
   .input(DeviceListFilterSchema.partial())
   .output(z.array(DeviceSchema))
   .handler(async ({ input, context }) => {
-    const rows = await queryDevices(context.db, input)
-    return rows.map(toPublicDevice)
+    const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
+    let rows = await queryDevices(context.db, input)
+    if (input.favorite) rows = rows.filter((r) => favoriteIds.has(r.id))
+    return rows.map((row) => toPublicDevice(row, favoriteIds))
   })
 
 export const get = authed
@@ -44,7 +58,31 @@ export const get = authed
   .output(DeviceSchema)
   .handler(async ({ input, context }) => {
     const row = await loadDeviceRow(context.db, input.id)
-    return toPublicDevice(row)
+    const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
+    return toPublicDevice(row, favoriteIds)
+  })
+
+/** Star / unstar a device for the current user. Idempotent. */
+export const setFavorite = authed
+  .input(z.object({ id: z.string().uuid(), favorite: z.boolean() }))
+  .output(z.object({ favorite: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    if (input.favorite) {
+      await context.db
+        .insert(deviceFavorites)
+        .values({ userId: context.user.id, deviceId: input.id })
+        .onConflictDoNothing()
+    } else {
+      await context.db
+        .delete(deviceFavorites)
+        .where(
+          and(
+            eq(deviceFavorites.userId, context.user.id),
+            eq(deviceFavorites.deviceId, input.id),
+          ),
+        )
+    }
+    return { favorite: input.favorite }
   })
 
 /** Sidebar / filter facets, aggregated from the whole address book. */

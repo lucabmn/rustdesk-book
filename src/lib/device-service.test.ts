@@ -40,4 +40,10 @@ describe('toPublicDevice', () => {
     expect(pub.lastSeen).toBe('2026-01-01T10:00:00.000Z')
     expect(pub.createdAt).toBe('2026-01-01T09:00:00.000Z')
   })
+
+  it('marks isFavorite from the supplied favorite set, false by default', () => {
+    expect(toPublicDevice(row).isFavorite).toBe(false)
+    expect(toPublicDevice(row, new Set([row.id])).isFavorite).toBe(true)
+    expect(toPublicDevice(row, new Set(['other'])).isFavorite).toBe(false)
+  })
 })

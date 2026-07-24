@@ -11,6 +11,10 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     environment: 'node',
     setupFiles: ['src/test/setup.ts'],
+    // Booting the in-memory Postgres once per worker takes a moment; the
+    // default 5s is tight for the first test on a busy machine or in an IDE.
+    testTimeout: 20_000,
+    hookTimeout: 30_000,
     // Deterministic 32-byte key (all zeros) so the crypto module loads in tests.
     // Not a real secret.
     env: {

@@ -8,7 +8,15 @@ import {
   DeviceListFilterSchema,
   DeviceSchema,
 } from '#/orpc/schema'
-import { queryDevices, toPublicDevice } from '#/lib/device-service'
+import {
+  audit,
+  customerNameOf,
+  favoriteIdsFor,
+  loadDeviceRow,
+  queryDevices,
+  resolveCustomerId,
+  toPublicDevice,
+} from '#/lib/device-service'
 import { groupMemberIds } from '#/lib/group-service'
 import {
   isSyncEnabled,
@@ -17,89 +25,9 @@ import {
 } from '#/lib/rustdesk-sync'
 import { osLabel } from '#/lib/device-meta'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
-import { auditLog, customers, deviceFavorites, devices } from '#/db/schema'
-import type { AuditAction } from '#/db/schema'
+import { deviceFavorites, devices } from '#/db/schema'
 
 const IdInput = z.object({ id: z.string().uuid() })
-
-/**
- * Resolve a free-text customer name to a customer id, creating the customer
- * on first use. Empty/whitespace clears the assignment (null). This keeps the
- * device form's name-based combobox working while customers live in their own
- * table — one canonical row per name.
- */
-async function resolveCustomerId(
-  db: typeof import('#/db').db,
-  name: string | null | undefined,
-): Promise<string | null> {
-  const trimmed = name?.trim()
-  if (!trimmed) return null
-  const [existing] = await db
-    .select({ id: customers.id })
-    .from(customers)
-    .where(eq(customers.name, trimmed))
-    .limit(1)
-  if (existing) return existing.id
-  const [created] = await db
-    .insert(customers)
-    .values({ name: trimmed })
-    .onConflictDoNothing()
-    .returning({ id: customers.id })
-  if (created) return created.id
-  // Lost a race — the row now exists, fetch it.
-  const [row] = await db
-    .select({ id: customers.id })
-    .from(customers)
-    .where(eq(customers.name, trimmed))
-    .limit(1)
-  return row?.id ?? null
-}
-
-/** Fetch a customer's display name by id (null id → null). */
-async function customerNameOf(
-  db: typeof import('#/db').db,
-  id: string | null,
-): Promise<string | null> {
-  if (!id) return null
-  const [row] = await db
-    .select({ name: customers.name })
-    .from(customers)
-    .where(eq(customers.id, id))
-    .limit(1)
-  return row?.name ?? null
-}
-
-/** Set of device ids the given user has starred. */
-async function favoriteIdsFor(
-  db: typeof import('#/db').db,
-  userId: string,
-): Promise<Set<string>> {
-  const rows = await db
-    .select({ deviceId: deviceFavorites.deviceId })
-    .from(deviceFavorites)
-    .where(eq(deviceFavorites.userId, userId))
-  return new Set(rows.map((r) => r.deviceId))
-}
-
-async function loadDeviceRow(db: typeof import('#/db').db, id: string) {
-  const [row] = await db
-    .select()
-    .from(devices)
-    .where(eq(devices.id, id))
-    .limit(1)
-  if (!row)
-    throw new ORPCError('NOT_FOUND', { message: 'Gerät nicht gefunden.' })
-  return row
-}
-
-async function audit(
-  db: typeof import('#/db').db,
-  action: AuditAction,
-  deviceId: string,
-  userId: string,
-) {
-  await db.insert(auditLog).values({ action, deviceId, userId })
-}
 
 export const list = authed
   .input(DeviceListFilterSchema.partial())

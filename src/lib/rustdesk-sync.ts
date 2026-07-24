@@ -88,8 +88,11 @@ export function normalizePeer(raw: unknown): LivePeer | null {
 
 /** Fetch and normalize the peer list from the configured RustDesk server. */
 async function fetchPeers(cfg: SyncConfig): Promise<LivePeer[]> {
+  // Hard timeout: this runs inside the device-list read path (incl. SSR), so a
+  // slow/unreachable server must fail fast rather than hang every list load.
   const res = await fetch(`${cfg.url}${cfg.path}`, {
     headers: cfg.key ? { Authorization: `Bearer ${cfg.key}` } : {},
+    signal: AbortSignal.timeout(5000),
   })
   if (!res.ok) throw new Error(`RustDesk API responded ${res.status}`)
   const data: unknown = await res.json()
@@ -124,8 +127,10 @@ async function applyStatuses(
   for (const row of rows) {
     const peer = byId.get(row.rustdeskId)
     if (!peer) continue
+    const statusChanged = row.status !== peer.status
+    // Nothing to write if the status is unchanged and there's no fresh lastSeen.
+    if (!statusChanged && peer.lastSeen === null) continue
     // Sync is authoritative when enabled: it overwrites the manual status.
-    if (row.status === peer.status && peer.lastSeen === null) continue
     await db
       .update(devices)
       .set({
@@ -133,7 +138,8 @@ async function applyStatuses(
         ...(peer.lastSeen ? { lastSeen: peer.lastSeen } : {}),
       })
       .where(inArray(devices.id, [row.id]))
-    updated++
+    // Only count genuine status transitions so the "N updated" toast is honest.
+    if (statusChanged) updated++
   }
   return updated
 }

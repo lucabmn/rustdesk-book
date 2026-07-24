@@ -2,7 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { asc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { authed } from '#/orpc/context'
+import { adminProcedure, authed } from '#/orpc/context'
 import { customers, devices } from '#/db/schema'
 
 const NameSchema = z.string().trim().min(1).max(160)
@@ -55,7 +55,7 @@ export const list = authed
     return rows
   })
 
-export const create = authed
+export const create = adminProcedure
   .input(
     z.object({ name: NameSchema, contact: OptText, notes: OptText }),
   )
@@ -73,7 +73,7 @@ export const create = authed
     return row
   })
 
-export const update = authed
+export const update = adminProcedure
   .input(
     z.object({
       id: z.string().uuid(),
@@ -101,7 +101,7 @@ export const update = authed
  * Delete a customer. Devices keep existing but become unassigned
  * (devices.customerId → null via the FK's ON DELETE SET NULL).
  */
-export const remove = authed
+export const remove = adminProcedure
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     await context.db.delete(customers).where(eq(customers.id, input.id))

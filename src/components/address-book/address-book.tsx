@@ -524,14 +524,16 @@ export function AddressBook({ user }: { user: SessionUser }) {
             >
               {m.section_customers()}
             </span>
-            <button
-              className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-              title={m.customers_manage()}
-              aria-label={m.customers_manage()}
-              onClick={() => setCustomersOpen(true)}
-            >
-              <Settings2 size={14} />
-            </button>
+            {isAdmin && (
+              <button
+                className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+                title={m.customers_manage()}
+                aria-label={m.customers_manage()}
+                onClick={() => setCustomersOpen(true)}
+              >
+                <Settings2 size={14} />
+              </button>
+            )}
           </div>
           {stats?.customers.map((c) => (
             <button

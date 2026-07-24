@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 
-import { devices, enrollmentClaims, enrollmentTokens } from '#/db/schema'
+import {
+  customers,
+  devices,
+  enrollmentClaims,
+  enrollmentTokens,
+} from '#/db/schema'
 import { decryptSecret } from '#/lib/crypto'
 import {
   claimEnrollment,
@@ -282,5 +287,63 @@ describe('finalizeEnrollment', () => {
     expect(updated.useCount).toBe(1)
     expect(updated.usedAt).not.toBeNull()
     expect(updated.lastUsedAt).not.toBeNull()
+  })
+})
+
+describe('finalizeEnrollment guards', () => {
+  it('refuses when the device was taken over by another token mid-flight', async () => {
+    const first = await seedToken('permanent')
+    const claim = await claimEnrollment(db as never, first.token, claimInput)
+    if (claim.alreadyEnrolled) throw new Error('unexpected')
+
+    // A device with the same RustDesk ID appears, owned by a different token.
+    const other = await seedToken('permanent')
+    await db.insert(devices).values({
+      rustdeskId: claimInput.rustdeskId,
+      alias: 'Taken',
+      enrollmentTokenId: other.row.id,
+    })
+
+    await expect(
+      finalizeEnrollment(db as never, claim.claimToken, {
+        password: 'pw-123456',
+      }),
+    ).rejects.toMatchObject({ code: 'device_exists', status: 409 })
+  })
+
+  it('refuses when the single-use token was consumed while the claim was open', async () => {
+    const { token, row } = await seedToken('single')
+    const claim = await claimEnrollment(db as never, token, claimInput)
+    if (claim.alreadyEnrolled) throw new Error('unexpected')
+
+    await db
+      .update(enrollmentTokens)
+      .set({ useCount: 1 })
+      .where(eq(enrollmentTokens.id, row.id))
+
+    await expect(
+      finalizeEnrollment(db as never, claim.claimToken, {
+        password: 'pw-123456',
+      }),
+    ).rejects.toMatchObject({ code: 'token_used', status: 409 })
+  })
+
+  it('reuses a customer created concurrently with the same name', async () => {
+    const { token } = await seedToken('permanent')
+    const claim = await claimEnrollment(db as never, token, claimInput)
+    if (claim.alreadyEnrolled) throw new Error('unexpected')
+
+    // Someone else inserted the customer between the lookup and the insert;
+    // the fallback must find it instead of leaving the device unassigned.
+    const [existing] = await db
+      .insert(customers)
+      .values({ name: 'Acme' })
+      .returning({ id: customers.id })
+
+    await finalizeEnrollment(db as never, claim.claimToken, {
+      password: 'pw-123456',
+    })
+    const [device] = await db.select().from(devices)
+    expect(device.customerId).toBe(existing.id)
   })
 })

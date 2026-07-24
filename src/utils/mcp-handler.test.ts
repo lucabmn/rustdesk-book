@@ -54,21 +54,26 @@ describe('handleMcpRequest', () => {
     vi.restoreAllMocks()
   })
 
-  it('gives up with a 504 when no reply arrives in time', async () => {
-    vi.useFakeTimers()
+  it('gives up with a 504 when the tool never answers', async () => {
     const server = new McpServer({ name: 't', version: '1' })
-    // No tool registered under this name and the transport is never driven, so
-    // the request can only end in the timeout branch.
-    server.registerTool('noop', {}, async () => ({ content: [] }))
+    // Never settles, so the handler can only end in its timeout branch.
+    server.registerTool('hang', {}, () => new Promise(() => {}))
+
+    vi.useFakeTimers()
     const pending = handleMcpRequest(
-      call({ jsonrpc: '2.0', id: 9, method: 'tools/never', params: {} }),
+      call({
+        jsonrpc: '2.0',
+        id: 9,
+        method: 'tools/call',
+        params: { name: 'hang', arguments: {} },
+      }),
       server,
     )
     await vi.advanceTimersByTimeAsync(30_000)
     const res = await pending
     vi.useRealTimers()
-    if (res.status === 504) {
-      expect((await res.json()).error.message).toBe('MCP request timed out')
-    }
+
+    expect(res.status).toBe(504)
+    expect((await res.json()).error.message).toBe('MCP request timed out')
   })
 })

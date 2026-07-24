@@ -9,8 +9,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  verify:
+    name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +34,15 @@ jobs:
       - name: Compile i18n messages
         run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/paraglide
 
+      - name: Lint and format check
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test
-        run: pnpm test
+      # Enforces the coverage thresholds in vitest.config.ts — a drop fails CI.
+      - name: Test with coverage
+        run: pnpm test:coverage
 
       - name: Build
         run: pnpm build
@@ -42,3 +50,29 @@ jobs:
           # A valid-shaped key so build-time module evaluation never fails;
           # this is not a real secret and is not used at runtime.
           APP_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build only (no push) so a broken Dockerfile is caught on the PR.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

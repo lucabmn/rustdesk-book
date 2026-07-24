@@ -51,6 +51,13 @@
   "favorite_remove": "Remove from favorites",
   "section_customers": "Customers / Tenants",
   "section_tags": "Tags",
+  "section_groups": "My groups",
+  "group_create": "Create group",
+  "group_delete": "Delete group",
+  "group_new_placeholder": "Group name",
+  "group_none": "No groups yet.",
+  "group_none_hint": "Create a group in the sidebar on the left.",
+  "drawer_groups": "My groups",
   "rail_invites": "Invitations",
 
   "view_table": "Table",

@@ -3,6 +3,7 @@ import * as account from './account'
 import * as invites from './invites'
 import * as audit from './audit'
 import * as users from './users'
+import * as groups from './groups'
 
 export default {
   devices,
@@ -10,4 +11,5 @@ export default {
   invites,
   audit,
   users,
+  groups,
 }

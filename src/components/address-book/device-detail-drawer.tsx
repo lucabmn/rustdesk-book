@@ -12,6 +12,7 @@ import { orpc } from '#/orpc/client'
 import { auditActionLabel, statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
+import { GroupMembership } from './group-membership'
 
 interface Props {
   device: Device | null
@@ -249,6 +250,10 @@ export function DeviceDetailDrawer({
                     </div>
                   </Section>
                 )}
+
+                <Section title={m.drawer_groups()}>
+                  <GroupMembership deviceId={device.id} />
+                </Section>
 
                 <Section title={m.drawer_history()}>
                   {history.length === 0 ? (

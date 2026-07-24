@@ -9,6 +9,7 @@ import {
   DeviceSchema,
 } from '#/orpc/schema'
 import { queryDevices, toPublicDevice } from '#/lib/device-service'
+import { groupMemberIds } from '#/lib/group-service'
 import { osLabel } from '#/lib/device-meta'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
 import { auditLog, deviceFavorites, devices } from '#/db/schema'
@@ -50,6 +51,14 @@ export const list = authed
     const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
     let rows = await queryDevices(context.db, input)
     if (input.favorite) rows = rows.filter((r) => favoriteIds.has(r.id))
+    if (input.groupId) {
+      const members = await groupMemberIds(
+        context.db,
+        context.user.id,
+        input.groupId,
+      )
+      rows = rows.filter((r) => members.has(r.id))
+    }
     return rows.map((row) => toPublicDevice(row, favoriteIds))
   })
 

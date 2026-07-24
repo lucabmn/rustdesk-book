@@ -51,6 +51,13 @@
   "favorite_remove": "Aus Favoriten entfernen",
   "section_customers": "Kunden / Mandanten",
   "section_tags": "Tags",
+  "section_groups": "Meine Gruppen",
+  "group_create": "Gruppe erstellen",
+  "group_delete": "Gruppe löschen",
+  "group_new_placeholder": "Gruppenname",
+  "group_none": "Noch keine Gruppen.",
+  "group_none_hint": "Lege links in der Seitenleiste eine Gruppe an.",
+  "drawer_groups": "Meine Gruppen",
   "rail_invites": "Einladungen",
 
   "view_table": "Tabelle",

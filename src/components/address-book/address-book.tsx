@@ -47,6 +47,7 @@ import { InviteDialog } from './invite-dialog'
 import { UsersDialog } from './users-dialog'
 import { AuditDialog } from './audit-dialog'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
+import { GroupSidebar } from './group-sidebar'
 
 type ViewMode = 'table' | 'grouped' | 'cards'
 
@@ -60,6 +61,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [filterOs, setFilterOs] = useState('all')
   const [filterCustomer, setFilterCustomer] = useState('all')
   const [filterFavorite, setFilterFavorite] = useState(false)
+  const [filterGroupId, setFilterGroupId] = useState<string | null>(null)
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [view, setView] = useState<ViewMode>('table')
   const [theme, setTheme] = useState<Theme>(getCurrentTheme())
@@ -81,6 +83,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     customer: filterCustomer !== 'all' ? filterCustomer : undefined,
     tags: activeTags.length ? activeTags : undefined,
     favorite: filterFavorite || undefined,
+    groupId: filterGroupId ?? undefined,
   }
 
   const listQuery = useQuery(orpc.devices.list.queryOptions({ input: listInput }))
@@ -246,6 +249,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     setFilterOs('all')
     setFilterCustomer('all')
     setFilterFavorite(false)
+    setFilterGroupId(null)
     setActiveTags([])
   }
   async function signOut() {
@@ -259,6 +263,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
     filterOs !== 'all' ||
     filterCustomer !== 'all' ||
     filterFavorite ||
+    filterGroupId !== null ||
     activeTags.length > 0
 
   const grouped = useMemo(() => {
@@ -459,10 +464,11 @@ export function AddressBook({ user }: { user: SessionUser }) {
 
           <button
             className="tv-navitem"
-            data-active={filterCustomer === 'all' && !filterFavorite}
+            data-active={filterCustomer === 'all' && !filterFavorite && !filterGroupId}
             onClick={() => {
               setFilterCustomer('all')
               setFilterFavorite(false)
+              setFilterGroupId(null)
             }}
           >
             <MonitorDot className="tv-navitem__icon" />
@@ -527,6 +533,8 @@ export function AddressBook({ user }: { user: SessionUser }) {
               )
             })}
           </div>
+
+          <GroupSidebar activeGroupId={filterGroupId} onSelect={setFilterGroupId} />
         </div>
 
         {/* Main panel */}

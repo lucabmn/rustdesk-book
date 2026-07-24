@@ -151,7 +151,7 @@ export const ban = adminProcedure
 export const unban = adminProcedure
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
-    await context.db
+    const [row] = await context.db
       .update(user)
       .set({
         banned: false,
@@ -160,6 +160,10 @@ export const unban = adminProcedure
         updatedAt: new Date(),
       })
       .where(eq(user.id, input.id))
+      .returning({ id: user.id })
+    if (!row) {
+      throw new ORPCError('NOT_FOUND', { message: 'Benutzer nicht gefunden.' })
+    }
     return { ok: true }
   })
 

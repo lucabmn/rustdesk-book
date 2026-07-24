@@ -4,7 +4,7 @@ import { formatRustdeskId, osLabel, STATUS_META } from '#/lib/device-meta'
 import { statusLabel } from '#/lib/i18n-labels'
 import type { Device } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
-import { formatLastSeen } from '../device-detail-drawer'
+import { formatLastSeen } from '#/lib/format'
 import { activatable, DeviceTags, FavoriteButton } from '../ui-bits'
 
 export interface CardsViewProps {

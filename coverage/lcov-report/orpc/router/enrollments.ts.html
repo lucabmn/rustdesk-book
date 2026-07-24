@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>48/48</span>
+                <span class='fraction'>49/49</span>
             </div>
         
             
@@ -295,13 +295,7 @@
 <a name='L230'></a><a href='#L230'>230</a>
 <a name='L231'></a><a href='#L231'>231</a>
 <a name='L232'></a><a href='#L232'>232</a>
-<a name='L233'></a><a href='#L233'>233</a>
-<a name='L234'></a><a href='#L234'>234</a>
-<a name='L235'></a><a href='#L235'>235</a>
-<a name='L236'></a><a href='#L236'>236</a>
-<a name='L237'></a><a href='#L237'>237</a>
-<a name='L238'></a><a href='#L238'>238</a>
-<a name='L239'></a><a href='#L239'>239</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L233'></a><a href='#L233'>233</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -326,6 +320,8 @@
 <span class="cline-any cline-yes">26x</span>
 <span class="cline-any cline-yes">26x</span>
 <span class="cline-any cline-yes">26x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">26x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -344,9 +340,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -361,7 +354,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">21x</span>
+<span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -440,8 +435,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -455,6 +448,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -498,8 +492,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
@@ -521,8 +513,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -531,8 +521,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -563,7 +551,9 @@ const BaseUrlSchema = z.object({ baseUrl: z.string().url() })
 function deploymentOrigin(inputBaseUrl: string): string {
   const baseUrl = process.env.BETTER_AUTH_URL?.trim() || inputBaseUrl
   const publicUrl = new URL(baseUrl)
-  const isLoopback = ['localhost', '127.0.0.1', '::1'].includes(publicUrl.hostname)
+  const isLoopback = ['localhost', '127.0.0.1', '::1'].includes(
+    publicUrl.hostname,
+  )
   if (publicUrl.protocol !== 'https:' &amp;&amp; !isLoopback) {
     throw new ORPCError('BAD_REQUEST', {
       message: 'Deployment scripts require a public HTTPS URL.',
@@ -579,10 +569,7 @@ function accessibleToken(
 ) {
   return role === 'admin'
     ? <span class="branch-0 cbranch-no" title="branch not covered" >eq(enrollmentTokens.id, id)</span>
-    : and(
-        eq(enrollmentTokens.id, id),
-        eq(enrollmentTokens.createdBy, userId),
-      )
+    : and(eq(enrollmentTokens.id, id), eq(enrollmentTokens.createdBy, userId))
 }
 &nbsp;
 const CreateEnrollmentSchema = z.object({
@@ -599,7 +586,9 @@ export const create = authed
   .input(CreateEnrollmentSchema)
   .handler(async ({ input, context }) =&gt; {
     const token = generateEnrollmentToken()
-    const tags = [...new Set(input.tags.map((tag) =&gt; tag.trim()).filter(Boolean))]
+    const tags = [
+      ...new Set(input.tags.map((tag) =&gt; tag.trim()).filter(Boolean)),
+    ]
     const rustdeskVersion = DEFAULT_RUSTDESK_VERSION
     const origin = deploymentOrigin(input.baseUrl)
 &nbsp;
@@ -674,9 +663,7 @@ export const scripts = authed
       const [row] = await tx
         .select()
         .from(enrollmentTokens)
-        .where(
-          accessibleToken(input.id, context.user.id, context.user.role),
-        )
+        .where(accessibleToken(input.id, context.user.id, context.user.role))
         .limit(1)
         .for('update')
 &nbsp;
@@ -688,7 +675,8 @@ export const scripts = authed
       }
       if (row.revokedAt) {
         throw new ORPCError('BAD_REQUEST', {
-          message: 'Revoked tokens cannot be used to generate deployment scripts.',
+          message:
+            'Revoked tokens cannot be used to generate deployment scripts.',
         })
       }
 &nbsp;
@@ -733,9 +721,7 @@ export const remove = authed
       const [token] = await tx
         .select({ id: enrollmentTokens.id })
         .from(enrollmentTokens)
-        .where(
-          accessibleToken(input.id, context.user.id, context.user.role),
-        )
+        .where(accessibleToken(input.id, context.user.id, context.user.role))
         .limit(1)
         .for('update')
       if (!token) return { ok: false }
@@ -758,9 +744,7 @@ export const remove = authed
         })
       }
 &nbsp;
-      await tx
-        .delete(enrollmentTokens)
-        .where(eq(enrollmentTokens.id, token.id))
+      await tx.delete(enrollmentTokens).where(eq(enrollmentTokens.id, token.id))
       return { ok: true }
     }),
   )
@@ -771,9 +755,7 @@ export const revoke = authed
     const [row] = await context.db
       .update(enrollmentTokens)
       .set({ revokedAt: new Date() })
-      .where(
-        accessibleToken(input.id, context.user.id, context.user.role),
-      )
+      .where(accessibleToken(input.id, context.user.id, context.user.role))
       .returning({ id: enrollmentTokens.id })
     return { ok: Boolean(row) }
   })
@@ -784,7 +766,7 @@ export const revoke = authed
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-24T22:20:07.696Z
+                at 2026-07-24T22:36:26.920Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -3,7 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { formatRustdeskId, osLabel } from '#/lib/device-meta'
 import type { Device } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
-import { formatLastSeen } from '../device-detail-drawer'
+import { formatLastSeen } from '#/lib/format'
 import {
   ConnectButton,
   DeviceTags,

@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Dialog } from 'radix-ui'
-import { Copy, Eye, EyeOff, Pencil, Power, Star, Trash2, X } from 'lucide-react'
+import { Copy, Pencil, Power, Star, Trash2, X } from 'lucide-react'
 
 import { STATUS_META, formatRustdeskId, osLabel } from '#/lib/device-meta'
 import { orpc } from '#/orpc/client'
-import { auditActionLabel, statusLabel } from '#/lib/i18n-labels'
+import { statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
+import { formatLastSeen } from '#/lib/format'
+import { DeviceHistoryList } from './device-history-list'
+import { DevicePasswordField } from './device-password-field'
+import { Meta, Section } from './drawer-parts'
 import { GroupMembership } from './group-membership'
 
 interface Props {
@@ -221,49 +225,12 @@ export function DeviceDetailDrawer({
                   </button>
                 </div>
 
-                <Section title={m.th_password()}>
-                  {device.hasPassword ? (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 10px',
-                        border: '1px solid var(--bd-1)',
-                        borderRadius: 6,
-                        background: 'var(--bg-sunken)',
-                      }}
-                    >
-                      <span
-                        className="mono"
-                        style={{
-                          flex: 1,
-                          letterSpacing: 1,
-                          color: 'var(--fg-1)',
-                        }}
-                      >
-                        {password ?? '••••••••'}
-                      </span>
-                      <button
-                        type="button"
-                        className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                        onClick={toggleReveal}
-                        disabled={revealing}
-                        aria-label={
-                          password
-                            ? m.drawer_hide_password()
-                            : m.drawer_show_password()
-                        }
-                      >
-                        {password ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-                      {m.drawer_no_password()}
-                    </span>
-                  )}
-                </Section>
+                <DevicePasswordField
+                  hasPassword={device.hasPassword}
+                  password={password}
+                  revealing={revealing}
+                  onToggleReveal={toggleReveal}
+                />
 
                 {device.tags.length > 0 && (
                   <Section title={m.th_tags()}>
@@ -296,60 +263,7 @@ export function DeviceDetailDrawer({
                   <GroupMembership deviceId={device.id} />
                 </Section>
 
-                <Section title={m.drawer_history()}>
-                  {history.length === 0 ? (
-                    <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-                      {m.drawer_history_none()}
-                    </span>
-                  ) : (
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 6,
-                      }}
-                    >
-                      {history.map((h) => (
-                        <div
-                          key={h.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            fontSize: 12,
-                          }}
-                        >
-                          <span
-                            className={
-                              h.action === 'connect'
-                                ? 'tv-chip tv-chip--info'
-                                : 'tv-chip tv-chip--warn'
-                            }
-                          >
-                            {auditActionLabel(h.action)}
-                          </span>
-                          <span
-                            style={{
-                              color: 'var(--fg-2)',
-                              flex: 1,
-                              minWidth: 0,
-                            }}
-                          >
-                            {h.userName ?? h.userEmail ?? '—'}
-                          </span>
-                          <span
-                            style={{
-                              color: 'var(--fg-4)',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {formatLastSeen(h.createdAt)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Section>
+                <DeviceHistoryList history={history} />
               </div>
 
               <div
@@ -383,56 +297,4 @@ export function DeviceDetailDrawer({
       </Dialog.Portal>
     </Dialog.Root>
   )
-}
-
-function Meta({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <>
-      <span style={{ color: 'var(--fg-3)' }}>{label}</span>
-      <span style={{ color: 'var(--fg-1)', textAlign: 'right' }}>
-        {children}
-      </span>
-    </>
-  )
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '.05em',
-          color: 'var(--fg-4)',
-          marginBottom: 7,
-        }}
-      >
-        {title}
-      </div>
-      {children}
-    </div>
-  )
-}
-
-export function formatLastSeen(iso: string | null): string {
-  if (!iso) return m.last_seen_never()
-  const d = new Date(iso)
-  return d.toLocaleString('de-DE', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
 }

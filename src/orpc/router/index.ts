@@ -5,6 +5,7 @@ import * as audit from './audit'
 import * as users from './users'
 import * as groups from './groups'
 import * as customers from './customers'
+import * as enrollments from './enrollments'
 
 export default {
   devices,
@@ -14,4 +15,5 @@ export default {
   users,
   groups,
   customers,
+  enrollments,
 }

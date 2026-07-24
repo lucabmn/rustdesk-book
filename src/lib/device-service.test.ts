@@ -16,6 +16,7 @@ const row: DeviceRow = {
   lastSeen: new Date('2026-01-01T10:00:00Z'),
   passwordCipher: 'BASE64_CIPHERTEXT_VALUE',
   notes: 'Kassen-PC',
+  enrollmentTokenId: null,
   createdBy: 'user-1',
   createdAt: new Date('2026-01-01T09:00:00Z'),
   updatedAt: new Date('2026-01-01T09:30:00Z'),

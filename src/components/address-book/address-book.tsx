@@ -17,6 +17,7 @@ import {
   Plus,
   Power,
   RefreshCw,
+  Rocket,
   Search,
   Settings2,
   Star,
@@ -51,6 +52,7 @@ import { AuditDialog } from './audit-dialog'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 import { GroupSidebar } from './group-sidebar'
 import { CustomersDialog } from './customers-dialog'
+import { EnrollmentDialog } from './enrollment-dialog'
 
 type ViewMode = 'table' | 'grouped' | 'cards'
 
@@ -76,6 +78,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [usersOpen, setUsersOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
   const [customersOpen, setCustomersOpen] = useState(false)
+  const [enrollmentOpen, setEnrollmentOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Device | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const isAdmin = user.role === 'admin'
@@ -92,11 +95,14 @@ export function AddressBook({ user }: { user: SessionUser }) {
 
   const listQuery = useQuery(orpc.devices.list.queryOptions({ input: listInput }))
   const statsQuery = useQuery(orpc.devices.stats.queryOptions({ input: {} }))
+  const customersQuery = useQuery(
+    orpc.customers.list.queryOptions({ input: {} }),
+  )
   const syncInfoQuery = useQuery(orpc.devices.syncInfo.queryOptions({ input: {} }))
   const syncEnabled = syncInfoQuery.data?.enabled ?? false
   const devices = listQuery.data ?? []
   const stats = statsQuery.data
-  const customerNames = stats?.customers.map((c) => c.name) ?? []
+  const customerNames = customersQuery.data?.map((customer) => customer.name) ?? []
   // OS suggestions: the built-in presets merged with any custom values already
   // stored, deduped and sorted — so known systems are found and new ones added.
   const osNames = [
@@ -106,8 +112,10 @@ export function AddressBook({ user }: { user: SessionUser }) {
     ]),
   ].sort((a, b) => a.localeCompare(b, 'de'))
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: orpc.devices.key() })
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: orpc.devices.key() })
+    void queryClient.invalidateQueries({ queryKey: orpc.customers.key() })
+  }
 
   const createMut = useMutation(
     orpc.devices.create.mutationOptions({
@@ -384,6 +392,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
             onInvite={() => setInviteOpen(true)}
             onUsers={() => setUsersOpen(true)}
             onAudit={() => setAuditOpen(true)}
+            onEnrollment={() => setEnrollmentOpen(true)}
             onSignOut={signOut}
           />
         </div>
@@ -433,6 +442,13 @@ export function AddressBook({ user }: { user: SessionUser }) {
             <Monitor size={17} strokeWidth={1.75} />
           </div>
           <div style={{ flex: 1 }} />
+          <button
+            className="tv-rail-ico"
+            title={m.enrollment_menu()}
+            onClick={() => setEnrollmentOpen(true)}
+          >
+            <Rocket size={17} strokeWidth={1.5} />
+          </button>
           {isAdmin && (
             <>
               <button
@@ -810,6 +826,11 @@ export function AddressBook({ user }: { user: SessionUser }) {
         currentUserId={user.id}
       />
       <AuditDialog open={auditOpen} onOpenChange={setAuditOpen} />
+      <EnrollmentDialog
+        open={enrollmentOpen}
+        onOpenChange={setEnrollmentOpen}
+        customerNames={customerNames}
+      />
       <ConfirmDeleteDialog
         device={pendingDelete}
         onOpenChange={(o) => !o && setPendingDelete(null)}
@@ -927,6 +948,7 @@ function UserMenu({
   onInvite,
   onUsers,
   onAudit,
+  onEnrollment,
   onSignOut,
 }: {
   initials: string
@@ -936,6 +958,7 @@ function UserMenu({
   onInvite: () => void
   onUsers: () => void
   onAudit: () => void
+  onEnrollment: () => void
   onSignOut: () => void
 }) {
   return (
@@ -968,6 +991,11 @@ function UserMenu({
             <div style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{email}</div>
           </div>
           <div style={{ height: 1, background: 'var(--bd-subtle)', margin: '4px 0' }} />
+          <DropdownMenu.Item asChild>
+            <button className="tv-menu-item" onClick={onEnrollment}>
+              <Rocket size={14} /> {m.enrollment_menu()}
+            </button>
+          </DropdownMenu.Item>
           {isAdmin && (
             <>
               <DropdownMenu.Item asChild>

@@ -19,8 +19,14 @@ protokollierte Anfrage. Details dazu in [SECURITY.md](./SECURITY.md).
 - Verbinden per Klick über `rustdesk://` – die URI wird serverseitig gebaut und
   das Passwort korrekt kodiert
 - Passwörter AES-256-GCM-verschlüsselt; Anzeigen und Verbinden werden auditiert
+- Verbindungs-Historie pro Gerät (wer hat wann verbunden/Passwort angezeigt)
+- Kunden als eigene Entität: einmal umbenennen wirkt auf alle Geräte, mit
+  Kontaktdaten und Notizen
+- Persönliche Favoriten und private Geräte-Gruppen je Nutzer
+- Optionaler Live-Status-Sync gegen einen eigenen RustDesk-Server (siehe
+  `RUSTDESK_API_URL` in `.env.example`); ohne Server bleibt der Status manuell
 - Drei Ansichten (Tabelle, nach Kunde gruppiert, Karten), Volltextsuche und
-  Filter nach Status, OS, Kunde und Tag
+  Filter nach Status, OS, Kunde, Tag, Favoriten und Gruppe
 - Import/Export als JSON (Export ohne Passwörter)
 - Einladungsbasierte Registrierung; erstes Konto wird zum Administrator
 - Heller und dunkler Modus

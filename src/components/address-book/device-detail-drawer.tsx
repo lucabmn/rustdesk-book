@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Dialog } from 'radix-ui'
-import { Copy, Eye, EyeOff, Pencil, Power, Trash2, X } from 'lucide-react'
+import { Copy, Eye, EyeOff, Pencil, Power, Star, Trash2, X } from 'lucide-react'
 
 import {
   STATUS_META,
   formatRustdeskId,
   osLabel,
 } from '#/lib/device-meta'
-import { statusLabel } from '#/lib/i18n-labels'
+import { orpc } from '#/orpc/client'
+import { auditActionLabel, statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
+import { GroupMembership } from './group-membership'
 
 interface Props {
   device: Device | null
@@ -18,6 +21,7 @@ interface Props {
   onEdit: (device: Device) => void
   onDelete: (device: Device) => void
   onCopyId: (device: Device) => void
+  onToggleFavorite: (device: Device) => void
   reveal: (device: Device) => Promise<string>
 }
 
@@ -28,10 +32,19 @@ export function DeviceDetailDrawer({
   onEdit,
   onDelete,
   onCopyId,
+  onToggleFavorite,
   reveal,
 }: Props) {
   const [password, setPassword] = useState<string | null>(null)
   const [revealing, setRevealing] = useState(false)
+
+  const historyQuery = useQuery(
+    orpc.audit.listForDevice.queryOptions({
+      input: { deviceId: device?.id ?? '' },
+      enabled: device !== null,
+    }),
+  )
+  const history = historyQuery.data ?? []
 
   // Forget any revealed secret when the drawer target changes or closes.
   useEffect(() => {
@@ -109,6 +122,19 @@ export function DeviceDetailDrawer({
                   </div>
                 </div>
                 <span className={meta.chip}>{statusLabel(device.status)}</span>
+                <button
+                  className="tv-btn tv-btn--ghost tv-btn--icon-sm"
+                  title={device.isFavorite ? m.favorite_remove() : m.favorite_add()}
+                  aria-label={device.isFavorite ? m.favorite_remove() : m.favorite_add()}
+                  aria-pressed={device.isFavorite}
+                  style={device.isFavorite ? { color: 'var(--brand)' } : undefined}
+                  onClick={() => onToggleFavorite(device)}
+                >
+                  <Star
+                    size={16}
+                    style={device.isFavorite ? { fill: 'currentColor' } : undefined}
+                  />
+                </button>
                 <Dialog.Close asChild>
                   <button
                     className="tv-btn tv-btn--ghost tv-btn--icon-sm"
@@ -224,6 +250,48 @@ export function DeviceDetailDrawer({
                     </div>
                   </Section>
                 )}
+
+                <Section title={m.drawer_groups()}>
+                  <GroupMembership deviceId={device.id} />
+                </Section>
+
+                <Section title={m.drawer_history()}>
+                  {history.length === 0 ? (
+                    <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
+                      {m.drawer_history_none()}
+                    </span>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {history.map((h) => (
+                        <div
+                          key={h.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            fontSize: 12,
+                          }}
+                        >
+                          <span
+                            className={
+                              h.action === 'connect'
+                                ? 'tv-chip tv-chip--info'
+                                : 'tv-chip tv-chip--warn'
+                            }
+                          >
+                            {auditActionLabel(h.action)}
+                          </span>
+                          <span style={{ color: 'var(--fg-2)', flex: 1, minWidth: 0 }}>
+                            {h.userName ?? h.userEmail ?? '—'}
+                          </span>
+                          <span style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
+                            {formatLastSeen(h.createdAt)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
               </div>
 
               <div

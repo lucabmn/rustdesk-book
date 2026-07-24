@@ -16,10 +16,14 @@ import {
   Pencil,
   Plus,
   Power,
+  RefreshCw,
   Search,
+  Settings2,
+  Star,
   Sun,
   Trash2,
   Upload,
+  Users,
   X,
 } from 'lucide-react'
 
@@ -42,8 +46,11 @@ import { DeviceFormDialog } from './device-form-dialog'
 import { CustomerCombobox } from './customer-combobox'
 import { DeviceDetailDrawer, formatLastSeen } from './device-detail-drawer'
 import { InviteDialog } from './invite-dialog'
+import { UsersDialog } from './users-dialog'
 import { AuditDialog } from './audit-dialog'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
+import { GroupSidebar } from './group-sidebar'
+import { CustomersDialog } from './customers-dialog'
 
 type ViewMode = 'table' | 'grouped' | 'cards'
 
@@ -56,6 +63,8 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterOs, setFilterOs] = useState('all')
   const [filterCustomer, setFilterCustomer] = useState('all')
+  const [filterFavorite, setFilterFavorite] = useState(false)
+  const [filterGroupId, setFilterGroupId] = useState<string | null>(null)
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [view, setView] = useState<ViewMode>('table')
   const [theme, setTheme] = useState<Theme>(getCurrentTheme())
@@ -64,7 +73,9 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [editing, setEditing] = useState<Device | null>(null)
   const [detail, setDetail] = useState<Device | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [usersOpen, setUsersOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
+  const [customersOpen, setCustomersOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Device | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const isAdmin = user.role === 'admin'
@@ -75,10 +86,14 @@ export function AddressBook({ user }: { user: SessionUser }) {
     osKey: filterOs !== 'all' ? filterOs : undefined,
     customer: filterCustomer !== 'all' ? filterCustomer : undefined,
     tags: activeTags.length ? activeTags : undefined,
+    favorite: filterFavorite || undefined,
+    groupId: filterGroupId ?? undefined,
   }
 
   const listQuery = useQuery(orpc.devices.list.queryOptions({ input: listInput }))
   const statsQuery = useQuery(orpc.devices.stats.queryOptions({ input: {} }))
+  const syncInfoQuery = useQuery(orpc.devices.syncInfo.queryOptions({ input: {} }))
+  const syncEnabled = syncInfoQuery.data?.enabled ?? false
   const devices = listQuery.data ?? []
   const stats = statsQuery.data
   const customerNames = stats?.customers.map((c) => c.name) ?? []
@@ -132,6 +147,30 @@ export function AddressBook({ user }: { user: SessionUser }) {
       onError: () => toast(m.toast_import_failed()),
     }),
   )
+
+  const favoriteMut = useMutation(
+    orpc.devices.setFavorite.mutationOptions({
+      onSuccess: () => invalidate(),
+      onError: (e) => toast(e.message),
+    }),
+  )
+  const syncMut = useMutation(
+    orpc.devices.syncNow.mutationOptions({
+      onSuccess: (r) => {
+        invalidate()
+        queryClient.invalidateQueries({ queryKey: orpc.devices.syncInfo.key() })
+        if (r.enabled) toast(m.toast_synced({ count: r.updated }))
+      },
+      onError: (e) => toast(e.message),
+    }),
+  )
+
+  function toggleFavorite(device: Device) {
+    const favorite = !device.isFavorite
+    favoriteMut.mutate({ id: device.id, favorite })
+    // Keep the open drawer's star in sync — it holds its own device snapshot.
+    setDetail((d) => (d && d.id === device.id ? { ...d, isFavorite: favorite } : d))
+  }
 
   function openAdd() {
     setEditing(null)
@@ -226,6 +265,8 @@ export function AddressBook({ user }: { user: SessionUser }) {
     setFilterStatus('all')
     setFilterOs('all')
     setFilterCustomer('all')
+    setFilterFavorite(false)
+    setFilterGroupId(null)
     setActiveTags([])
   }
   async function signOut() {
@@ -238,6 +279,8 @@ export function AddressBook({ user }: { user: SessionUser }) {
     filterStatus !== 'all' ||
     filterOs !== 'all' ||
     filterCustomer !== 'all' ||
+    filterFavorite ||
+    filterGroupId !== null ||
     activeTags.length > 0
 
   const grouped = useMemo(() => {
@@ -339,6 +382,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
             email={user.email}
             isAdmin={isAdmin}
             onInvite={() => setInviteOpen(true)}
+            onUsers={() => setUsersOpen(true)}
             onAudit={() => setAuditOpen(true)}
             onSignOut={signOut}
           />
@@ -393,6 +437,13 @@ export function AddressBook({ user }: { user: SessionUser }) {
             <>
               <button
                 className="tv-rail-ico"
+                title={m.users_menu()}
+                onClick={() => setUsersOpen(true)}
+              >
+                <Users size={17} strokeWidth={1.5} />
+              </button>
+              <button
+                className="tv-rail-ico"
                 title={m.audit_menu()}
                 onClick={() => setAuditOpen(true)}
               >
@@ -430,15 +481,60 @@ export function AddressBook({ user }: { user: SessionUser }) {
 
           <button
             className="tv-navitem"
-            data-active={filterCustomer === 'all'}
-            onClick={() => setFilterCustomer('all')}
+            data-active={filterCustomer === 'all' && !filterFavorite && !filterGroupId}
+            onClick={() => {
+              setFilterCustomer('all')
+              setFilterFavorite(false)
+              setFilterGroupId(null)
+            }}
           >
             <MonitorDot className="tv-navitem__icon" />
             <span className="tv-navitem__label">{m.nav_all_devices()}</span>
             <span className="tv-navitem__count">{stats?.total ?? '—'}</span>
           </button>
 
-          <SidebarHeading>{m.section_customers()}</SidebarHeading>
+          <button
+            className="tv-navitem"
+            data-active={filterFavorite}
+            onClick={() => setFilterFavorite((v) => !v)}
+          >
+            <Star
+              className="tv-navitem__icon"
+              style={filterFavorite ? { fill: 'currentColor' } : undefined}
+            />
+            <span className="tv-navitem__label">{m.nav_favorites()}</span>
+          </button>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 14px 6px',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 600,
+                letterSpacing: '.05em',
+                textTransform: 'uppercase',
+                color: 'var(--fg-4)',
+              }}
+            >
+              {m.section_customers()}
+            </span>
+            {isAdmin && (
+              <button
+                className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+                title={m.customers_manage()}
+                aria-label={m.customers_manage()}
+                onClick={() => setCustomersOpen(true)}
+              >
+                <Settings2 size={14} />
+              </button>
+            )}
+          </div>
           {stats?.customers.map((c) => (
             <button
               key={c.name}
@@ -483,6 +579,8 @@ export function AddressBook({ user }: { user: SessionUser }) {
               )
             })}
           </div>
+
+          <GroupSidebar activeGroupId={filterGroupId} onSelect={setFilterGroupId} />
         </div>
 
         {/* Main panel */}
@@ -521,6 +619,24 @@ export function AddressBook({ user }: { user: SessionUser }) {
               </button>
             </div>
             <span style={{ width: 1, height: 22, background: 'var(--bd-1)' }} />
+            {syncEnabled && (
+              <button
+                className="tv-btn tv-btn--outline tv-btn--sm"
+                onClick={() => syncMut.mutate({})}
+                disabled={syncMut.isPending}
+                title={m.sync_now()}
+              >
+                <RefreshCw
+                  size={14}
+                  style={
+                    syncMut.isPending
+                      ? { animation: 'tv-spin 0.8s linear infinite' }
+                      : undefined
+                  }
+                />
+                {m.sync_now()}
+              </button>
+            )}
             <button
               className="tv-btn tv-btn--outline tv-btn--sm"
               onClick={() => fileRef.current?.click()}
@@ -620,6 +736,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
                 onConnect={onConnect}
                 onEdit={openEdit}
                 onDelete={onDelete}
+                onToggleFavorite={toggleFavorite}
               />
             ) : view === 'grouped' ? (
               <GroupedView groups={grouped} onOpen={setDetail} onConnect={onConnect} />
@@ -629,6 +746,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
                 onOpen={setDetail}
                 onConnect={onConnect}
                 onEdit={openEdit}
+                onToggleFavorite={toggleFavorite}
               />
             )}
           </div>
@@ -681,9 +799,16 @@ export function AddressBook({ user }: { user: SessionUser }) {
         onEdit={openEdit}
         onDelete={onDelete}
         onCopyId={copyId}
+        onToggleFavorite={toggleFavorite}
         reveal={reveal}
       />
+      <CustomersDialog open={customersOpen} onOpenChange={setCustomersOpen} />
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <UsersDialog
+        open={usersOpen}
+        onOpenChange={setUsersOpen}
+        currentUserId={user.id}
+      />
       <AuditDialog open={auditOpen} onOpenChange={setAuditOpen} />
       <ConfirmDeleteDialog
         device={pendingDelete}
@@ -755,6 +880,30 @@ function StatusDot({ status }: { status: Device['status'] }) {
   )
 }
 
+function FavoriteButton({
+  active,
+  onToggle,
+}: {
+  active: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+      title={active ? m.favorite_remove() : m.favorite_add()}
+      aria-label={active ? m.favorite_remove() : m.favorite_add()}
+      aria-pressed={active}
+      style={active ? { color: 'var(--brand)' } : undefined}
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+    >
+      <Star size={13} style={active ? { fill: 'currentColor' } : undefined} />
+    </button>
+  )
+}
+
 function ConnectButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
@@ -776,6 +925,7 @@ function UserMenu({
   email,
   isAdmin,
   onInvite,
+  onUsers,
   onAudit,
   onSignOut,
 }: {
@@ -784,6 +934,7 @@ function UserMenu({
   email: string
   isAdmin: boolean
   onInvite: () => void
+  onUsers: () => void
   onAudit: () => void
   onSignOut: () => void
 }) {
@@ -819,6 +970,11 @@ function UserMenu({
           <div style={{ height: 1, background: 'var(--bd-subtle)', margin: '4px 0' }} />
           {isAdmin && (
             <>
+              <DropdownMenu.Item asChild>
+                <button className="tv-menu-item" onClick={onUsers}>
+                  <Users size={14} /> {m.users_menu()}
+                </button>
+              </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
                 <button className="tv-menu-item" onClick={onInvite}>
                   <Mail size={14} /> {m.invite_users()}
@@ -874,12 +1030,14 @@ function TableView({
   onConnect,
   onEdit,
   onDelete,
+  onToggleFavorite,
 }: {
   devices: Device[]
   onOpen: (d: Device) => void
   onConnect: (d: Device) => void
   onEdit: (d: Device) => void
   onDelete: (d: Device) => void
+  onToggleFavorite: (d: Device) => void
 }) {
   return (
     <div className="tv-card tv-flush">
@@ -919,6 +1077,10 @@ function TableView({
                 </td>
                 <td>
                   <span style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                    <FavoriteButton
+                      active={d.isFavorite}
+                      onToggle={() => onToggleFavorite(d)}
+                    />
                     <ConnectButton onClick={() => onConnect(d)} />
                     <button
                       className="tv-btn tv-btn--ghost tv-btn--icon-xs"
@@ -1022,11 +1184,13 @@ function CardsView({
   onOpen,
   onConnect,
   onEdit,
+  onToggleFavorite,
 }: {
   devices: Device[]
   onOpen: (d: Device) => void
   onConnect: (d: Device) => void
   onEdit: (d: Device) => void
+  onToggleFavorite: (d: Device) => void
 }) {
   return (
     <div
@@ -1066,6 +1230,10 @@ function CardsView({
                 {formatRustdeskId(d.rustdeskId)}
               </div>
             </div>
+            <FavoriteButton
+              active={d.isFavorite}
+              onToggle={() => onToggleFavorite(d)}
+            />
             <span className={STATUS_META[d.status].chip}>{statusLabel(d.status)}</span>
           </div>
           <div

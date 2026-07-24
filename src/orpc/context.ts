@@ -21,6 +21,9 @@ const requireAuth = base.middleware(async ({ context, next }) => {
   if (!session) {
     throw new ORPCError('UNAUTHORIZED', { message: 'Authentication required.' })
   }
+  if ((session.user as { banned?: boolean }).banned) {
+    throw new ORPCError('FORBIDDEN', { message: 'Dieses Konto wurde gesperrt.' })
+  }
   return next({
     context: {
       session: session.session,

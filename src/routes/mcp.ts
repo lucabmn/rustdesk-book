@@ -20,7 +20,7 @@ const server = new McpServer({ name: 'rustdesk-book', version: '1.0.0' })
 
 /** Present a device for the LLM: labelled OS, no secrets. */
 function describe(row: Awaited<ReturnType<typeof queryDevices>>[number]) {
-  const d = toPublicDevice(row)
+  const d = toPublicDevice(row, undefined, row.customerName)
   return {
     rustdeskId: d.rustdeskId,
     alias: d.alias,
@@ -109,7 +109,7 @@ server.registerTool(
     const rows = await queryDevices(db, {})
     const counts = new Map<string, number>()
     for (const d of rows) {
-      const c = d.customer?.trim()
+      const c = d.customerName?.trim()
       if (c) counts.set(c, (counts.get(c) ?? 0) + 1)
     }
     const customers = [...counts.entries()]

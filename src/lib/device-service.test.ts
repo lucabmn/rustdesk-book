@@ -9,7 +9,7 @@ const row: DeviceRow = {
   id: '11111111-1111-1111-1111-111111111111',
   rustdeskId: '482910375',
   alias: 'Empfang-PC',
-  customer: 'Bäckerei Krause GmbH',
+  customerId: '99999999-9999-9999-9999-999999999999',
   osKey: 'win11',
   tags: ['Kasse'],
   status: 'online',
@@ -39,5 +39,19 @@ describe('toPublicDevice', () => {
     const pub = toPublicDevice(row)
     expect(pub.lastSeen).toBe('2026-01-01T10:00:00.000Z')
     expect(pub.createdAt).toBe('2026-01-01T09:00:00.000Z')
+  })
+
+  it('projects the resolved customer name and id', () => {
+    expect(toPublicDevice(row).customer).toBe(null)
+    expect(toPublicDevice(row, undefined, 'Bäckerei Krause GmbH').customer).toBe(
+      'Bäckerei Krause GmbH',
+    )
+    expect(toPublicDevice(row).customerId).toBe(row.customerId)
+  })
+
+  it('marks isFavorite from the supplied favorite set, false by default', () => {
+    expect(toPublicDevice(row).isFavorite).toBe(false)
+    expect(toPublicDevice(row, new Set([row.id])).isFavorite).toBe(true)
+    expect(toPublicDevice(row, new Set(['other'])).isFavorite).toBe(false)
   })
 })

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Dialog } from 'radix-ui'
 import { Copy, Eye, EyeOff, Pencil, Power, Trash2, X } from 'lucide-react'
 
@@ -7,7 +8,8 @@ import {
   formatRustdeskId,
   osLabel,
 } from '#/lib/device-meta'
-import { statusLabel } from '#/lib/i18n-labels'
+import { orpc } from '#/orpc/client'
+import { auditActionLabel, statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import type { Device } from '#/orpc/schema'
 
@@ -32,6 +34,14 @@ export function DeviceDetailDrawer({
 }: Props) {
   const [password, setPassword] = useState<string | null>(null)
   const [revealing, setRevealing] = useState(false)
+
+  const historyQuery = useQuery(
+    orpc.audit.listForDevice.queryOptions({
+      input: { deviceId: device?.id ?? '' },
+      enabled: device !== null,
+    }),
+  )
+  const history = historyQuery.data ?? []
 
   // Forget any revealed secret when the drawer target changes or closes.
   useEffect(() => {
@@ -224,6 +234,44 @@ export function DeviceDetailDrawer({
                     </div>
                   </Section>
                 )}
+
+                <Section title={m.drawer_history()}>
+                  {history.length === 0 ? (
+                    <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
+                      {m.drawer_history_none()}
+                    </span>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {history.map((h) => (
+                        <div
+                          key={h.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            fontSize: 12,
+                          }}
+                        >
+                          <span
+                            className={
+                              h.action === 'connect'
+                                ? 'tv-chip tv-chip--info'
+                                : 'tv-chip tv-chip--warn'
+                            }
+                          >
+                            {auditActionLabel(h.action)}
+                          </span>
+                          <span style={{ color: 'var(--fg-2)', flex: 1, minWidth: 0 }}>
+                            {h.userName ?? h.userEmail ?? '—'}
+                          </span>
+                          <span style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
+                            {formatLastSeen(h.createdAt)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
               </div>
 
               <div

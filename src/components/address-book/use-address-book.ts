@@ -20,24 +20,29 @@ import {
 } from '#/lib/device-transfer'
 import { formatRustdeskId } from '#/lib/device-meta'
 import { applyTheme, getCurrentTheme, type Theme } from '#/lib/theme'
+import { type ViewMode, writeViewCookie } from '#/lib/view-mode'
 import type { Device, DeviceInput } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
 
-export type ViewMode = 'table' | 'grouped' | 'cards'
+export type { ViewMode }
 
 /**
  * All address-book state: filters, server data, mutations and the actions the
  * shell wires to its controls. Keeping it here leaves the components purely
  * about layout.
+ *
+ * `initialView` comes from the route loader, which reads it from a cookie, so
+ * the server renders the view the user last chose instead of a default the
+ * client then has to correct.
  */
-export function useAddressBook() {
+export function useAddressBook(initialView: ViewMode) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
-  const [view, setView] = useState<ViewMode>('table')
+  const [view, setViewState] = useState<ViewMode>(initialView)
   const [theme, setTheme] = useState<Theme>(getCurrentTheme())
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Device | null>(null)
@@ -46,6 +51,11 @@ export function useAddressBook() {
 
   const patch = (next: Partial<FilterState>) =>
     setFilters((current) => ({ ...current, ...next }))
+
+  const setView = (next: ViewMode) => {
+    writeViewCookie(next)
+    setViewState(next)
+  }
 
   const listQuery = useQuery(
     orpc.devices.list.queryOptions({ input: buildListInput(filters) }),

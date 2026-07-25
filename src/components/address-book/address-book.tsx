@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { EmptyState, Spinner } from '#/components/ui'
 import { ANY, initialsOf } from '#/lib/address-book-filters'
 import type { SessionUser } from '#/lib/auth-server'
+import type { ViewMode } from '#/lib/view-mode'
 import { m } from '#/paraglide/messages'
 import { AuditDialog } from './audit-dialog'
 import { TopBar } from './chrome'
@@ -25,8 +26,14 @@ import { TableView } from './views/table-view'
  * Layout and composition only — all state lives in {@link useAddressBook}, all
  * filter logic in `lib/address-book-filters`.
  */
-export function AddressBook({ user }: { user: SessionUser }) {
-  const book = useAddressBook()
+export function AddressBook({
+  user,
+  initialView,
+}: {
+  user: SessionUser
+  initialView: ViewMode
+}) {
+  const book = useAddressBook(initialView)
   const { filters, patch, actions, stats } = book
   const isAdmin = user.role === 'admin'
 

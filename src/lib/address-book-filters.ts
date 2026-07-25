@@ -82,20 +82,27 @@ export function mergeOsOptions(stored: readonly string[] = []): string[] {
 }
 
 /** Bucket devices by customer for the grouped view, alphabetically. */
+/**
+ * Identity of the "no customer" bucket. Distinct from its label because the
+ * label is translated — keying anything durable (collapsed state) on the label
+ * would lose track of the bucket the moment the user switches locale.
+ */
+export const UNASSIGNED_KEY = ''
+
 export function groupByCustomer(
   devices: readonly Device[],
   unassignedLabel: string,
-): Array<{ name: string; items: Device[] }> {
+): Array<{ key: string; name: string; items: Device[] }> {
   const map = new Map<string, Device[]>()
   for (const device of devices) {
-    const key = device.customer || unassignedLabel
+    const key = device.customer || UNASSIGNED_KEY
     const items = map.get(key) ?? []
     items.push(device)
     map.set(key, items)
   }
   return [...map.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0], 'de'))
-    .map(([name, items]) => ({ name, items }))
+    .map(([key, items]) => ({ key, name: key || unassignedLabel, items }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'))
 }
 
 /** Two-letter avatar initials for a display name. */

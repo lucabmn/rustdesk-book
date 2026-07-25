@@ -1,136 +1,120 @@
+<img src="./public/icon.svg" alt="rustdesk-book" width="72" />
+
 # rustdesk-book
 
-Ein selbstgehostetes Adressbuch für [RustDesk](https://rustdesk.com). Es hält
-Geräte, Zugangsdaten und Kundenzuordnung an einem Ort – und öffnet die
-Fernwartung per Klick. Gedacht für IT-Dienstleister und alle, die mehr als eine
-Handvoll RustDesk-IDs pflegen.
+A self-hosted address book for [RustDesk](https://rustdesk.com). It keeps
+devices, credentials and customer assignments in one place — and starts a remote
+session with a single click. Built for IT service providers and anyone
+maintaining more than a handful of RustDesk IDs.
 
-Im Kern ist rustdesk-book ein Passwort-Tresor. Passwörter liegen ausschließlich
-verschlüsselt in der Datenbank; Klartext gibt es nur auf ausdrückliche,
-protokollierte Anfrage. Details dazu in [SECURITY.md](./SECURITY.md).
+At its core it is a password vault: passwords are stored encrypted only, and
+plaintext is revealed solely on an explicit, audited request. See
+[SECURITY.md](./SECURITY.md).
 
-![rustdesk-book Screenshot](./docs/screenshot.svg)
+![rustdesk-book screenshot](./public/demo.png)
 
-<!-- Platzhalter – echter Screenshot folgt. -->
+## Features
 
-## Funktionen
+- Devices with RustDesk ID, alias, customer, OS, tags and notes
+- One-click connect via `rustdesk://` — the URI is built server-side with the
+  password encoded correctly
+- Passwords encrypted with AES-256-GCM; reveals and connects are audited
+- Per-device connection history (who connected or revealed a password, and when)
+- Customers as a first-class entity: rename once, applies to every device, with
+  contact details and notes
+- Personal favorites and private device groups per user
+- Optional live status sync against your own RustDesk server
+  (`RUSTDESK_API_URL`); without it the status stays manual
+- Three views (table, grouped by customer, cards), full-text search and filters
+  for status, OS, customer, tag, favorites and group
+- JSON import/export (export excludes passwords)
+- Roll out RustDesk OSS clients via Windows, Linux or macOS scripts; one-time or
+  permanent enrollment tokens
+- Invite-based sign-up; the first account becomes the administrator
+- Light and dark mode
+- Optional read-only MCP server: answer "do I have a device for customer X?"
+  straight from your assistant
 
-- Geräte mit RustDesk-ID, Alias, Kunde, Betriebssystem, Tags und Notizen
-- Verbinden per Klick über `rustdesk://` – die URI wird serverseitig gebaut und
-  das Passwort korrekt kodiert
-- Passwörter AES-256-GCM-verschlüsselt; Anzeigen und Verbinden werden auditiert
-- Verbindungs-Historie pro Gerät (wer hat wann verbunden/Passwort angezeigt)
-- Kunden als eigene Entität: einmal umbenennen wirkt auf alle Geräte, mit
-  Kontaktdaten und Notizen
-- Persönliche Favoriten und private Geräte-Gruppen je Nutzer
-- Optionaler Live-Status-Sync gegen einen eigenen RustDesk-Server (siehe
-  `RUSTDESK_API_URL` in `.env.example`); ohne Server bleibt der Status manuell
-- Drei Ansichten (Tabelle, nach Kunde gruppiert, Karten), Volltextsuche und
-  Filter nach Status, OS, Kunde, Tag, Favoriten und Gruppe
-- Import/Export als JSON (Export ohne Passwörter)
-- RustDesk-OSS-Clients per Windows-, Linux- oder macOS-Skript ausrollen; einmalige oder permanente Enrollment-Tokens
-- Einladungsbasierte Registrierung; erstes Konto wird zum Administrator
-- Heller und dunkler Modus
-- Optionaler, lesender MCP-Server: „Habe ich ein Gerät für Kunde X?“ direkt aus
-  dem Assistenten beantworten
+## Install
 
-## Schnellstart mit Docker Compose
-
-Vorausgesetzt sind Docker und Docker Compose.
+Requires Docker and Docker Compose.
 
 ```bash
-# 1. Repository holen
 git clone https://github.com/lucabmn/rustdesk-book.git
 cd rustdesk-book
-
-# 2. Umgebung anlegen
 cp .env.example .env
 ```
 
-Trage in `.env` die nötigen Werte ein und **erzeuge eigene Schlüssel**:
-
-```bash
-# 32-Byte-Schlüssel für die Passwortverschlüsselung (Pflicht)
-openssl rand -base64 32
-
-# Session-Secret für better-auth
-openssl rand -base64 32
-
-# optionaler Bearer-Token für den MCP-Endpunkt
-openssl rand -hex 32
-```
-
-Minimal benötigte Variablen in `.env`:
+Put these four values into `.env`:
 
 ```dotenv
-POSTGRES_PASSWORD=…            # frei wählbar
-BETTER_AUTH_SECRET=…           # openssl rand -base64 32
-APP_ENCRYPTION_KEY=…           # openssl rand -base64 32  (getrennt sichern!)
-BETTER_AUTH_URL=https://adressbuch.example.com
-# MCP_API_KEY=…                # nur setzen, wenn der MCP-Server genutzt wird
+POSTGRES_PASSWORD=…       # any password you like
+BETTER_AUTH_SECRET=…      # openssl rand -base64 32
+APP_ENCRYPTION_KEY=…      # openssl rand -base64 32  (back up separately!)
+BETTER_AUTH_URL=https://book.example.com
 ```
 
-Dann starten:
+Start it:
 
 ```bash
 docker compose up -d
 ```
 
-Die App läuft auf Port 3000. Migrationen werden beim Start automatisch angewandt.
-Beim ersten Aufruf legst du das Administrator-Konto an – danach ist die
-Registrierung nur noch per Einladung möglich.
+The app listens on port 3000 and applies database migrations on startup. Open it
+and create the administrator account — after that, sign-up is invite-only.
 
-Das Container-Image wird bei jedem Release nach
-`ghcr.io/lucabmn/rustdesk-book` veröffentlicht (multi-arch, amd64/arm64).
+> **Important:** if `APP_ENCRYPTION_KEY` is lost, every stored password is gone
+> for good. Back it up separately from the database.
 
-## Konfiguration
+Images are published to `ghcr.io/lucabmn/rustdesk-book` on every release
+(multi-arch, amd64/arm64).
 
-| Variable             | Pflicht | Beschreibung                                                                 |
-| -------------------- | :-----: | ---------------------------------------------------------------------------- |
-| `DATABASE_URL`       |   ja    | PostgreSQL-Verbindung. In Compose automatisch gesetzt.                        |
-| `APP_ENCRYPTION_KEY` |   ja    | 32-Byte-Schlüssel (base64/hex) für die Passwortverschlüsselung.              |
-| `BETTER_AUTH_SECRET` |   ja    | Secret zum Signieren der Sessions. Muss sich vom Verschlüsselungsschlüssel unterscheiden. |
-| `BETTER_AUTH_URL`    |   ja    | Öffentliche Basis-URL der Instanz.                                           |
-| `MCP_API_KEY`        |  nein   | Bearer-Token für `/mcp`. Ohne diesen ist der MCP-Endpunkt deaktiviert.        |
-| `TRUST_PROXY_HEADERS` | nein   | `true` vertraut Proxy-IP-Headern für Enrollment-Rate-Limits; nur hinter einem vertrauenswürdigen Reverse Proxy aktivieren. |
+## Configuration
 
-> **Wichtig:** Geht `APP_ENCRYPTION_KEY` verloren, sind alle gespeicherten
-> Passwörter unwiederbringlich verloren. Sichere ihn getrennt von der Datenbank.
+| Variable              | Required | Description                                                                             |
+| --------------------- | :------: | --------------------------------------------------------------------------------------- |
+| `DATABASE_URL`        |   yes    | PostgreSQL connection. Set automatically by Compose.                                      |
+| `APP_ENCRYPTION_KEY`  |   yes    | 32-byte key (base64/hex) encrypting device passwords.                                     |
+| `BETTER_AUTH_SECRET`  |   yes    | Session signing secret. Must differ from the encryption key.                              |
+| `BETTER_AUTH_URL`     |   yes    | Public base URL of the instance.                                                          |
+| `MCP_API_KEY`         |    no    | Bearer token for `/mcp`. Without it the MCP endpoint is disabled.                         |
+| `TRUST_PROXY_HEADERS` |    no    | `true` trusts proxy IP headers for enrollment rate limits; only behind a trusted proxy.    |
+| `RUSTDESK_API_URL`    |    no    | RustDesk server with a peers API, for live online/offline status.                         |
 
-## MCP-Server
+Full list with comments in [.env.example](./.env.example).
 
-rustdesk-book stellt optional einen [Model-Context-Protocol](https://modelcontextprotocol.io)-Server
-unter `/mcp` bereit. Er ist lesend und gibt keine Passwörter aus. Zugriff nur mit
+## MCP server
+
+rustdesk-book optionally exposes a
+[Model Context Protocol](https://modelcontextprotocol.io) server at `/mcp`. It
+is read-only and never returns passwords. Access requires
 `Authorization: Bearer <MCP_API_KEY>`.
 
-Verfügbare Tools:
+Tools:
 
-- `search_devices` – Volltextsuche über ID, Alias, Kunde, Tags, Notizen
-- `list_devices` – Liste, optional nach Kunde, OS, Status oder Tag gefiltert
-- `get_device` – ein Gerät per RustDesk-ID oder Alias
-- `list_customers` – alle Kunden mit Gerätezahl
+- `search_devices` — full-text search over ID, alias, customer, tags, notes
+- `list_devices` — list, optionally filtered by customer, OS, status or tag
+- `get_device` — a single device by RustDesk ID or alias
+- `list_customers` — all customers with device counts
 
-Damit lassen sich Fragen wie „Habe ich ein Gerät für die Bäckerei Krause?“ oder
-„Welche Server sind offline?“ direkt aus einem Assistenten beantworten.
+## Development
 
-## Entwicklung
-
-Voraussetzungen: Node 22, pnpm, PostgreSQL.
+Requires Node 22, pnpm and PostgreSQL.
 
 ```bash
 pnpm install
-cp .env.example .env.local        # Werte eintragen, Schlüssel erzeugen
+cp .env.example .env.local        # fill in values, generate keys
 pnpm db:migrate
 pnpm dev                          # http://localhost:3000
 ```
 
-Weitere Hinweise in [CONTRIBUTING.md](./CONTRIBUTING.md).
+More in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-## Technik
+## Stack
 
 TanStack Start (React, SSR) · oRPC · Drizzle ORM · PostgreSQL · better-auth ·
-Paraglide (i18n) · Vite. Das UI basiert auf dem Tenvima Design System.
+Tailwind CSS · Paraglide (i18n) · Vite.
 
-## Lizenz
+## License
 
 [MIT](./LICENSE)

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { Card, EmptyState, Spinner } from '#/components/ui'
 import { ANY, initialsOf } from '#/lib/address-book-filters'
 import type { SessionUser } from '#/lib/auth-server'
 import { m } from '#/paraglide/messages'
@@ -13,7 +14,6 @@ import { EnrollmentDialog } from './enrollment-dialog'
 import { FilterSidebar } from './filter-sidebar'
 import { InviteDialog } from './invite-dialog'
 import { FilterBar, Toolbar } from './toolbar'
-import { EmptyState } from './ui-bits'
 import { useAddressBook } from './use-address-book'
 import { UsersDialog } from './users-dialog'
 import { CardsView } from './views/cards-view'
@@ -38,16 +38,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
   return (
     <div
       data-theme={book.theme}
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--bg-app)',
-        color: 'var(--fg-1)',
-        fontFamily: 'var(--font-sans)',
-        fontSize: 13,
-        overflow: 'hidden',
-      }}
+      className="flex h-screen flex-col overflow-hidden bg-canvas text-text"
     >
       <TopBar
         search={filters.search}
@@ -68,7 +59,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
         }}
       />
 
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="flex min-h-0 flex-1">
         <AppRail
           isAdmin={isAdmin}
           onEnrollment={() => setEnrollmentOpen(true)}
@@ -88,14 +79,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
           onManageCustomers={() => setCustomersOpen(true)}
         />
 
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            minWidth: 0,
-          }}
-        >
+        <main className="flex min-w-0 flex-1 flex-col">
           <Toolbar
             heading={
               filters.customer === ANY ? m.nav_all_devices() : filters.customer
@@ -121,13 +105,16 @@ export function AddressBook({ user }: { user: SessionUser }) {
             customerCount={stats?.customers.length ?? 0}
           />
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
+          <div className="flex-1 overflow-y-auto p-4">
             {book.isLoading ? (
-              <EmptyState>{m.loading()}</EmptyState>
-            ) : book.devices.length === 0 ? (
-              <div className="tv-card tv-flush">
-                <EmptyState>{m.empty_devices()}</EmptyState>
+              <div className="flex items-center justify-center gap-2 py-16 text-muted text-xs">
+                <Spinner className="size-3.5" />
+                {m.loading()}
               </div>
+            ) : book.devices.length === 0 ? (
+              <Card>
+                <EmptyState>{m.empty_devices()}</EmptyState>
+              </Card>
             ) : book.view === 'table' ? (
               <TableView
                 devices={book.devices}
@@ -153,7 +140,7 @@ export function AddressBook({ user }: { user: SessionUser }) {
               />
             )}
           </div>
-        </div>
+        </main>
       </div>
 
       <StatusBar total={stats?.total ?? 0} />

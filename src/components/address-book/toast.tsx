@@ -12,6 +12,10 @@ export function useToast(): ToastContextValue {
   return ctx
 }
 
+/**
+ * One transient message at a time, anchored bottom-left above the status bar.
+ * Bottom-centre would sit on top of the row a user just acted on.
+ */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [message, setMessage] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -29,29 +33,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         <div
           role="status"
           aria-live="polite"
-          style={{
-            position: 'fixed',
-            bottom: 36,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 60,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-            padding: '9px 14px',
-            borderRadius: 8,
-            background: 'var(--fg-1)',
-            color: 'var(--bg-panel)',
-            fontSize: 12.5,
-            fontWeight: 500,
-            boxShadow: 'var(--sh-pop)',
-            animation: 'tvToastIn .18s ease',
-          }}
+          className="fade-in-0 slide-in-from-bottom-2 fixed bottom-9 left-4 z-60 flex max-w-sm animate-in items-center gap-2.5 rounded-lg border border-line bg-elevated px-3 py-2 text-text text-xs shadow-pop"
         >
-          <span
-            className="tv-dot"
-            style={{ width: 7, height: 7, background: 'var(--brand)' }}
-          />
+          <span className="size-1.5 shrink-0 rounded-full bg-accent" />
           {message}
         </div>
       )}

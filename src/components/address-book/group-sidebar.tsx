@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, FolderClosed, Plus, Trash2, X } from 'lucide-react'
+import { Check, FolderClosed, Plus, Trash2 } from 'lucide-react'
 
+import { Button, Input, NavItem, SectionLabel } from '#/components/ui'
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
@@ -53,45 +54,32 @@ export function GroupSidebar({
   function submit() {
     const trimmed = name.trim()
     if (trimmed) createMut.mutate({ name: trimmed })
-    else setAdding(false)
+    else cancel()
+  }
+
+  function cancel() {
+    setAdding(false)
+    setName('')
   }
 
   return (
-    <>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 14px 6px',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 10.5,
-            fontWeight: 600,
-            letterSpacing: '.05em',
-            textTransform: 'uppercase',
-            color: 'var(--fg-4)',
-          }}
-        >
-          {m.section_groups()}
-        </span>
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+    <div className="px-2 pt-4">
+      <div className="flex h-6 items-center justify-between gap-2 px-2">
+        <SectionLabel>{m.section_groups()}</SectionLabel>
+        <Button
+          variant="ghost"
+          size="icon-xs"
           title={m.group_create()}
           aria-label={m.group_create()}
-          onClick={() => setAdding((v) => !v)}
+          onClick={() => (adding ? cancel() : setAdding(true))}
         >
-          <Plus size={14} />
-        </button>
+          <Plus />
+        </Button>
       </div>
 
       {adding && (
-        <div style={{ display: 'flex', gap: 4, padding: '0 14px 6px' }}>
-          <input
-            className="tv-input"
+        <div className="mt-1 flex gap-1 px-2">
+          <Input
             // biome-ignore lint/a11y/noAutofocus: the field only exists once the user opened this inline editor, so focus follows their action
             autoFocus
             value={name}
@@ -99,79 +87,50 @@ export function GroupSidebar({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') submit()
-              else if (e.key === 'Escape') {
-                setAdding(false)
-                setName('')
-              }
+              else if (e.key === 'Escape') cancel()
             }}
-            style={{ height: 26 }}
+            className="h-7 text-xs"
           />
-          <button
-            type="button"
-            className="tv-btn tv-btn--default tv-btn--icon-sm"
+          <Button
+            variant="accent"
+            size="icon-sm"
             onClick={submit}
             disabled={createMut.isPending}
             aria-label={m.group_create()}
           >
-            <Check size={14} />
-          </button>
+            <Check />
+          </Button>
         </div>
       )}
 
-      {groups.length === 0 && !adding && (
-        <div
-          style={{
-            padding: '0 14px 6px',
-            fontSize: 11.5,
-            color: 'var(--fg-4)',
-          }}
-        >
-          {m.group_none()}
+      {groups.length === 0 && !adding ? (
+        <p className="px-2 py-1 text-2xs text-faint">{m.group_none()}</p>
+      ) : (
+        <div className="mt-0.5 flex flex-col gap-px">
+          {groups.map((g) => (
+            <div key={g.id} className="group/row flex items-center">
+              <NavItem
+                icon={FolderClosed}
+                label={g.name}
+                count={g.count}
+                active={activeGroupId === g.id}
+                className="min-w-0 flex-1"
+                onClick={() => onSelect(activeGroupId === g.id ? null : g.id)}
+              />
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                title={m.group_delete()}
+                aria-label={m.group_delete()}
+                className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover/row:opacity-100"
+                onClick={() => removeMut.mutate({ id: g.id })}
+              >
+                <Trash2 />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
-
-      {groups.map((g) => (
-        <div
-          key={g.id}
-          style={{ display: 'flex', alignItems: 'center', paddingRight: 8 }}
-        >
-          <button
-            type="button"
-            className="tv-navitem"
-            data-active={activeGroupId === g.id}
-            style={{ flex: 1, minWidth: 0 }}
-            onClick={() => onSelect(activeGroupId === g.id ? null : g.id)}
-          >
-            <FolderClosed className="tv-navitem__icon" />
-            <span className="tv-navitem__label">{g.name}</span>
-            <span className="tv-navitem__count">{g.count}</span>
-          </button>
-          <button
-            type="button"
-            className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-            title={m.group_delete()}
-            aria-label={m.group_delete()}
-            style={{ color: 'var(--fg-4)' }}
-            onClick={() => removeMut.mutate({ id: g.id })}
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-      ))}
-
-      {adding && groups.length === 0 && (
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--xs"
-          style={{ margin: '0 14px' }}
-          onClick={() => {
-            setAdding(false)
-            setName('')
-          }}
-        >
-          <X size={12} /> {m.common_cancel()}
-        </button>
-      )}
-    </>
+    </div>
   )
 }

@@ -9,7 +9,15 @@ import {
   X,
 } from 'lucide-react'
 
+import {
+  Button,
+  Divider,
+  Segmented,
+  SegmentedItem,
+  Select,
+} from '#/components/ui'
 import { ANY, type FilterState } from '#/lib/address-book-filters'
+import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 import { CustomerCombobox } from './customer-combobox'
 import type { ViewMode } from './use-address-book'
@@ -26,6 +34,12 @@ export interface ToolbarProps {
   onImportFile: (file: File) => void
 }
 
+const VIEWS = [
+  { key: 'table', icon: List, label: m.view_table },
+  { key: 'grouped', icon: Building2, label: m.view_grouped },
+  { key: 'cards', icon: LayoutGrid, label: m.view_cards },
+] as const
+
 /** Title, view switch and the import/export/sync actions. */
 export function Toolbar({
   heading,
@@ -41,99 +55,55 @@ export function Toolbar({
   const fileRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '12px 18px',
-        borderBottom: '1px solid var(--bd-1)',
-        background: 'var(--bg-chrome)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <span style={{ fontSize: 15, fontWeight: 600 }}>{heading}</span>
-        <span
-          className="mono tnum"
-          style={{ fontSize: 12, color: 'var(--fg-3)' }}
-        >
-          {count}
+    <div className="flex shrink-0 items-center gap-3 border-line border-b bg-surface px-4 py-2.5">
+      <h1 className="flex items-baseline gap-2">
+        <span className="truncate font-semibold text-text text-lg">
+          {heading}
         </span>
-      </div>
-      <div style={{ flex: 1 }} />
-      <div className="tv-seg">
-        <button
-          type="button"
-          data-active={view === 'table'}
-          onClick={() => onView('table')}
-        >
-          <List size={14} />
-          {m.view_table()}
-        </button>
-        <button
-          type="button"
-          data-active={view === 'grouped'}
-          onClick={() => onView('grouped')}
-        >
-          <Building2 size={14} />
-          {m.view_grouped()}
-        </button>
-        <button
-          type="button"
-          data-active={view === 'cards'}
-          onClick={() => onView('cards')}
-        >
-          <LayoutGrid size={14} />
-          {m.view_cards()}
-        </button>
-      </div>
-      <span style={{ width: 1, height: 22, background: 'var(--bd-1)' }} />
+        <span className="tnum text-muted text-xs">{count}</span>
+      </h1>
+
+      <div className="flex-1" />
+
+      <Segmented>
+        {VIEWS.map(({ key, icon: Icon, label }) => (
+          <SegmentedItem
+            key={key}
+            active={view === key}
+            onClick={() => onView(key)}
+          >
+            <Icon />
+            {label()}
+          </SegmentedItem>
+        ))}
+      </Segmented>
+
+      <Divider vertical />
+
       {syncEnabled && (
-        <button
-          type="button"
-          className="tv-btn tv-btn--outline tv-btn--sm"
-          onClick={onSyncNow}
-          disabled={syncPending}
-          title={m.sync_now()}
-        >
-          <RefreshCw
-            size={14}
-            style={
-              syncPending
-                ? { animation: 'tv-spin 0.8s linear infinite' }
-                : undefined
-            }
-          />
+        <Button onClick={onSyncNow} disabled={syncPending} title={m.sync_now()}>
+          <RefreshCw className={cn(syncPending && 'animate-spin')} />
           {m.sync_now()}
-        </button>
+        </Button>
       )}
-      <button
-        type="button"
-        className="tv-btn tv-btn--outline tv-btn--sm"
-        onClick={() => fileRef.current?.click()}
-      >
-        <Upload size={14} />
+      <Button onClick={() => fileRef.current?.click()}>
+        <Upload />
         {m.action_import()}
-      </button>
-      <button
-        type="button"
-        className="tv-btn tv-btn--outline tv-btn--sm"
-        onClick={onExport}
-      >
-        <Download size={14} />
+      </Button>
+      <Button onClick={onExport}>
+        <Download />
         {m.action_export()}
-      </button>
+      </Button>
       <input
         type="file"
         accept=".json"
         ref={fileRef}
+        className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) onImportFile(file)
           e.target.value = ''
         }}
-        style={{ display: 'none' }}
       />
     </div>
   )
@@ -162,30 +132,20 @@ export function FilterBar({
   customerCount,
 }: FilterBarProps) {
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        flexWrap: 'wrap',
-        padding: '10px 18px',
-        borderBottom: '1px solid var(--bd-subtle)',
-        background: 'var(--bg-panel)',
-      }}
-    >
-      <select
-        className="tv-select"
+    <div className="flex shrink-0 flex-wrap items-center gap-2 border-line border-b bg-sunken px-4 py-2">
+      <Select
         value={filters.status}
         onChange={(e) => patch({ status: e.target.value })}
         aria-label={m.filter_all_status()}
+        className="h-7 w-auto text-xs"
       >
         <option value={ANY}>{m.filter_all_status()}</option>
         <option value="online">{m.status_online()}</option>
         <option value="away">{m.status_away()}</option>
         <option value="offline">{m.status_offline()}</option>
-      </select>
-      <div style={{ width: 200 }}>
+      </Select>
+
+      <div className="w-44">
         <CustomerCombobox
           value={filters.osKey === ANY ? '' : filters.osKey}
           onChange={(v) => patch({ osKey: v || ANY })}
@@ -196,7 +156,7 @@ export function FilterBar({
           aria-label={m.filter_all_os()}
         />
       </div>
-      <div style={{ width: 200 }}>
+      <div className="w-44">
         <CustomerCombobox
           value={filters.customer === ANY ? '' : filters.customer}
           onChange={(v) => patch({ customer: v || ANY })}
@@ -207,31 +167,21 @@ export function FilterBar({
           aria-label={m.filter_all_customers()}
         />
       </div>
+
       {hasActiveFilters && (
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--xs"
-          onClick={onReset}
-          style={{ color: 'var(--fg-3)' }}
-        >
-          <X size={12} />
+        <Button variant="ghost" size="xs" onClick={onReset}>
+          <X />
           {m.filter_reset()}
-        </button>
+        </Button>
       )}
-      <div style={{ flex: 1 }} />
-      <span
-        style={{
-          fontSize: 11.5,
-          color: 'var(--fg-3)',
-          display: 'inline-flex',
-          gap: 12,
-        }}
-      >
+
+      <div className="flex-1" />
+      <div className="flex gap-3 text-2xs text-muted">
         <span className="tnum">{m.stat_online({ count: onlineCount })}</span>
         <span className="tnum">
           {m.stat_customers({ count: customerCount })}
         </span>
-      </span>
+      </div>
     </div>
   )
 }

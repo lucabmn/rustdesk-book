@@ -1,32 +1,40 @@
-import { MonitorDot } from 'lucide-react'
+import { cn } from '#/lib/utils'
 
-/** Compact wordmark used on auth screens and in the app top bar. */
-export function BrandMark({ size = 18 }: { size?: number }) {
+/**
+ * Wordmark. The mark is a nine-cell grid — a RustDesk id is nine digits, and
+ * one cell is lit because exactly one machine is the one you are on.
+ */
+export function BrandMark({
+  size = 'md',
+  className,
+}: {
+  size?: 'sm' | 'md'
+  className?: string
+}) {
+  const small = size === 'sm'
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+    <span className={cn('inline-flex items-center gap-2', className)}>
       <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 26,
-          height: 26,
-          borderRadius: 7,
-          backgroundImage: 'var(--brand-gradient)',
-          color: 'var(--brand-fg)',
-        }}
+        aria-hidden
+        className={cn(
+          'grid shrink-0 grid-cols-3 gap-[2px] rounded-md border border-line bg-sunken',
+          small ? 'size-[22px] p-[4px]' : 'size-7 p-[5px]',
+        )}
       >
-        <MonitorDot size={16} strokeWidth={1.9} />
+        {Array.from({ length: 9 }, (_, i) => (
+          <span
+            key={i}
+            className={cn('rounded-[1px]', i === 4 ? 'bg-accent' : 'bg-line-strong')}
+          />
+        ))}
       </span>
       <span
-        style={{
-          fontSize: size,
-          fontWeight: 700,
-          letterSpacing: '-0.02em',
-          color: 'var(--fg-1)',
-        }}
+        className={cn(
+          'font-semibold tracking-tight text-text',
+          small ? 'text-xs' : 'text-sm',
+        )}
       >
-        rustdesk<span style={{ color: 'var(--brand)' }}>·</span>book
+        rustdesk<span className="text-faint">/</span>book
       </span>
     </span>
   )

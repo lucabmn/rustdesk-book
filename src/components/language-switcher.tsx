@@ -1,21 +1,21 @@
+import { Segmented, SegmentedItem } from '#/components/ui'
 import { availableLocales, useLocale } from '#/lib/i18n'
 import { m } from '#/paraglide/messages'
 
-/** Compact segmented de/en switcher built on the Tenvima segmented control. */
+/** Compact de/en switch. */
 export function LanguageSwitcher() {
   const { locale, setLocale } = useLocale()
   return (
-    <div className="tv-seg" role="toolbar" aria-label={m.language()}>
+    <Segmented aria-label={m.language()}>
       {availableLocales.map((l) => (
-        <button
+        <SegmentedItem
           key={l}
-          data-active={l === locale}
+          active={l === locale}
           onClick={() => setLocale(l)}
-          type="button"
         >
           {l.toUpperCase()}
-        </button>
+        </SegmentedItem>
       ))}
-    </div>
+    </Segmented>
   )
 }

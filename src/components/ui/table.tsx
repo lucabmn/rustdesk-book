@@ -3,17 +3,27 @@ import { cn } from '#/lib/utils'
 /**
  * Data table. Rows are 34px and separated by hairlines rather than zebra
  * striping — at this density stripes fight with the status column.
+ *
+ * `flush` bleeds the table into its container and makes the wrapper the scroll
+ * area, which is what lets {@link THead} actually stick. Without it the table
+ * is a bordered card that grows with its content (dialogs, short lists).
  */
-
 export function Table({
+  flush,
   className,
   children,
 }: {
+  flush?: boolean
   className?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+    <div
+      className={cn(
+        'overflow-auto',
+        flush ? 'h-full' : 'rounded-lg border border-line bg-surface',
+      )}
+    >
       <table
         className={cn('w-full border-collapse text-left text-xs', className)}
       >
@@ -24,10 +34,8 @@ export function Table({
 }
 
 export function THead({ children }: { children: React.ReactNode }) {
-  // Not sticky: the wrapper below is an `overflow-x-auto` scroll container with
-  // no bounded height, so `position: sticky` has nothing to stick to here.
   return (
-    <thead className="bg-sunken">
+    <thead className="sticky top-0 z-10 bg-sunken">
       <tr className="border-line border-b">{children}</tr>
     </thead>
   )
@@ -42,7 +50,7 @@ export function TH({
     <th
       scope="col"
       className={cn(
-        'h-8 px-3 font-medium text-2xs text-faint uppercase tracking-wide',
+        'h-8 whitespace-nowrap px-3 font-medium text-2xs text-faint uppercase tracking-wide',
         align === 'right' && 'text-right',
         className,
       )}
@@ -65,7 +73,7 @@ export function TR({
       className={cn(
         'border-line border-b last:border-b-0',
         interactive &&
-          'cursor-pointer transition-colors hover:bg-hover focus-visible:bg-hover',
+          'group/row cursor-pointer transition-colors hover:bg-hover focus-within:bg-hover',
         className,
       )}
       {...props}
@@ -74,5 +82,13 @@ export function TR({
 }
 
 export function TD({ className, ...props }: React.ComponentProps<'td'>) {
-  return <td className={cn('h-[34px] px-3 text-text', className)} {...props} />
+  // Cells never wrap: the table already scrolls horizontally below its
+  // min-width, and a wrapped id or alias destroys the row rhythm. Chips inside
+  // a cell still wrap — their own flex container governs that.
+  return (
+    <td
+      className={cn('h-[34px] whitespace-nowrap px-3 text-text', className)}
+      {...props}
+    />
+  )
 }

@@ -1,7 +1,21 @@
-import { Building2, MonitorSmartphone, Settings2, Star } from 'lucide-react'
+import {
+  Building2,
+  Monitor,
+  MonitorSmartphone,
+  Settings2,
+  Star,
+} from 'lucide-react'
 
-import { Button, NavItem, SectionLabel, TagChip } from '#/components/ui'
+import {
+  Button,
+  NavItem,
+  SectionLabel,
+  StatusDot,
+  TagChip,
+} from '#/components/ui'
 import { ANY, type FilterState } from '#/lib/address-book-filters'
+import { DEVICE_STATUSES } from '#/lib/device-meta'
+import { statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import { GroupSidebar } from './group-sidebar'
 
@@ -16,6 +30,7 @@ export interface FilterSidebarProps {
   onToggleTag: (name: string) => void
   total?: number
   customers: Facet[]
+  operatingSystems: Facet[]
   tags: Facet[]
   isAdmin: boolean
   onManageCustomers: () => void
@@ -42,22 +57,31 @@ function Group({
   )
 }
 
-/** Context sidebar: scope selection, customer facets, tag facets and groups. */
+/**
+ * The app's only navigation. Every filter dimension lives here — scope, status,
+ * customer, OS, tag, group — which is what let the separate filter bar go: you
+ * narrow the list where you already are, instead of in a band above it.
+ */
 export function FilterSidebar({
   filters,
   patch,
   onToggleTag,
   total,
   customers,
+  operatingSystems,
   tags,
   isAdmin,
   onManageCustomers,
 }: FilterSidebarProps) {
   const allActive =
-    filters.customer === ANY && !filters.favorite && !filters.groupId
+    filters.customer === ANY &&
+    !filters.favorite &&
+    !filters.groupId &&
+    filters.status === ANY &&
+    filters.osKey === ANY
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-line border-r bg-surface pb-4">
+    <aside className="flex w-56 shrink-0 flex-col overflow-y-auto border-line border-r bg-surface pb-6">
       <div className="px-4 pt-3.5 pb-1">
         <h2 className="font-semibold text-sm text-text">{m.nav_title()}</h2>
         <p className="mt-px text-muted text-xs">{m.nav_subtitle()}</p>
@@ -70,7 +94,13 @@ export function FilterSidebar({
           count={total ?? '—'}
           active={allActive}
           onClick={() =>
-            patch({ customer: ANY, favorite: false, groupId: null })
+            patch({
+              customer: ANY,
+              favorite: false,
+              groupId: null,
+              status: ANY,
+              osKey: ANY,
+            })
           }
         />
         <NavItem
@@ -80,6 +110,24 @@ export function FilterSidebar({
           onClick={() => patch({ favorite: !filters.favorite })}
         />
       </div>
+
+      <Group title={m.form_status_label()}>
+        <div className="flex flex-wrap gap-1 px-2 pt-1">
+          {DEVICE_STATUSES.map((s) => {
+            const on = filters.status === s
+            return (
+              <TagChip
+                key={s}
+                active={on}
+                onClick={() => patch({ status: on ? ANY : s })}
+              >
+                <StatusDot status={s} className="size-1.5" />
+                {statusLabel(s)}
+              </TagChip>
+            )
+          })}
+        </div>
+      </Group>
 
       <Group
         title={m.section_customers()}
@@ -115,6 +163,23 @@ export function FilterSidebar({
         )}
       </Group>
 
+      {operatingSystems.length > 0 && (
+        <Group title={m.form_os_label()}>
+          {operatingSystems.map((o) => (
+            <NavItem
+              key={o.name}
+              icon={Monitor}
+              label={o.name}
+              count={o.count}
+              active={filters.osKey === o.name}
+              onClick={() =>
+                patch({ osKey: filters.osKey === o.name ? ANY : o.name })
+              }
+            />
+          ))}
+        </Group>
+      )}
+
       {tags.length > 0 && (
         <Group title={m.section_tags()}>
           <div className="flex flex-wrap gap-1 px-2 pt-1">
@@ -139,5 +204,3 @@ export function FilterSidebar({
     </aside>
   )
 }
-
-export { Group as SidebarGroup }

@@ -41,7 +41,7 @@ export function GroupedView({ groups, onOpen, onConnect }: GroupedViewProps) {
               <span className="min-w-0 flex-1 truncate text-muted text-xs">
                 {osLabel(d.osKey)}
               </span>
-              <DeviceTags tags={d.tags} />
+              <DeviceTags tags={d.tags} className="flex-nowrap" />
               <ConnectButton variant="outline" onClick={() => onConnect(d)} />
             </div>
           ))}

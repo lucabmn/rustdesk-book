@@ -28,9 +28,11 @@ export function DeviceId({
 export function FavoriteButton({
   active,
   onToggle,
+  className,
 }: {
   active: boolean
   onToggle: () => void
+  className?: string
 }) {
   const label = active ? m.favorite_remove() : m.favorite_add()
   return (
@@ -40,7 +42,7 @@ export function FavoriteButton({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={active ? 'text-accent hover:text-accent' : undefined}
+      className={cn(active && 'text-accent hover:text-accent', className)}
       onClick={(e) => {
         e.stopPropagation()
         onToggle()

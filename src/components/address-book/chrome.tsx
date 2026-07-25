@@ -1,23 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  History,
-  Mail,
-  MonitorSmartphone,
-  Moon,
-  Plus,
-  Rocket,
-  Search,
-  Sun,
-  Users,
-} from 'lucide-react'
+import { Moon, Plus, Search, Sun } from 'lucide-react'
 
-import { BrandMark } from '#/components/brand-mark'
-import { Button, Divider, Input, Kbd, RailButton } from '#/components/ui'
+import { BrandGlyph } from '#/components/brand-mark'
+import { Button, Divider, Input, Kbd } from '#/components/ui'
 import type { Theme } from '#/lib/theme'
 import { m } from '#/paraglide/messages'
 import { UserMenu, type UserMenuProps } from './user-menu'
 
-/** Window chrome: the top bar, the icon rail and the status bar. */
+/**
+ * The single piece of window chrome. Everything that used to live in a second
+ * icon rail is reachable from the user menu, so the app has one vertical
+ * navigation instead of two.
+ */
 
 export interface TopBarProps {
   search: string
@@ -57,29 +51,33 @@ export function TopBar({
   }, [])
 
   return (
-    <header className="flex h-11 shrink-0 items-center gap-3 border-line border-b bg-surface px-3">
-      <BrandMark size="sm" />
+    <header className="flex h-12 shrink-0 items-center gap-3 border-line border-b bg-surface pr-3 pl-4">
+      {/* Aligned to the sidebar's width so the glyph sits over the nav column. */}
+      <span className="flex w-56 shrink-0 items-center gap-2 text-text">
+        <BrandGlyph className="size-[18px]" />
+        <span className="font-semibold text-xs tracking-tight">
+          rustdesk<span className="text-faint">/</span>book
+        </span>
+      </span>
 
-      <div className="flex flex-1 justify-center">
-        <div className="relative w-full max-w-md">
-          <Search className="pointer-events-none absolute top-2 left-2.5 size-3.5 text-faint" />
-          <Input
-            ref={searchRef}
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Escape' && e.currentTarget.blur()}
-            placeholder={m.search_placeholder()}
-            aria-label={m.search_placeholder()}
-            className="h-7 bg-sunken pr-14 pl-8 text-xs"
-          />
-          <span className="pointer-events-none absolute top-1.5 right-2 flex gap-0.5">
-            <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
-            <Kbd>K</Kbd>
-          </span>
-        </div>
+      <div className="relative min-w-0 max-w-lg flex-1">
+        <Search className="pointer-events-none absolute top-2 left-2.5 size-3.5 text-faint" />
+        <Input
+          ref={searchRef}
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && e.currentTarget.blur()}
+          placeholder={m.search_placeholder()}
+          aria-label={m.search_placeholder()}
+          className="h-7 bg-sunken pr-14 pl-8 text-xs"
+        />
+        <span className="pointer-events-none absolute top-1.5 right-2 flex gap-0.5">
+          <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
+          <Kbd>K</Kbd>
+        </span>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
         <Button variant="accent" onClick={onAdd}>
           <Plus />
           {m.device_add()}
@@ -97,56 +95,5 @@ export function TopBar({
         <UserMenu {...menu} />
       </div>
     </header>
-  )
-}
-
-export interface AppRailProps {
-  isAdmin: boolean
-  onEnrollment: () => void
-  onUsers: () => void
-  onAudit: () => void
-  onInvite: () => void
-}
-
-/** Far-left icon rail. Devices is the only destination; the rest open dialogs. */
-export function AppRail({
-  isAdmin,
-  onEnrollment,
-  onUsers,
-  onAudit,
-  onInvite,
-}: AppRailProps) {
-  return (
-    <nav className="flex w-12 shrink-0 flex-col items-center gap-1 border-line border-r bg-sunken py-2">
-      <RailButton active icon={MonitorSmartphone} label={m.nav_title()} />
-      <div className="flex-1" />
-      <RailButton
-        icon={Rocket}
-        label={m.enrollment_menu()}
-        onClick={onEnrollment}
-      />
-      {isAdmin && (
-        <>
-          <RailButton icon={Users} label={m.users_menu()} onClick={onUsers} />
-          <RailButton icon={History} label={m.audit_menu()} onClick={onAudit} />
-          <RailButton icon={Mail} label={m.rail_invites()} onClick={onInvite} />
-        </>
-      )}
-    </nav>
-  )
-}
-
-export function StatusBar({ total }: { total: number }) {
-  return (
-    <footer className="flex h-6 shrink-0 items-center gap-4 whitespace-nowrap border-line border-t bg-surface px-3 text-2xs text-faint">
-      <span className="inline-flex items-center gap-1.5">
-        <span className="size-1.5 rounded-full bg-ok" />
-        {m.sb_server_connected()}
-      </span>
-      <span className="tnum text-muted">{m.sb_devices({ count: total })}</span>
-      <div className="flex-1" />
-      <span>{m.sb_selfhosted()}</span>
-      <span className="font-mono">{m.app_name()}</span>
-    </footer>
   )
 }

@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-25
+
+### Added
+- Tailwind v4 token set as the visual language: one accent, borders over
+  shadows, 6px radii, tool-sized type scale, light and dark themes
+- `src/components/ui` primitive layer (button, inputs, dialog/confirm, drawer,
+  menu, table, badge, nav/segmented/rail, status), so `components.json` finally
+  points at something real
+- Search affordance in the top bar with a Cmd/Ctrl+K shortcut
+
+### Changed
+- App shell, auth screens, device views, detail drawer and every dialog
+  rewritten on the new primitives; auth screens share one `AuthLayout`
+- `STATUS_META` exposes a semantic `STATUS_TONE` instead of class strings, so
+  `lib/` says what a status means and `ui/` decides how it looks
+- Table and grouped rows use an outline Connect button; the accent hue now only
+  marks the primary action and the active nav item
+
+### Fixed
+- Tailwind v4 was wired into Vite but never imported by `styles.css`, so no
+  utility applied
+- Combobox list rides a Radix Popover: inside a dialog the panel was clipped,
+  and picking a row could close the dialog
+- Enrollment script region is focusable again for keyboard scrolling
+- Device form comboboxes get ids so their labels point at them
+
+### Removed
+- `src/styles/tenvima`, `ui-bits.tsx` and `drawer-parts.tsx`
+
 ## [0.4.0] - 2026-07-25
 
 ### Added

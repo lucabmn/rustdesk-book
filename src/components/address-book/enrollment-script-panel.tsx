@@ -83,7 +83,10 @@ export function EnrollmentScriptPanel({
         </Button>
       </div>
 
+      {/* Focusable region so keyboard-only users can scroll a long script. */}
       <section
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be reachable without a pointer
+        tabIndex={0}
         aria-label={m.enrollment_script_label()}
         className="max-h-80 overflow-auto rounded-md border border-line bg-sunken"
       >

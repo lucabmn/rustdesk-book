@@ -82,7 +82,7 @@ export function TableView({
                   active={d.isFavorite}
                   onToggle={() => onToggleFavorite(d)}
                 />
-                <ConnectButton onClick={() => onConnect(d)} />
+                <ConnectButton variant="outline" onClick={() => onConnect(d)} />
                 <Button
                   variant="ghost"
                   size="icon-xs"

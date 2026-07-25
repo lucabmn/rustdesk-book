@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Popover } from 'radix-ui'
 
 import { Input } from '#/components/ui'
 import { filterCustomers, shouldOfferCreate } from '#/lib/customer-suggest'
@@ -48,7 +49,6 @@ export function CustomerCombobox({
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
-  const wrapRef = useRef<HTMLDivElement>(null)
   const focusedRef = useRef(false)
   const listId = useId()
 
@@ -58,17 +58,6 @@ export function CustomerCombobox({
   useEffect(() => {
     if (!focusedRef.current) setQuery(value)
   }, [value])
-
-  // Close on click outside; discard an uncommitted query in select mode.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the listener is (re)bound purely on open/close; `close` is stable for its lifetime
-  useEffect(() => {
-    if (!open) return
-    function onDocMouseDown(e: MouseEvent) {
-      if (!wrapRef.current?.contains(e.target as Node)) close()
-    }
-    document.addEventListener('mousedown', onDocMouseDown)
-    return () => document.removeEventListener('mousedown', onDocMouseDown)
-  }, [open])
 
   const matches = filterCustomers(options, query)
   const offerCreate = allowCreate && shouldOfferCreate(options, query)
@@ -143,35 +132,51 @@ export function CustomerCombobox({
 
   const showEmpty = matches.length === 0 && !offerCreate
 
+  const hasList = rows.length > 0 || showEmpty
+
   return (
-    <div ref={wrapRef} className="relative">
-      <Input
-        id={id}
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={active >= 0 ? optionId(active) : undefined}
-        aria-label={ariaLabel}
-        autoComplete="off"
-        value={query}
-        placeholder={placeholder}
-        className={cn('h-7 text-xs', className)}
-        onChange={(e) => onInput(e.target.value)}
-        onFocus={() => {
-          focusedRef.current = true
-          setOpen(true)
-        }}
-        onBlur={() => {
-          focusedRef.current = false
-        }}
-        onKeyDown={onKeyDown}
-      />
-      {open && (rows.length > 0 || showEmpty) && (
-        <div
+    // The list rides Radix's Popover rather than a plain absolute box: inside a
+    // dialog the panel clips overflow, and a hand-rolled portal would sit
+    // outside the dialog's dismissable layer (clicking a row would close the
+    // dialog). Popover composes with Dialog and handles both.
+    <Popover.Root open={open && hasList} onOpenChange={(o) => !o && close()}>
+      <Popover.Anchor asChild>
+        <div className="relative">
+          <Input
+            id={id}
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={active >= 0 ? optionId(active) : undefined}
+            aria-label={ariaLabel}
+            autoComplete="off"
+            value={query}
+            placeholder={placeholder}
+            className={cn('h-7 text-xs', className)}
+            onChange={(e) => onInput(e.target.value)}
+            onFocus={() => {
+              focusedRef.current = true
+              setOpen(true)
+            }}
+            onBlur={() => {
+              focusedRef.current = false
+            }}
+            onKeyDown={onKeyDown}
+          />
+        </div>
+      </Popover.Anchor>
+
+      <Popover.Portal>
+        <Popover.Content
           id={listId}
           role="listbox"
-          className="absolute top-[calc(100%+4px)] right-0 left-0 z-80 max-h-56 overflow-y-auto rounded-lg border border-line bg-elevated p-1 shadow-pop"
+          align="start"
+          sideOffset={4}
+          // Keep the caret in the input — the list is driven from there.
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          className="z-80 max-h-56 w-(--radix-popover-trigger-width) overflow-y-auto rounded-lg border border-line bg-elevated p-1 shadow-pop"
         >
           {rows.map((row, i) => (
             <button
@@ -200,8 +205,8 @@ export function CustomerCombobox({
               {m.combobox_empty()}
             </div>
           )}
-        </div>
-      )}
-    </div>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }

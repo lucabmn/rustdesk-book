@@ -137,8 +137,9 @@ export function DeviceFormDialog({
             />
           </Field>
 
-          <Field label={m.form_customer_label()}>
+          <Field label={m.form_customer_label()} htmlFor="f-customer">
             <CustomerCombobox
+              id="f-customer"
               value={form.customer}
               onChange={(v) => set('customer', v)}
               options={customers}
@@ -148,8 +149,9 @@ export function DeviceFormDialog({
               aria-label={m.form_customer_label()}
             />
           </Field>
-          <Field label={m.form_os_label()}>
+          <Field label={m.form_os_label()} htmlFor="f-os">
             <CustomerCombobox
+              id="f-os"
               value={form.osKey}
               onChange={(v) => set('osKey', v)}
               options={operatingSystems}

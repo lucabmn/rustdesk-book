@@ -24,8 +24,10 @@ export function Table({
 }
 
 export function THead({ children }: { children: React.ReactNode }) {
+  // Not sticky: the wrapper below is an `overflow-x-auto` scroll container with
+  // no bounded height, so `position: sticky` has nothing to stick to here.
   return (
-    <thead className="sticky top-0 z-10 bg-sunken">
+    <thead className="bg-sunken">
       <tr className="border-line border-b">{children}</tr>
     </thead>
   )

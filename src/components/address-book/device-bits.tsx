@@ -54,13 +54,20 @@ export function FavoriteButton({
 export function ConnectButton({
   onClick,
   className,
+  /**
+   * Accent is for the one primary action on a surface. In a list every row
+   * would claim it, so rows pass `variant="outline"` and only the card and the
+   * drawer — where Connect really is *the* action — keep the accent.
+   */
+  variant = 'accent',
 }: {
   onClick: () => void
   className?: string
+  variant?: 'accent' | 'outline'
 }) {
   return (
     <Button
-      variant="accent"
+      variant={variant}
       size="xs"
       className={className}
       onClick={(e) => {

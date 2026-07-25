@@ -42,7 +42,7 @@ export function GroupedView({ groups, onOpen, onConnect }: GroupedViewProps) {
                 {osLabel(d.osKey)}
               </span>
               <DeviceTags tags={d.tags} />
-              <ConnectButton onClick={() => onConnect(d)} />
+              <ConnectButton variant="outline" onClick={() => onConnect(d)} />
             </div>
           ))}
         </Card>

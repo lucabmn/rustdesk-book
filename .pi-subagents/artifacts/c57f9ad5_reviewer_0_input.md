@@ -1,3 +1,0 @@
-# Task for reviewer
-
-Führe einen zweiten Security-/Correctness-Review der aktuellen uncommitteten RustDesk-OSS-Enrollment-Implementierung durch. Ein erster Review meldete Passwortverlust vor Enrollment, fehlende Unix-Fehlerprüfung, HTTP, ungeprüfte Downloads, Revocation-Race, Token-Duplikate und parallele Permanent-Deployments. Diese Punkte wurden durch Claim/Finalize, root-only Recovery-Datei, HTTPS-Zwang, Checksums/Signaturprüfung, Zeilensperren/advisory locks und per-device Claims überarbeitet. Prüfe den jetzigen Stand erneut, besonders Single-use exakt ein Gerät, parallele permanente GPO-Rollouts, Retry/Recovery, generierte Skriptsyntax, DB-Transaktionen und öffentliche Endpunkte. Nichts ändern; nur verbleibende konkrete Findings nach Schweregrad.

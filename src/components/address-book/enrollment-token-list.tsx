@@ -1,5 +1,7 @@
 import { Download, ShieldOff, Trash2 } from 'lucide-react'
 
+import { Badge, Button, EmptyState, SectionLabel } from '#/components/ui'
+import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 
 export interface EnrollmentToken {
@@ -31,101 +33,86 @@ export function EnrollmentTokenList({
   onDelete,
 }: EnrollmentTokenListProps) {
   return (
-    <div style={{ borderTop: '1px solid var(--bd-1)', paddingTop: 12 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
-        {m.enrollment_existing()}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {tokens.length === 0 && (
-          <span style={{ fontSize: 12, color: 'var(--fg-4)' }}>
-            {m.enrollment_none()}
-          </span>
-        )}
-        {tokens.map((token) => {
-          const inactive =
-            Boolean(token.revokedAt) ||
-            (token.kind === 'single' && token.useCount > 0)
-          return (
-            <div
-              key={token.id}
-              style={{
-                display: 'flex',
-                gap: 10,
-                alignItems: 'center',
-                padding: '8px 10px',
-                border: '1px solid var(--bd-1)',
-                borderRadius: 6,
-                background: 'var(--bg-sunken)',
-                opacity: inactive ? 0.65 : 1,
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 7,
-                    alignItems: 'center',
-                  }}
-                >
-                  <strong style={{ fontSize: 12.5 }}>{token.name}</strong>
-                  <span className="tv-chip">
-                    {token.kind === 'single'
-                      ? m.enrollment_type_single_short()
-                      : m.enrollment_type_permanent_short()}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--fg-4)',
-                    marginTop: 2,
-                  }}
-                >
-                  {token.tokenPrefix} ·{' '}
-                  {m.enrollment_uses({ count: token.useCount })}
-                  {token.customer ? ` · ${token.customer}` : ''}
-                  {inactive ? ` · ${m.enrollment_inactive()}` : ''}
-                </div>
-              </div>
-              {token.kind === 'permanent' && !token.revokedAt && (
-                <button
-                  type="button"
-                  className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                  title={m.enrollment_download_again()}
-                  aria-label={m.enrollment_download_again()}
-                  disabled={scriptsPending}
-                  onClick={() => onDownloadAgain(token.id)}
-                >
-                  <Download size={14} />
-                </button>
-              )}
-              {!token.revokedAt && (
-                <button
-                  type="button"
-                  className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                  title={m.enrollment_revoke()}
-                  aria-label={m.enrollment_revoke()}
-                  style={{ color: 'var(--s-err)' }}
-                  onClick={() => onRevoke(token.id)}
-                >
-                  <ShieldOff size={14} />
-                </button>
-              )}
-              <button
-                type="button"
-                className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                title={m.enrollment_delete()}
-                aria-label={m.enrollment_delete()}
-                style={{ color: 'var(--s-err)' }}
-                disabled={removePending}
-                onClick={() => onDelete(token)}
+    <div className="mt-4 border-line border-t pt-3">
+      <SectionLabel className="mb-2">{m.enrollment_existing()}</SectionLabel>
+
+      {tokens.length === 0 ? (
+        <EmptyState className="py-6">{m.enrollment_none()}</EmptyState>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {tokens.map((token) => {
+            // Spent single-use tokens and revoked ones are kept for the record
+            // but faded — they can no longer enroll anything.
+            const inactive =
+              Boolean(token.revokedAt) ||
+              (token.kind === 'single' && token.useCount > 0)
+            return (
+              <li
+                key={token.id}
+                className={cn(
+                  'flex items-center gap-2 rounded-md border border-line bg-sunken py-1.5 pr-1.5 pl-2.5',
+                  inactive && 'opacity-60',
+                )}
               >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          )
-        })}
-      </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate font-medium text-text text-xs">
+                      {token.name}
+                    </span>
+                    <Badge>
+                      {token.kind === 'single'
+                        ? m.enrollment_type_single_short()
+                        : m.enrollment_type_permanent_short()}
+                    </Badge>
+                  </div>
+                  <div className="truncate text-2xs text-faint">
+                    <span className="font-mono">{token.tokenPrefix}</span> ·{' '}
+                    {m.enrollment_uses({ count: token.useCount })}
+                    {token.customer ? ` · ${token.customer}` : ''}
+                    {inactive ? ` · ${m.enrollment_inactive()}` : ''}
+                  </div>
+                </div>
+
+                {token.kind === 'permanent' && !token.revokedAt && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={m.enrollment_download_again()}
+                    aria-label={m.enrollment_download_again()}
+                    disabled={scriptsPending}
+                    onClick={() => onDownloadAgain(token.id)}
+                  >
+                    <Download />
+                  </Button>
+                )}
+                {!token.revokedAt && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={m.enrollment_revoke()}
+                    aria-label={m.enrollment_revoke()}
+                    className="hover:bg-warn-soft hover:text-warn"
+                    onClick={() => onRevoke(token.id)}
+                  >
+                    <ShieldOff />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={m.enrollment_delete()}
+                  aria-label={m.enrollment_delete()}
+                  className="hover:bg-danger-soft hover:text-danger"
+                  disabled={removePending}
+                  onClick={() => onDelete(token)}
+                >
+                  <Trash2 />
+                </Button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

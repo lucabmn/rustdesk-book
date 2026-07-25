@@ -1,3 +1,0 @@
-# Task for reviewer
-
-Verifiziere ausschließlich die drei zuletzt behobenen hohen Findings im aktuellen Diff: (1) abgelaufene Recovery-Claims werden erneuert und bereits gesetztes Passwort wiederverwendet, (2) PowerShell 5.1-kompatible RNG-Nutzung, (3) RustDesk-ID wird durch aktive Claims global über verschiedene Tokens reserviert. Prüfe zudem, ob dadurch ein neuer Blocker entstanden ist. Nichts ändern. Maximal 8 Sätze.

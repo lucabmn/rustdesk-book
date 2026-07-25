@@ -1,7 +1,15 @@
-import { DropdownMenu } from 'radix-ui'
 import { History, LogOut, Mail, Rocket, Users } from 'lucide-react'
 
 import { LanguageSwitcher } from '#/components/language-switcher'
+import {
+  Avatar,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+  MenuTrigger,
+} from '#/components/ui'
 import { m } from '#/paraglide/messages'
 
 export interface UserMenuProps {
@@ -29,115 +37,51 @@ export function UserMenu({
   onSignOut,
 }: UserMenuProps) {
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
+    <Menu>
+      <MenuTrigger asChild>
         <button
           type="button"
-          className="tv-avatar tv-avatar--sm"
-          style={{
-            background: 'var(--brand-soft)',
-            color: 'var(--brand)',
-            fontSize: 11,
-            border: 'none',
-            cursor: 'pointer',
-          }}
           aria-label={m.user_menu()}
+          className="rounded-full"
         >
-          {initials}
+          <Avatar initials={initials} />
         </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={6}
-          style={{
-            minWidth: 200,
-            padding: 6,
-            borderRadius: 8,
-            background: 'var(--bg-panel)',
-            boxShadow: 'var(--sh-pop), var(--ring-card)',
-            fontSize: 12.5,
-            zIndex: 70,
-          }}
-        >
-          <div style={{ padding: '6px 8px' }}>
-            <div style={{ fontWeight: 600 }}>{name}</div>
-            <div style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{email}</div>
-          </div>
-          <div
-            style={{
-              height: 1,
-              background: 'var(--bd-subtle)',
-              margin: '4px 0',
-            }}
-          />
-          <DropdownMenu.Item asChild>
-            <button
-              type="button"
-              className="tv-menu-item"
-              onClick={onEnrollment}
-            >
-              <Rocket size={14} /> {m.enrollment_menu()}
-            </button>
-          </DropdownMenu.Item>
-          {isAdmin && (
-            <>
-              <DropdownMenu.Item asChild>
-                <button
-                  type="button"
-                  className="tv-menu-item"
-                  onClick={onUsers}
-                >
-                  <Users size={14} /> {m.users_menu()}
-                </button>
-              </DropdownMenu.Item>
-              <DropdownMenu.Item asChild>
-                <button
-                  type="button"
-                  className="tv-menu-item"
-                  onClick={onInvite}
-                >
-                  <Mail size={14} /> {m.invite_users()}
-                </button>
-              </DropdownMenu.Item>
-              <DropdownMenu.Item asChild>
-                <button
-                  type="button"
-                  className="tv-menu-item"
-                  onClick={onAudit}
-                >
-                  <History size={14} /> {m.audit_menu()}
-                </button>
-              </DropdownMenu.Item>
-            </>
-          )}
-          <DropdownMenu.Item asChild>
-            <button type="button" className="tv-menu-item" onClick={onSignOut}>
-              <LogOut size={14} /> {m.sign_out()}
-            </button>
-          </DropdownMenu.Item>
-          <div
-            style={{
-              height: 1,
-              background: 'var(--bd-subtle)',
-              margin: '4px 0',
-            }}
-          />
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '4px 8px',
-            }}
-          >
-            <span style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>
-              {m.language()}
-            </span>
-            <LanguageSwitcher />
-          </div>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+      </MenuTrigger>
+      <MenuContent>
+        <MenuLabel>
+          <div className="truncate font-semibold text-text text-xs">{name}</div>
+          <div className="truncate text-2xs text-muted">{email}</div>
+        </MenuLabel>
+        <MenuSeparator />
+
+        <MenuItem onClick={onEnrollment}>
+          <Rocket /> {m.enrollment_menu()}
+        </MenuItem>
+        {isAdmin && (
+          <>
+            <MenuItem onClick={onUsers}>
+              <Users /> {m.users_menu()}
+            </MenuItem>
+            <MenuItem onClick={onInvite}>
+              <Mail /> {m.invite_users()}
+            </MenuItem>
+            <MenuItem onClick={onAudit}>
+              <History /> {m.audit_menu()}
+            </MenuItem>
+          </>
+        )}
+
+        <MenuSeparator />
+        <div className="flex items-center justify-between gap-2 px-2 py-1">
+          <span className="text-2xs text-muted">{m.language()}</span>
+          <LanguageSwitcher />
+        </div>
+        <MenuSeparator />
+
+        <MenuItem onClick={onSignOut}>
+          <LogOut /> {m.sign_out()}
+        </MenuItem>
+      </MenuContent>
+    </Menu>
   )
 }

@@ -3,11 +3,11 @@ import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 
+import { AuthLayout, FormError } from '#/components/auth-layout'
+import { Button, Field, Input } from '#/components/ui'
 import { authClient } from '#/lib/auth-client'
-import { client, orpc } from '#/orpc/client'
 import { fetchSession } from '#/lib/auth-server'
-import { BrandMark } from '#/components/brand-mark'
-import { LanguageSwitcher } from '#/components/language-switcher'
+import { client, orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 
 const searchSchema = z.object({ token: z.string().optional() })
@@ -68,104 +68,58 @@ function RegisterPage() {
   const invalidInvite = !token || inviteQuery.isError
 
   return (
-    <div className="tv-auth-wrap">
-      <div className="tv-auth-card">
-        <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <BrandMark />
-            <LanguageSwitcher />
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>
-              {m.auth_register_title()}
-            </div>
-            <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
-              {inviteQuery.data
-                ? m.auth_register_invite_for({ email: inviteQuery.data.email })
-                : m.auth_register_need_invite()}
-            </div>
-          </div>
-        </header>
+    <AuthLayout
+      title={m.auth_register_title()}
+      subtitle={
+        inviteQuery.data
+          ? m.auth_register_invite_for({ email: inviteQuery.data.email })
+          : m.auth_register_need_invite()
+      }
+    >
+      {invalidInvite ? (
+        <FormError>{m.auth_register_invalid_invite()}</FormError>
+      ) : (
+        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+          <Field label={m.common_name()} htmlFor="name">
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+              required
+            />
+          </Field>
 
-        {invalidInvite ? (
-          <div
-            style={{
-              fontSize: 12.5,
-              color: 'var(--s-err)',
-              background: 'var(--s-err-bg)',
-              padding: '10px 12px',
-              borderRadius: 6,
-            }}
+          <Field
+            label={m.common_password()}
+            htmlFor="password"
+            hint={m.auth_password_hint()}
           >
-            {m.auth_register_invalid_invite()}
-          </div>
-        ) : (
-          <form
-            onSubmit={onSubmit}
-            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+            <Input
+              id="password"
+              type="password"
+              className="font-mono"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+              minLength={10}
+            />
+          </Field>
+
+          {error && <FormError>{error}</FormError>}
+
+          <Button
+            type="submit"
+            variant="accent"
+            size="lg"
+            className="w-full"
+            disabled={busy || inviteQuery.isLoading}
           >
-            <div className="tv-field">
-              <label className="tv-label" htmlFor="name">
-                {m.common_name()}
-              </label>
-              <input
-                id="name"
-                className="tv-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-                required
-              />
-            </div>
-            <div className="tv-field">
-              <label className="tv-label" htmlFor="password">
-                {m.common_password()}
-              </label>
-              <input
-                id="password"
-                type="password"
-                className="tv-input mono"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-                minLength={10}
-              />
-              <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-                {m.auth_password_hint()}
-              </span>
-            </div>
-
-            {error && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: 'var(--s-err)',
-                  background: 'var(--s-err-bg)',
-                  padding: '8px 10px',
-                  borderRadius: 6,
-                }}
-              >
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="tv-btn tv-btn--default tv-btn--lg tv-btn--block"
-              disabled={busy || inviteQuery.isLoading}
-            >
-              {m.auth_create_and_signin()}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+            {m.auth_create_and_signin()}
+          </Button>
+        </form>
+      )}
+    </AuthLayout>
   )
 }

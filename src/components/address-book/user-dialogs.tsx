@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Dialog } from 'radix-ui'
-import { Ban, X } from 'lucide-react'
+import { Ban } from 'lucide-react'
 
+import {
+  Button,
+  Dialog,
+  DialogBody,
+  Field,
+  Input,
+  Select,
+} from '#/components/ui'
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
@@ -41,92 +48,54 @@ export function EditUserDialog({
   )
 
   return (
-    <Dialog.Root open={user !== null} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="tv-dialog-overlay" />
-        <Dialog.Content className="tv-dialog" style={{ maxWidth: 420 }}>
-          <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">
-              {m.users_edit_title()}
-            </Dialog.Title>
-            <Dialog.Description className="tv-dialog__description">
-              {m.users_edit_description()}
-            </Dialog.Description>
-          </div>
-
-          <div className="tv-field">
-            <label className="tv-label" htmlFor="user-name">
-              {m.common_name()}
-            </label>
-            <input
-              id="user-name"
-              className="tv-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="tv-field">
-            <label className="tv-label" htmlFor="user-email">
-              {m.common_email()}
-            </label>
-            <input
-              id="user-email"
-              className="tv-input"
-              value={user?.email ?? ''}
-              disabled
-            />
-          </div>
-          <div className="tv-field">
-            <label className="tv-label" htmlFor="user-role">
-              {m.users_role_label()}
-            </label>
-            <select
-              id="user-role"
-              className="tv-select"
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
-              disabled={user?.role === 'admin' && !canDemote}
-            >
-              <option value="member">{m.common_role_member()}</option>
-              <option value="admin">{m.common_role_admin()}</option>
-            </select>
-          </div>
-
-          <div className="tv-dialog__footer">
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                className="tv-btn tv-btn--outline tv-btn--sm"
-              >
-                {m.common_cancel()}
-              </button>
-            </Dialog.Close>
-            <button
-              type="button"
-              className="tv-btn tv-btn--default tv-btn--sm"
-              disabled={!name.trim() || updateMut.isPending}
-              onClick={() =>
-                user &&
-                updateMut.mutate({ id: user.id, name: name.trim(), role })
-              }
-            >
-              {m.common_save()}
-            </button>
-          </div>
-
-          <Dialog.Close asChild>
-            <button
-              type="button"
-              className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-              aria-label={m.common_close()}
-              style={{ position: 'absolute', top: 8, right: 8 }}
-            >
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <Dialog
+      open={user !== null}
+      onOpenChange={onOpenChange}
+      title={m.users_edit_title()}
+      description={m.users_edit_description()}
+      width={420}
+      footer={
+        <>
+          <Button onClick={() => onOpenChange(false)}>
+            {m.common_cancel()}
+          </Button>
+          <Button
+            variant="accent"
+            disabled={!name.trim() || updateMut.isPending}
+            onClick={() =>
+              user && updateMut.mutate({ id: user.id, name: name.trim(), role })
+            }
+          >
+            {m.common_save()}
+          </Button>
+        </>
+      }
+    >
+      <DialogBody className="flex flex-col gap-4">
+        <Field label={m.common_name()} htmlFor="user-name">
+          <Input
+            id="user-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
+        <Field label={m.common_email()} htmlFor="user-email">
+          <Input id="user-email" value={user?.email ?? ''} disabled />
+        </Field>
+        <Field label={m.users_role_label()} htmlFor="user-role">
+          <Select
+            id="user-role"
+            value={role}
+            onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
+            // The last admin must not be able to demote themselves away.
+            disabled={user?.role === 'admin' && !canDemote}
+          >
+            <option value="member">{m.common_role_member()}</option>
+            <option value="admin">{m.common_role_admin()}</option>
+          </Select>
+        </Field>
+      </DialogBody>
+    </Dialog>
   )
 }
 
@@ -156,59 +125,41 @@ export function BanUserDialog({
   )
 
   return (
-    <Dialog.Root open={user !== null} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="tv-dialog-overlay" />
-        <Dialog.Content className="tv-dialog" style={{ maxWidth: 420 }}>
-          <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">
-              {m.users_ban_title()}
-            </Dialog.Title>
-            <Dialog.Description className="tv-dialog__description">
-              {user ? m.users_ban_description({ name: user.name }) : ''}
-            </Dialog.Description>
-          </div>
-
-          <div className="tv-field">
-            <label className="tv-label" htmlFor="ban-reason">
-              {m.users_ban_reason_label()}
-            </label>
-            <input
-              id="ban-reason"
-              className="tv-input"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={m.users_ban_reason_ph()}
-            />
-          </div>
-
-          <div className="tv-dialog__footer">
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                className="tv-btn tv-btn--outline tv-btn--sm"
-              >
-                {m.common_cancel()}
-              </button>
-            </Dialog.Close>
-            <button
-              type="button"
-              className="tv-btn tv-btn--destructive tv-btn--sm"
-              disabled={banMut.isPending}
-              onClick={() =>
-                user &&
-                banMut.mutate({
-                  id: user.id,
-                  reason: reason.trim() || undefined,
-                })
-              }
-            >
-              <Ban size={13} />
-              {m.users_ban_confirm()}
-            </button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <Dialog
+      open={user !== null}
+      onOpenChange={onOpenChange}
+      title={m.users_ban_title()}
+      description={user ? m.users_ban_description({ name: user.name }) : ''}
+      width={420}
+      footer={
+        <>
+          <Button onClick={() => onOpenChange(false)}>
+            {m.common_cancel()}
+          </Button>
+          <Button
+            variant="danger"
+            disabled={banMut.isPending}
+            onClick={() =>
+              user &&
+              banMut.mutate({ id: user.id, reason: reason.trim() || undefined })
+            }
+          >
+            <Ban />
+            {m.users_ban_confirm()}
+          </Button>
+        </>
+      }
+    >
+      <DialogBody>
+        <Field label={m.users_ban_reason_label()} htmlFor="ban-reason">
+          <Input
+            id="ban-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={m.users_ban_reason_ph()}
+          />
+        </Field>
+      </DialogBody>
+    </Dialog>
   )
 }

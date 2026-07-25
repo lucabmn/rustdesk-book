@@ -9,14 +9,16 @@ import {
   X,
 } from 'lucide-react'
 
-import { ANY, type FilterState } from '#/lib/address-book-filters'
+import { Button, Divider, Segmented, SegmentedItem } from '#/components/ui'
+import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
-import { CustomerCombobox } from './customer-combobox'
 import type { ViewMode } from './use-address-book'
 
-export interface ToolbarProps {
+export interface ContentHeaderProps {
   heading: string
   count: number
+  onlineCount: number
+  customerCount: number
   view: ViewMode
   onView: (view: ViewMode) => void
   syncEnabled: boolean
@@ -24,12 +26,27 @@ export interface ToolbarProps {
   onSyncNow: () => void
   onExport: () => void
   onImportFile: (file: File) => void
+  hasActiveFilters: boolean
+  onResetFilters: () => void
 }
 
-/** Title, view switch and the import/export/sync actions. */
-export function Toolbar({
+const VIEWS = [
+  { key: 'table', icon: List, label: m.view_table },
+  { key: 'grouped', icon: Building2, label: m.view_grouped },
+  { key: 'cards', icon: LayoutGrid, label: m.view_cards },
+] as const
+
+/**
+ * One header band instead of the old toolbar-plus-filter-bar stack: the scope
+ * and its counts on the left, the view switch and the data actions on the
+ * right. Filtering itself lives in the sidebar, so nothing here duplicates it —
+ * only the escape hatch back to "no filters" appears, and only when it applies.
+ */
+export function ContentHeader({
   heading,
   count,
+  onlineCount,
+  customerCount,
   view,
   onView,
   syncEnabled,
@@ -37,201 +54,95 @@ export function Toolbar({
   onSyncNow,
   onExport,
   onImportFile,
-}: ToolbarProps) {
+  hasActiveFilters,
+  onResetFilters,
+}: ContentHeaderProps) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '12px 18px',
-        borderBottom: '1px solid var(--bd-1)',
-        background: 'var(--bg-chrome)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <span style={{ fontSize: 15, fontWeight: 600 }}>{heading}</span>
-        <span
-          className="mono tnum"
-          style={{ fontSize: 12, color: 'var(--fg-3)' }}
-        >
-          {count}
-        </span>
+    <div className="flex h-12 shrink-0 items-center gap-3 border-line border-b bg-surface px-4">
+      <div className="flex min-w-0 items-baseline gap-2.5">
+        <h1 className="truncate font-semibold text-base text-text">
+          {heading}
+        </h1>
+        <span className="tnum shrink-0 text-muted text-xs">{count}</span>
       </div>
-      <div style={{ flex: 1 }} />
-      <div className="tv-seg">
-        <button
-          type="button"
-          data-active={view === 'table'}
-          onClick={() => onView('table')}
-        >
-          <List size={14} />
-          {m.view_table()}
-        </button>
-        <button
-          type="button"
-          data-active={view === 'grouped'}
-          onClick={() => onView('grouped')}
-        >
-          <Building2 size={14} />
-          {m.view_grouped()}
-        </button>
-        <button
-          type="button"
-          data-active={view === 'cards'}
-          onClick={() => onView('cards')}
-        >
-          <LayoutGrid size={14} />
-          {m.view_cards()}
-        </button>
-      </div>
-      <span style={{ width: 1, height: 22, background: 'var(--bd-1)' }} />
-      {syncEnabled && (
-        <button
-          type="button"
-          className="tv-btn tv-btn--outline tv-btn--sm"
-          onClick={onSyncNow}
-          disabled={syncPending}
-          title={m.sync_now()}
-        >
-          <RefreshCw
-            size={14}
-            style={
-              syncPending
-                ? { animation: 'tv-spin 0.8s linear infinite' }
-                : undefined
-            }
-          />
-          {m.sync_now()}
-        </button>
-      )}
-      <button
-        type="button"
-        className="tv-btn tv-btn--outline tv-btn--sm"
-        onClick={() => fileRef.current?.click()}
-      >
-        <Upload size={14} />
-        {m.action_import()}
-      </button>
-      <button
-        type="button"
-        className="tv-btn tv-btn--outline tv-btn--sm"
-        onClick={onExport}
-      >
-        <Download size={14} />
-        {m.action_export()}
-      </button>
-      <input
-        type="file"
-        accept=".json"
-        ref={fileRef}
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) onImportFile(file)
-          e.target.value = ''
-        }}
-        style={{ display: 'none' }}
-      />
-    </div>
-  )
-}
 
-export interface FilterBarProps {
-  filters: FilterState
-  patch: (next: Partial<FilterState>) => void
-  osNames: string[]
-  customerNames: string[]
-  hasActiveFilters: boolean
-  onReset: () => void
-  onlineCount: number
-  customerCount: number
-}
+      <Divider vertical className="hidden sm:block" />
 
-/** Secondary bar: status/OS/customer selects plus the summary counters. */
-export function FilterBar({
-  filters,
-  patch,
-  osNames,
-  customerNames,
-  hasActiveFilters,
-  onReset,
-  onlineCount,
-  customerCount,
-}: FilterBarProps) {
-  return (
-    <div
-      style={{
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        flexWrap: 'wrap',
-        padding: '10px 18px',
-        borderBottom: '1px solid var(--bd-subtle)',
-        background: 'var(--bg-panel)',
-      }}
-    >
-      <select
-        className="tv-select"
-        value={filters.status}
-        onChange={(e) => patch({ status: e.target.value })}
-        aria-label={m.filter_all_status()}
-      >
-        <option value={ANY}>{m.filter_all_status()}</option>
-        <option value="online">{m.status_online()}</option>
-        <option value="away">{m.status_away()}</option>
-        <option value="offline">{m.status_offline()}</option>
-      </select>
-      <div style={{ width: 200 }}>
-        <CustomerCombobox
-          value={filters.osKey === ANY ? '' : filters.osKey}
-          onChange={(v) => patch({ osKey: v || ANY })}
-          options={osNames}
-          placeholder={m.filter_all_os()}
-          commitMode="select"
-          clearLabel={m.filter_all_os()}
-          aria-label={m.filter_all_os()}
-        />
-      </div>
-      <div style={{ width: 200 }}>
-        <CustomerCombobox
-          value={filters.customer === ANY ? '' : filters.customer}
-          onChange={(v) => patch({ customer: v || ANY })}
-          options={customerNames}
-          placeholder={m.filter_all_customers()}
-          commitMode="select"
-          clearLabel={m.filter_all_customers()}
-          aria-label={m.filter_all_customers()}
-        />
-      </div>
-      {hasActiveFilters && (
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--xs"
-          onClick={onReset}
-          style={{ color: 'var(--fg-3)' }}
-        >
-          <X size={12} />
-          {m.filter_reset()}
-        </button>
-      )}
-      <div style={{ flex: 1 }} />
-      <span
-        style={{
-          fontSize: 11.5,
-          color: 'var(--fg-3)',
-          display: 'inline-flex',
-          gap: 12,
-        }}
-      >
+      <div className="hidden shrink-0 gap-3 text-2xs text-faint sm:flex">
         <span className="tnum">{m.stat_online({ count: onlineCount })}</span>
         <span className="tnum">
           {m.stat_customers({ count: customerCount })}
         </span>
-      </span>
+      </div>
+
+      {hasActiveFilters && (
+        <Button variant="ghost" size="xs" onClick={onResetFilters}>
+          <X />
+          {m.filter_reset()}
+        </Button>
+      )}
+
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <Segmented>
+          {VIEWS.map(({ key, icon: Icon, label }) => (
+            <SegmentedItem
+              key={key}
+              active={view === key}
+              title={label()}
+              onClick={() => onView(key)}
+            >
+              <Icon />
+              <span className="hidden lg:inline">{label()}</span>
+            </SegmentedItem>
+          ))}
+        </Segmented>
+
+        <Divider vertical />
+
+        {syncEnabled && (
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={onSyncNow}
+            disabled={syncPending}
+            title={m.sync_now()}
+            aria-label={m.sync_now()}
+          >
+            <RefreshCw className={cn(syncPending && 'animate-spin')} />
+          </Button>
+        )}
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          onClick={() => fileRef.current?.click()}
+          title={m.action_import()}
+          aria-label={m.action_import()}
+        >
+          <Upload />
+        </Button>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          onClick={onExport}
+          title={m.action_export()}
+          aria-label={m.action_export()}
+        >
+          <Download />
+        </Button>
+        <input
+          type="file"
+          accept=".json"
+          ref={fileRef}
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) onImportFile(file)
+            e.target.value = ''
+          }}
+        />
+      </div>
     </div>
   )
 }

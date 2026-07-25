@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertDialog, Dialog } from 'radix-ui'
-import { X } from 'lucide-react'
 
+import { ConfirmDialog, Dialog, DialogBody, EmptyState } from '#/components/ui'
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
@@ -69,48 +68,31 @@ export function UsersDialog({
   )
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="tv-dialog-overlay" />
-        <Dialog.Content className="tv-dialog" style={{ maxWidth: 760 }}>
-          <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">
-              {m.users_title()}
-            </Dialog.Title>
-            <Dialog.Description className="tv-dialog__description">
-              {m.users_description()}
-            </Dialog.Description>
-          </div>
-
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={m.users_title()}
+        description={m.users_description()}
+        width={820}
+      >
+        <DialogBody>
           {users.length === 0 ? (
-            <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
+            <EmptyState>
               {listQuery.isLoading ? m.loading() : m.users_none()}
-            </span>
+            </EmptyState>
           ) : (
-            <div style={{ maxHeight: '58vh', overflowY: 'auto' }}>
-              <UserTable
-                users={users}
-                currentUserId={currentUserId}
-                onEdit={setEditing}
-                onBan={setBanning}
-                onUnban={(user) => unbanMut.mutate({ id: user.id })}
-                onDelete={setDeleting}
-              />
-            </div>
+            <UserTable
+              users={users}
+              currentUserId={currentUserId}
+              onEdit={setEditing}
+              onBan={setBanning}
+              onUnban={(user) => unbanMut.mutate({ id: user.id })}
+              onDelete={setDeleting}
+            />
           )}
-
-          <Dialog.Close asChild>
-            <button
-              type="button"
-              className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-              aria-label={m.common_close()}
-              style={{ position: 'absolute', top: 8, right: 8 }}
-            >
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
+        </DialogBody>
+      </Dialog>
 
       <EditUserDialog
         user={editing}
@@ -131,51 +113,18 @@ export function UsersDialog({
           setBanning(null)
         }}
       />
-      <AlertDialog.Root
+      <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}
-      >
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className="tv-dialog-overlay" />
-          <AlertDialog.Content className="tv-dialog" style={{ maxWidth: 400 }}>
-            <div className="tv-dialog__header">
-              <AlertDialog.Title className="tv-dialog__title">
-                {m.users_delete_title()}
-              </AlertDialog.Title>
-              <AlertDialog.Description className="tv-dialog__description">
-                {deleting
-                  ? m.users_delete_confirm({ name: deleting.name })
-                  : ''}
-              </AlertDialog.Description>
-            </div>
-            <div className="tv-dialog__footer">
-              <AlertDialog.Cancel asChild>
-                <button
-                  type="button"
-                  className="tv-btn tv-btn--outline tv-btn--sm"
-                >
-                  {m.common_cancel()}
-                </button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <button
-                  type="button"
-                  className="tv-btn tv-btn--destructive tv-btn--sm"
-                  disabled={removeMut.isPending}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (deleting) removeMut.mutate({ id: deleting.id })
-                  }}
-                >
-                  {m.common_delete()}
-                </button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
-    </Dialog.Root>
+        title={m.users_delete_title()}
+        description={
+          deleting ? m.users_delete_confirm({ name: deleting.name }) : ''
+        }
+        confirmLabel={m.common_delete()}
+        onConfirm={() => {
+          if (deleting) removeMut.mutate({ id: deleting.id })
+        }}
+      />
+    </>
   )
 }
-
-/* -------------------------------------------------------------------------- */

@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Dialog } from 'radix-ui'
-import { X } from 'lucide-react'
 
+import { Dialog, DialogBody } from '#/components/ui'
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
@@ -102,9 +101,10 @@ export function EnrollmentDialog({
   }
 
   return (
-    <Dialog.Root
+    <Dialog
       open={open}
       onOpenChange={(next) => {
+        // A single-use token is unrecoverable once this closes.
         if (
           !next &&
           created?.kind === 'single' &&
@@ -116,77 +116,51 @@ export function EnrollmentDialog({
         onOpenChange(next)
         if (!next) setCreated(null)
       }}
+      title={m.enrollment_title()}
+      description={m.enrollment_description()}
+      width={760}
     >
-      <Dialog.Portal>
-        <Dialog.Overlay className="tv-dialog-overlay" />
-        <Dialog.Content
-          className="tv-dialog"
-          style={{ maxWidth: 760, maxHeight: '90vh' }}
-        >
-          <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">
-              {m.enrollment_title()}
-            </Dialog.Title>
-            <Dialog.Description className="tv-dialog__description">
-              {m.enrollment_description()}
-            </Dialog.Description>
-          </div>
-
-          {created ? (
-            <EnrollmentScriptPanel
-              created={created}
-              platform={platform}
-              onPlatform={setPlatform}
-              onCopy={copyScript}
-              onDownload={downloadScript}
-              onCreateAnother={() => setCreated(null)}
+      <DialogBody>
+        {created ? (
+          <EnrollmentScriptPanel
+            created={created}
+            platform={platform}
+            onPlatform={setPlatform}
+            onCopy={copyScript}
+            onDownload={downloadScript}
+            onCreateAnother={() => setCreated(null)}
+          />
+        ) : (
+          <>
+            <EnrollmentForm
+              customerNames={customerNames}
+              busy={createMut.isPending}
+              onSubmit={(values) =>
+                createMut.mutate({ ...values, baseUrl: window.location.origin })
+              }
             />
-          ) : (
-            <>
-              <EnrollmentForm
-                customerNames={customerNames}
-                busy={createMut.isPending}
-                onSubmit={(values) =>
-                  createMut.mutate({
-                    ...values,
-                    baseUrl: window.location.origin,
-                  })
-                }
-              />
 
-              <EnrollmentTokenList
-                tokens={listQuery.data ?? []}
-                scriptsPending={scriptsMut.isPending}
-                removePending={removeMut.isPending}
-                onDownloadAgain={(id) =>
-                  scriptsMut.mutate({ id, baseUrl: window.location.origin })
+            <EnrollmentTokenList
+              tokens={listQuery.data ?? []}
+              scriptsPending={scriptsMut.isPending}
+              removePending={removeMut.isPending}
+              onDownloadAgain={(id) =>
+                scriptsMut.mutate({ id, baseUrl: window.location.origin })
+              }
+              onRevoke={(id) => revokeMut.mutate({ id })}
+              onDelete={(token) => {
+                if (
+                  window.confirm(
+                    m.enrollment_delete_confirm({ name: token.name }),
+                  )
+                ) {
+                  removeMut.mutate({ id: token.id })
                 }
-                onRevoke={(id) => revokeMut.mutate({ id })}
-                onDelete={(token) => {
-                  if (
-                    window.confirm(
-                      m.enrollment_delete_confirm({ name: token.name }),
-                    )
-                  ) {
-                    removeMut.mutate({ id: token.id })
-                  }
-                }}
-              />
-            </>
-          )}
-
-          <Dialog.Close asChild>
-            <button
-              type="button"
-              className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-              aria-label={m.common_close()}
-              style={{ position: 'absolute', top: 8, right: 8 }}
-            >
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+              }}
+            />
+          </>
+        )}
+      </DialogBody>
+    </Dialog>
   )
 }

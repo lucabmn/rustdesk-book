@@ -1,10 +1,20 @@
-import { Building2 } from 'lucide-react'
+import { useId, useState } from 'react'
+import { Building2, ChevronRight } from 'lucide-react'
 
-import { formatRustdeskId, osLabel } from '#/lib/device-meta'
+import { activatable, Badge, Card, StatusDot } from '#/components/ui'
+import {
+  readCollapsedGroups,
+  toggleCollapsed,
+  writeCollapsedGroups,
+} from '#/lib/collapsed-groups'
+import { osLabel } from '#/lib/device-meta'
 import type { Device } from '#/orpc/schema'
-import { activatable, ConnectButton, DeviceTags, StatusDot } from '../ui-bits'
+import { cn } from '#/lib/utils'
+import { ConnectButton, DeviceId, DeviceTags } from '../device-bits'
 
 export interface DeviceGroup {
+  /** Stable identity — the customer name, or '' for the unassigned bucket. */
+  key: string
   name: string
   items: Device[]
 }
@@ -15,71 +25,79 @@ export interface GroupedViewProps {
   onConnect: (device: Device) => void
 }
 
-/** Devices bucketed by customer, one card per customer. */
+/** Devices bucketed by customer, one foldable card per customer. */
 export function GroupedView({ groups, onOpen, onConnect }: GroupedViewProps) {
+  const baseId = useId()
+
+  // Read straight from storage as the initial value, so a group that was left
+  // collapsed is collapsed in this component's very first paint rather than
+  // rendering open and snapping shut afterwards.
+  const [collapsed, setCollapsed] = useState(readCollapsedGroups)
+
+  function toggle(key: string) {
+    const next = toggleCollapsed(collapsed, key)
+    setCollapsed(next)
+    writeCollapsedGroups(next)
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {groups.map((g) => (
-        <div key={g.name} className="tv-card tv-flush">
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '11px 14px',
-              borderBottom: '1px solid var(--bd-subtle)',
-            }}
-          >
-            <Building2
-              size={15}
-              strokeWidth={1.5}
-              style={{ color: 'var(--fg-3)' }}
-            />
-            <span style={{ fontWeight: 600, fontSize: 13 }}>{g.name}</span>
-            <span className="tv-badge tv-badge--secondary">
-              {g.items.length}
-            </span>
-          </div>
-          {g.items.map((d) => (
-            <div
-              key={d.id}
-              className="tv-row-click"
-              {...activatable(() => onOpen(d))}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '9px 14px',
-                borderBottom: '1px solid var(--bd-subtle)',
-              }}
-            >
-              <StatusDot status={d.status} />
-              <span
-                className="mono"
-                style={{ fontSize: 12, color: 'var(--fg-2)', width: 110 }}
+    <div className="flex flex-col gap-3">
+      {groups.map((g) => {
+        const open = !collapsed.has(g.key)
+        const panelId = `${baseId}-${g.key || 'unassigned'}`
+        return (
+          <Card key={g.key}>
+            <h2>
+              <button
+                type="button"
+                aria-expanded={open}
+                aria-controls={panelId}
+                onClick={() => toggle(g.key)}
+                className="flex w-full items-center gap-2 rounded-lg px-3.5 py-2.5 text-left transition-colors hover:bg-hover"
               >
-                {formatRustdeskId(d.rustdeskId)}
-              </span>
-              <span
-                style={{
-                  fontWeight: 600,
-                  width: 160,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {d.alias}
-              </span>
-              <span style={{ color: 'var(--fg-3)', flex: 1 }}>
-                {osLabel(d.osKey)}
-              </span>
-              <DeviceTags tags={d.tags} />
-              <ConnectButton onClick={() => onConnect(d)} />
-            </div>
-          ))}
-        </div>
-      ))}
+                <ChevronRight
+                  className={cn(
+                    'size-3.5 shrink-0 text-faint transition-transform',
+                    open && 'rotate-90',
+                  )}
+                />
+                <Building2 className="size-3.5 shrink-0 text-faint" />
+                <span className="truncate font-medium text-sm text-text">
+                  {g.name}
+                </span>
+                {/* The count is what makes a folded group still informative. */}
+                <Badge className="tnum">{g.items.length}</Badge>
+              </button>
+            </h2>
+
+            {open && (
+              <div id={panelId} className="border-line border-t">
+                {g.items.map((d) => (
+                  <div
+                    key={d.id}
+                    {...activatable(() => onOpen(d))}
+                    className="flex cursor-pointer items-center gap-3 border-line border-b px-3.5 py-2 transition-colors last:border-b-0 hover:bg-hover"
+                  >
+                    <StatusDot status={d.status} />
+                    <DeviceId id={d.rustdeskId} className="w-28 shrink-0" />
+                    <span className="w-40 shrink-0 truncate font-medium text-text text-xs">
+                      {d.alias}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-muted text-xs">
+                      {osLabel(d.osKey)}
+                    </span>
+                    <DeviceTags tags={d.tags} className="flex-nowrap" />
+                    <ConnectButton
+                      variant="outline"
+                      onClick={() => onConnect(d)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )
+      })}
     </div>
   )
 }

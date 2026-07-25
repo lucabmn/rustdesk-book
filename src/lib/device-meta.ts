@@ -23,13 +23,17 @@ export function osLabel(key: string | null | undefined): string {
 export const DEVICE_STATUSES = ['online', 'away', 'offline'] as const
 export type DeviceStatus = (typeof DEVICE_STATUSES)[number]
 
-/** Per-status presentation: i18n label key + Tenvima dot/chip classes. */
-export const STATUS_META: Record<DeviceStatus, { dot: string; chip: string }> =
-  {
-    online: { dot: 'tv-dot--ok', chip: 'tv-chip tv-chip--ok' },
-    away: { dot: 'tv-dot--warn', chip: 'tv-chip tv-chip--warn' },
-    offline: { dot: 'tv-dot--neutral', chip: 'tv-chip tv-chip--neutral' },
-  }
+/**
+ * Semantic tone per status. The UI layer decides how a tone renders; this only
+ * says what a status *means*, so it stays safe to import on the server.
+ */
+export type StatusTone = 'ok' | 'warn' | 'neutral'
+
+export const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
+  online: 'ok',
+  away: 'warn',
+  offline: 'neutral',
+}
 
 /** Formats a RustDesk id for display: 123456789 -> "123 456 789". */
 export function formatRustdeskId(id: string): string {

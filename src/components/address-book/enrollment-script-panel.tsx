@@ -1,5 +1,6 @@
 import { Copy, Download, Plus } from 'lucide-react'
 
+import { Button, Segmented, SegmentedItem } from '#/components/ui'
 import { m } from '#/paraglide/messages'
 
 export type Platform = 'windows' | 'linux' | 'macos'
@@ -44,88 +45,65 @@ export function EnrollmentScriptPanel({
   onCreateAnother,
 }: EnrollmentScriptPanelProps) {
   const currentScript = created.scripts[platform] ?? ''
+  const permanent = created.kind === 'permanent'
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        minHeight: 0,
-      }}
-    >
-      <div
-        style={{
-          padding: '10px 12px',
-          borderRadius: 6,
-          border: '1px solid var(--s-warn)',
-          background: 'color-mix(in srgb, var(--s-warn) 10%, transparent)',
-          fontSize: 12,
-        }}
-      >
-        <strong>
-          {created.kind === 'permanent'
+    <div className="flex min-h-0 flex-col gap-3">
+      {/* A single-use token is shown exactly once — say so loudly enough that
+          nobody closes the dialog without saving the script. */}
+      <p className="rounded-md border border-warn/40 bg-warn-soft px-3 py-2 text-text text-xs leading-relaxed">
+        <strong className="font-semibold">
+          {permanent
             ? m.enrollment_token_permanent_title()
             : m.enrollment_token_once_title()}
         </strong>{' '}
-        {created.kind === 'permanent'
+        {permanent
           ? m.enrollment_token_permanent_hint()
           : m.enrollment_token_once_hint()}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Segmented>
+          {PLATFORMS.map((item) => (
+            <SegmentedItem
+              key={item.id}
+              active={platform === item.id}
+              onClick={() => onPlatform(item.id)}
+            >
+              {item.label}
+            </SegmentedItem>
+          ))}
+        </Segmented>
+        <span className="flex-1" />
+        <Button onClick={onCopy}>
+          <Copy /> {m.enrollment_copy_script()}
+        </Button>
+        <Button onClick={onDownload}>
+          <Download /> {m.enrollment_download_script()}
+        </Button>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {PLATFORMS.map((item) => (
-          <button
-            type="button"
-            key={item.id}
-            className={`tv-btn tv-btn--sm ${platform === item.id ? 'tv-btn--default' : 'tv-btn--ghost'}`}
-            onClick={() => onPlatform(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
-        <span style={{ flex: 1 }} />
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--sm"
-          onClick={onCopy}
-        >
-          <Copy size={13} /> {m.enrollment_copy_script()}
-        </button>
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--sm"
-          onClick={onDownload}
-        >
-          <Download size={13} /> {m.enrollment_download_script()}
-        </button>
-      </div>
-
-      <textarea
-        className="tv-input"
-        readOnly
-        value={currentScript}
+      {/* Focusable region so keyboard-only users can scroll a long script. */}
+      <section
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be reachable without a pointer
+        tabIndex={0}
         aria-label={m.enrollment_script_label()}
-        style={{
-          minHeight: 300,
-          resize: 'vertical',
-          fontFamily: 'var(--font-mono, monospace)',
-          fontSize: 11,
-          lineHeight: 1.45,
-          whiteSpace: 'pre',
-        }}
-      />
-      <div style={{ fontSize: 11.5, color: 'var(--fg-4)' }}>
+        className="max-h-80 overflow-auto rounded-md border border-line bg-sunken"
+      >
+        <pre className="p-3 font-mono text-[11px] text-text leading-relaxed">
+          <code>{currentScript}</code>
+        </pre>
+      </section>
+
+      <p className="text-2xs text-faint">
         {platform === 'windows'
           ? m.enrollment_run_windows()
           : m.enrollment_run_unix()}
-      </div>
-      <button
-        type="button"
-        className="tv-btn tv-btn--default tv-btn--sm"
-        onClick={onCreateAnother}
-      >
-        <Plus size={13} /> {m.enrollment_create_another()}
-      </button>
+      </p>
+
+      <Button variant="accent" className="self-start" onClick={onCreateAnother}>
+        <Plus /> {m.enrollment_create_another()}
+      </Button>
     </div>
   )
 }

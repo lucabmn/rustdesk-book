@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Popover } from 'radix-ui'
 
+import { Input } from '#/components/ui'
 import { filterCustomers, shouldOfferCreate } from '#/lib/customer-suggest'
+import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 
 interface Props {
@@ -21,6 +24,7 @@ interface Props {
   /** When set, a sticky first row that commits '' — e.g. „Alle Kunden“ in the filter. */
   clearLabel?: string
   id?: string
+  className?: string
   'aria-label'?: string
 }
 
@@ -39,12 +43,12 @@ export function CustomerCombobox({
   allowCreate = false,
   clearLabel,
   id,
+  className,
   'aria-label': ariaLabel,
 }: Props) {
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
-  const wrapRef = useRef<HTMLDivElement>(null)
   const focusedRef = useRef(false)
   const listId = useId()
 
@@ -54,17 +58,6 @@ export function CustomerCombobox({
   useEffect(() => {
     if (!focusedRef.current) setQuery(value)
   }, [value])
-
-  // Close on click outside; discard an uncommitted query in select mode.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the listener is (re)bound purely on open/close; `close` is stable for its lifetime
-  useEffect(() => {
-    if (!open) return
-    function onDocMouseDown(e: MouseEvent) {
-      if (!wrapRef.current?.contains(e.target as Node)) close()
-    }
-    document.addEventListener('mousedown', onDocMouseDown)
-    return () => document.removeEventListener('mousedown', onDocMouseDown)
-  }, [open])
 
   const matches = filterCustomers(options, query)
   const offerCreate = allowCreate && shouldOfferCreate(options, query)
@@ -139,47 +132,51 @@ export function CustomerCombobox({
 
   const showEmpty = matches.length === 0 && !offerCreate
 
+  const hasList = rows.length > 0 || showEmpty
+
   return (
-    <div ref={wrapRef} style={{ position: 'relative' }}>
-      <input
-        id={id}
-        className="tv-input"
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={active >= 0 ? optionId(active) : undefined}
-        aria-label={ariaLabel}
-        autoComplete="off"
-        value={query}
-        placeholder={placeholder}
-        onChange={(e) => onInput(e.target.value)}
-        onFocus={() => {
-          focusedRef.current = true
-          setOpen(true)
-        }}
-        onBlur={() => {
-          focusedRef.current = false
-        }}
-        onKeyDown={onKeyDown}
-      />
-      {open && (rows.length > 0 || showEmpty) && (
-        <div
+    // The list rides Radix's Popover rather than a plain absolute box: inside a
+    // dialog the panel clips overflow, and a hand-rolled portal would sit
+    // outside the dialog's dismissable layer (clicking a row would close the
+    // dialog). Popover composes with Dialog and handles both.
+    <Popover.Root open={open && hasList} onOpenChange={(o) => !o && close()}>
+      <Popover.Anchor asChild>
+        <div className="relative">
+          <Input
+            id={id}
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={active >= 0 ? optionId(active) : undefined}
+            aria-label={ariaLabel}
+            autoComplete="off"
+            value={query}
+            placeholder={placeholder}
+            className={cn('h-7 text-xs', className)}
+            onChange={(e) => onInput(e.target.value)}
+            onFocus={() => {
+              focusedRef.current = true
+              setOpen(true)
+            }}
+            onBlur={() => {
+              focusedRef.current = false
+            }}
+            onKeyDown={onKeyDown}
+          />
+        </div>
+      </Popover.Anchor>
+
+      <Popover.Portal>
+        <Popover.Content
           id={listId}
           role="listbox"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            right: 0,
-            zIndex: 80,
-            maxHeight: 220,
-            overflowY: 'auto',
-            padding: 4,
-            borderRadius: 8,
-            background: 'var(--bg-panel)',
-            boxShadow: 'var(--sh-pop), var(--ring-card)',
-          }}
+          align="start"
+          sideOffset={4}
+          // Keep the caret in the input — the list is driven from there.
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          className="z-80 max-h-56 w-(--radix-popover-trigger-width) overflow-y-auto rounded-lg border border-line bg-elevated p-1 shadow-pop"
         >
           {rows.map((row, i) => (
             <button
@@ -188,11 +185,11 @@ export function CustomerCombobox({
               role="option"
               id={optionId(i)}
               aria-selected={i === active}
-              className="tv-menu-item"
-              style={{
-                ...(row.muted ? { color: 'var(--fg-2)' } : {}),
-                ...(i === active ? { background: 'var(--bg-active)' } : {}),
-              }}
+              className={cn(
+                'flex w-full cursor-pointer items-center rounded-md px-2 py-1.5 text-left text-xs transition-colors',
+                row.muted ? 'text-muted' : 'text-text',
+                i === active && 'bg-hover',
+              )}
               // mousedown (not click) so selection lands before the input blurs.
               onMouseDown={(e) => {
                 e.preventDefault()
@@ -204,18 +201,12 @@ export function CustomerCombobox({
             </button>
           ))}
           {showEmpty && (
-            <div
-              style={{
-                padding: '7px 8px',
-                fontSize: 12.5,
-                color: 'var(--fg-3)',
-              }}
-            >
+            <div className="px-2 py-1.5 text-muted text-xs">
               {m.combobox_empty()}
             </div>
           )}
-        </div>
-      )}
-    </div>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }

@@ -1,10 +1,12 @@
 import { useState } from 'react'
 
+import { EmptyState, Spinner } from '#/components/ui'
 import { ANY, initialsOf } from '#/lib/address-book-filters'
 import type { SessionUser } from '#/lib/auth-server'
+import type { ViewMode } from '#/lib/view-mode'
 import { m } from '#/paraglide/messages'
 import { AuditDialog } from './audit-dialog'
-import { AppRail, StatusBar, TopBar } from './chrome'
+import { TopBar } from './chrome'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 import { CustomersDialog } from './customers-dialog'
 import { DeviceDetailDrawer } from './device-detail-drawer'
@@ -12,8 +14,7 @@ import { DeviceFormDialog } from './device-form-dialog'
 import { EnrollmentDialog } from './enrollment-dialog'
 import { FilterSidebar } from './filter-sidebar'
 import { InviteDialog } from './invite-dialog'
-import { FilterBar, Toolbar } from './toolbar'
-import { EmptyState } from './ui-bits'
+import { ContentHeader } from './toolbar'
 import { useAddressBook } from './use-address-book'
 import { UsersDialog } from './users-dialog'
 import { CardsView } from './views/cards-view'
@@ -21,11 +22,18 @@ import { GroupedView } from './views/grouped-view'
 import { TableView } from './views/table-view'
 
 /**
- * Address-book shell. Layout and composition only — all state lives in
- * {@link useAddressBook}, all filter logic in `lib/address-book-filters`.
+ * Address-book shell: one top bar, one sidebar, one content header, then data.
+ * Layout and composition only — all state lives in {@link useAddressBook}, all
+ * filter logic in `lib/address-book-filters`.
  */
-export function AddressBook({ user }: { user: SessionUser }) {
-  const book = useAddressBook()
+export function AddressBook({
+  user,
+  initialView,
+}: {
+  user: SessionUser
+  initialView: ViewMode
+}) {
+  const book = useAddressBook(initialView)
   const { filters, patch, actions, stats } = book
   const isAdmin = user.role === 'admin'
 
@@ -35,19 +43,58 @@ export function AddressBook({ user }: { user: SessionUser }) {
   const [customersOpen, setCustomersOpen] = useState(false)
   const [enrollmentOpen, setEnrollmentOpen] = useState(false)
 
+  // The table bleeds into a bounded scroll area so its header can pin; the card
+  // and grouped views are collections of their own surfaces and keep padding.
+  const isTable = book.view === 'table'
+
+  function body() {
+    if (book.isLoading) {
+      return (
+        <div className="flex items-center justify-center gap-2 py-16 text-muted text-xs">
+          <Spinner className="size-3.5" />
+          {m.loading()}
+        </div>
+      )
+    }
+    if (book.devices.length === 0) {
+      return <EmptyState className="py-20">{m.empty_devices()}</EmptyState>
+    }
+    if (isTable) {
+      return (
+        <TableView
+          devices={book.devices}
+          onOpen={book.setDetail}
+          onConnect={actions.connect}
+          onEdit={actions.openEdit}
+          onDelete={book.setPendingDelete}
+          onToggleFavorite={actions.toggleFavorite}
+        />
+      )
+    }
+    if (book.view === 'grouped') {
+      return (
+        <GroupedView
+          groups={book.grouped}
+          onOpen={book.setDetail}
+          onConnect={actions.connect}
+        />
+      )
+    }
+    return (
+      <CardsView
+        devices={book.devices}
+        onOpen={book.setDetail}
+        onConnect={actions.connect}
+        onEdit={actions.openEdit}
+        onToggleFavorite={actions.toggleFavorite}
+      />
+    )
+  }
+
   return (
     <div
       data-theme={book.theme}
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--bg-app)',
-        color: 'var(--fg-1)',
-        fontFamily: 'var(--font-sans)',
-        fontSize: 13,
-        overflow: 'hidden',
-      }}
+      className="flex h-screen flex-col overflow-hidden bg-canvas text-text"
     >
       <TopBar
         search={filters.search}
@@ -68,39 +115,27 @@ export function AddressBook({ user }: { user: SessionUser }) {
         }}
       />
 
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <AppRail
-          isAdmin={isAdmin}
-          onEnrollment={() => setEnrollmentOpen(true)}
-          onUsers={() => setUsersOpen(true)}
-          onAudit={() => setAuditOpen(true)}
-          onInvite={() => setInviteOpen(true)}
-        />
-
+      <div className="flex min-h-0 flex-1">
         <FilterSidebar
           filters={filters}
           patch={patch}
           onToggleTag={actions.toggleTag}
           total={stats?.total}
           customers={stats?.customers ?? []}
+          operatingSystems={stats?.operatingSystems ?? []}
           tags={stats?.tags ?? []}
           isAdmin={isAdmin}
           onManageCustomers={() => setCustomersOpen(true)}
         />
 
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            minWidth: 0,
-          }}
-        >
-          <Toolbar
+        <main className="flex min-w-0 flex-1 flex-col">
+          <ContentHeader
             heading={
               filters.customer === ANY ? m.nav_all_devices() : filters.customer
             }
             count={book.devices.length}
+            onlineCount={stats?.online ?? 0}
+            customerCount={stats?.customers.length ?? 0}
             view={book.view}
             onView={book.setView}
             syncEnabled={book.syncEnabled}
@@ -108,55 +143,19 @@ export function AddressBook({ user }: { user: SessionUser }) {
             onSyncNow={book.syncNow}
             onExport={actions.exportDevices}
             onImportFile={actions.importFile}
-          />
-
-          <FilterBar
-            filters={filters}
-            patch={patch}
-            osNames={book.osNames}
-            customerNames={book.customerNames}
             hasActiveFilters={book.hasActiveFilters}
-            onReset={actions.clearFilters}
-            onlineCount={stats?.online ?? 0}
-            customerCount={stats?.customers.length ?? 0}
+            onResetFilters={actions.clearFilters}
           />
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
-            {book.isLoading ? (
-              <EmptyState>{m.loading()}</EmptyState>
-            ) : book.devices.length === 0 ? (
-              <div className="tv-card tv-flush">
-                <EmptyState>{m.empty_devices()}</EmptyState>
-              </div>
-            ) : book.view === 'table' ? (
-              <TableView
-                devices={book.devices}
-                onOpen={book.setDetail}
-                onConnect={actions.connect}
-                onEdit={actions.openEdit}
-                onDelete={book.setPendingDelete}
-                onToggleFavorite={actions.toggleFavorite}
-              />
-            ) : book.view === 'grouped' ? (
-              <GroupedView
-                groups={book.grouped}
-                onOpen={book.setDetail}
-                onConnect={actions.connect}
-              />
-            ) : (
-              <CardsView
-                devices={book.devices}
-                onOpen={book.setDetail}
-                onConnect={actions.connect}
-                onEdit={actions.openEdit}
-                onToggleFavorite={actions.toggleFavorite}
-              />
-            )}
+          <div
+            className={
+              isTable ? 'min-h-0 flex-1' : 'min-h-0 flex-1 overflow-y-auto p-4'
+            }
+          >
+            {body()}
           </div>
-        </div>
+        </main>
       </div>
-
-      <StatusBar total={stats?.total ?? 0} />
 
       <DeviceFormDialog
         open={book.formOpen}

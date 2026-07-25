@@ -1,9 +1,23 @@
-import { Building2, MonitorDot, Settings2, Star } from 'lucide-react'
+import {
+  Building2,
+  Monitor,
+  MonitorSmartphone,
+  Settings2,
+  Star,
+} from 'lucide-react'
 
+import {
+  Button,
+  NavItem,
+  SectionLabel,
+  StatusDot,
+  TagChip,
+} from '#/components/ui'
 import { ANY, type FilterState } from '#/lib/address-book-filters'
+import { DEVICE_STATUSES } from '#/lib/device-meta'
+import { statusLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import { GroupSidebar } from './group-sidebar'
-import { SidebarHeading } from './ui-bits'
 
 export interface Facet {
   name: string
@@ -16,157 +30,177 @@ export interface FilterSidebarProps {
   onToggleTag: (name: string) => void
   total?: number
   customers: Facet[]
+  operatingSystems: Facet[]
   tags: Facet[]
   isAdmin: boolean
   onManageCustomers: () => void
 }
 
-/** Context sidebar: scope selection, customer facets, tag facets and groups. */
+/** Section header with an optional action button on the right. */
+function Group({
+  title,
+  action,
+  children,
+}: {
+  title: string
+  action?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <div className="px-2 pt-4">
+      <div className="flex h-6 items-center justify-between gap-2 px-2">
+        <SectionLabel>{title}</SectionLabel>
+        {action}
+      </div>
+      <div className="mt-0.5 flex flex-col gap-px">{children}</div>
+    </div>
+  )
+}
+
+/**
+ * The app's only navigation. Every filter dimension lives here — scope, status,
+ * customer, OS, tag, group — which is what let the separate filter bar go: you
+ * narrow the list where you already are, instead of in a band above it.
+ */
 export function FilterSidebar({
   filters,
   patch,
   onToggleTag,
   total,
   customers,
+  operatingSystems,
   tags,
   isAdmin,
   onManageCustomers,
 }: FilterSidebarProps) {
   const allActive =
-    filters.customer === ANY && !filters.favorite && !filters.groupId
+    filters.customer === ANY &&
+    !filters.favorite &&
+    !filters.groupId &&
+    filters.status === ANY &&
+    filters.osKey === ANY
 
   return (
-    <div
-      style={{
-        width: 246,
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--bg-chrome)',
-        borderRight: '1px solid var(--bd-1)',
-        overflowY: 'auto',
-      }}
-    >
-      <div style={{ padding: '14px 14px 10px' }}>
-        <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nav_title()}</div>
-        <div style={{ fontSize: 11.5, color: 'var(--fg-3)', marginTop: 2 }}>
-          {m.nav_subtitle()}
-        </div>
+    <aside className="flex w-56 shrink-0 flex-col overflow-y-auto border-line border-r bg-surface pb-6">
+      <div className="px-4 pt-3.5 pb-1">
+        <h2 className="font-semibold text-sm text-text">{m.nav_title()}</h2>
+        <p className="mt-px text-muted text-xs">{m.nav_subtitle()}</p>
       </div>
 
-      <button
-        type="button"
-        className="tv-navitem"
-        data-active={allActive}
-        onClick={() => patch({ customer: ANY, favorite: false, groupId: null })}
-      >
-        <MonitorDot className="tv-navitem__icon" />
-        <span className="tv-navitem__label">{m.nav_all_devices()}</span>
-        <span className="tv-navitem__count">{total ?? '—'}</span>
-      </button>
-
-      <button
-        type="button"
-        className="tv-navitem"
-        data-active={filters.favorite}
-        onClick={() => patch({ favorite: !filters.favorite })}
-      >
-        <Star
-          className="tv-navitem__icon"
-          style={filters.favorite ? { fill: 'currentColor' } : undefined}
-        />
-        <span className="tv-navitem__label">{m.nav_favorites()}</span>
-      </button>
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 14px 6px',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 10.5,
-            fontWeight: 600,
-            letterSpacing: '.05em',
-            textTransform: 'uppercase',
-            color: 'var(--fg-4)',
-          }}
-        >
-          {m.section_customers()}
-        </span>
-        {isAdmin && (
-          <button
-            type="button"
-            className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-            title={m.customers_manage()}
-            aria-label={m.customers_manage()}
-            onClick={onManageCustomers}
-          >
-            <Settings2 size={14} />
-          </button>
-        )}
-      </div>
-      {customers.map((c) => (
-        <button
-          type="button"
-          key={c.name}
-          className="tv-navitem"
-          data-active={filters.customer === c.name}
+      <div className="flex flex-col gap-px px-2 pt-3">
+        <NavItem
+          icon={MonitorSmartphone}
+          label={m.nav_all_devices()}
+          count={total ?? '—'}
+          active={allActive}
           onClick={() =>
-            patch({ customer: filters.customer === c.name ? ANY : c.name })
+            patch({
+              customer: ANY,
+              favorite: false,
+              groupId: null,
+              status: ANY,
+              osKey: ANY,
+            })
           }
-        >
-          <Building2 className="tv-navitem__icon" />
-          <span className="tv-navitem__label">{c.name}</span>
-          <span className="tv-navitem__count">{c.count}</span>
-        </button>
-      ))}
-
-      <SidebarHeading>{m.section_tags()}</SidebarHeading>
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 6,
-          padding: '0 14px 16px',
-        }}
-      >
-        {tags.map((t) => {
-          const on = filters.tags.includes(t.name)
-          return (
-            <button
-              type="button"
-              key={t.name}
-              onClick={() => onToggleTag(t.name)}
-              style={{
-                height: 22,
-                padding: '0 9px',
-                borderRadius: 999,
-                border: `1px solid ${on ? 'var(--brand)' : 'var(--bd-1)'}`,
-                background: on ? 'var(--brand-soft)' : 'var(--bg-sunken)',
-                color: on ? 'var(--brand)' : 'var(--fg-2)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 11.5,
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-            >
-              {t.name}
-              <span style={{ opacity: 0.6, marginLeft: 3 }}>{t.count}</span>
-            </button>
-          )
-        })}
+        />
+        <NavItem
+          icon={Star}
+          label={m.nav_favorites()}
+          active={filters.favorite}
+          onClick={() => patch({ favorite: !filters.favorite })}
+        />
       </div>
+
+      <Group title={m.form_status_label()}>
+        <div className="flex flex-wrap gap-1 px-2 pt-1">
+          {DEVICE_STATUSES.map((s) => {
+            const on = filters.status === s
+            return (
+              <TagChip
+                key={s}
+                active={on}
+                onClick={() => patch({ status: on ? ANY : s })}
+              >
+                <StatusDot status={s} className="size-1.5" />
+                {statusLabel(s)}
+              </TagChip>
+            )
+          })}
+        </div>
+      </Group>
+
+      <Group
+        title={m.section_customers()}
+        action={
+          isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              title={m.customers_manage()}
+              aria-label={m.customers_manage()}
+              onClick={onManageCustomers}
+            >
+              <Settings2 />
+            </Button>
+          )
+        }
+      >
+        {customers.length === 0 ? (
+          <p className="px-2 py-1 text-2xs text-faint">{m.customers_none()}</p>
+        ) : (
+          customers.map((c) => (
+            <NavItem
+              key={c.name}
+              icon={Building2}
+              label={c.name}
+              count={c.count}
+              active={filters.customer === c.name}
+              onClick={() =>
+                patch({ customer: filters.customer === c.name ? ANY : c.name })
+              }
+            />
+          ))
+        )}
+      </Group>
+
+      {operatingSystems.length > 0 && (
+        <Group title={m.form_os_label()}>
+          {operatingSystems.map((o) => (
+            <NavItem
+              key={o.name}
+              icon={Monitor}
+              label={o.name}
+              count={o.count}
+              active={filters.osKey === o.name}
+              onClick={() =>
+                patch({ osKey: filters.osKey === o.name ? ANY : o.name })
+              }
+            />
+          ))}
+        </Group>
+      )}
+
+      {tags.length > 0 && (
+        <Group title={m.section_tags()}>
+          <div className="flex flex-wrap gap-1 px-2 pt-1">
+            {tags.map((t) => (
+              <TagChip
+                key={t.name}
+                count={t.count}
+                active={filters.tags.includes(t.name)}
+                onClick={() => onToggleTag(t.name)}
+              >
+                {t.name}
+              </TagChip>
+            ))}
+          </div>
+        </Group>
+      )}
 
       <GroupSidebar
         activeGroupId={filters.groupId}
         onSelect={(groupId) => patch({ groupId })}
       />
-    </div>
+    </aside>
   )
 }

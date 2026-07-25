@@ -1,3 +1,0 @@
-# Task for reviewer
-
-Reviewe die aktuellen uncommitteten Änderungen für das RustDesk-OSS-Enrollment. Prüfe insbesondere Security (Bearer-Token, Single-use-Atomizität, Passwortbehandlung), Datenmodell/Migration, oRPC/Auth, öffentlichen /api/enroll-Endpunkt, generierte Windows/Linux/macOS-Skripte inklusive unbekanntem Installationspfad und Auto-Installation sowie UI/UX. Keine Änderungen vornehmen. Berichte nur konkrete Bugs/Risiken nach Schweregrad mit Dateipfad/Zeile und Verbesserungsvorschlag; bestätige auch, falls keine Blocker.

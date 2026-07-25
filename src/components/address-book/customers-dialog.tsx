@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Dialog } from 'radix-ui'
-import { Plus, Save, Trash2, X } from 'lucide-react'
+import { Plus, Save, Trash2 } from 'lucide-react'
 
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogBody,
+  EmptyState,
+  Input,
+  Textarea,
+} from '#/components/ui'
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
@@ -43,76 +51,49 @@ export function CustomersDialog({
     }),
   )
 
+  function create() {
+    if (newName.trim()) createMut.mutate({ name: newName.trim() })
+  }
+
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="tv-dialog-overlay" />
-        <Dialog.Content className="tv-dialog" style={{ maxWidth: 640 }}>
-          <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">
-              {m.customers_title()}
-            </Dialog.Title>
-            <Dialog.Description className="tv-dialog__description">
-              {m.customers_description()}
-            </Dialog.Description>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={m.customers_title()}
+      description={m.customers_description()}
+      width={640}
+    >
+      <DialogBody className="flex flex-col gap-3">
+        <div className="flex gap-1.5">
+          <Input
+            value={newName}
+            placeholder={m.customers_new_placeholder()}
+            aria-label={m.customers_new_placeholder()}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && create()}
+          />
+          <Button
+            variant="accent"
+            size="md"
+            disabled={!newName.trim() || createMut.isPending}
+            onClick={create}
+          >
+            <Plus />
+            {m.common_add()}
+          </Button>
+        </div>
+
+        {customers.length === 0 ? (
+          <EmptyState>{m.customers_none()}</EmptyState>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {customers.map((c) => (
+              <CustomerRow key={c.id} customer={c} onChanged={invalidate} />
+            ))}
           </div>
-
-          <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
-            <input
-              className="tv-input"
-              value={newName}
-              placeholder={m.customers_new_placeholder()}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newName.trim()) {
-                  createMut.mutate({ name: newName.trim() })
-                }
-              }}
-            />
-            <button
-              type="button"
-              className="tv-btn tv-btn--default tv-btn--sm"
-              disabled={!newName.trim() || createMut.isPending}
-              onClick={() => createMut.mutate({ name: newName.trim() })}
-            >
-              <Plus size={14} />
-              {m.common_add()}
-            </button>
-          </div>
-
-          {customers.length === 0 ? (
-            <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-              {m.customers_none()}
-            </span>
-          ) : (
-            <div
-              style={{
-                maxHeight: '55vh',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-              }}
-            >
-              {customers.map((c) => (
-                <CustomerRow key={c.id} customer={c} onChanged={invalidate} />
-              ))}
-            </div>
-          )}
-
-          <Dialog.Close asChild>
-            <button
-              type="button"
-              className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-              aria-label={m.common_close()}
-              style={{ position: 'absolute', top: 8, right: 8 }}
-            >
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        )}
+      </DialogBody>
+    </Dialog>
   )
 }
 
@@ -153,34 +134,22 @@ function CustomerRow({
   )
 
   return (
-    <div
-      style={{
-        border: '1px solid var(--bd-1)',
-        borderRadius: 8,
-        padding: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-        background: 'var(--bg-sunken)',
-      }}
-    >
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <input
-          className="tv-input"
+    <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-sunken p-2.5">
+      <div className="flex items-center gap-1.5">
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           aria-label={m.common_name()}
-          style={{ flex: 1 }}
+          className="flex-1"
         />
-        <span
-          className="tv-badge tv-badge--secondary"
-          title={m.customers_device_count()}
-        >
+        <Badge className="tnum" title={m.customers_device_count()}>
           {customer.count}
-        </span>
-        <button
-          type="button"
-          className="tv-btn tv-btn--default tv-btn--icon-sm"
+        </Badge>
+        {/* Save stays disabled until something actually changed, so the row
+            never invites a pointless write. */}
+        <Button
+          variant="accent"
+          size="icon-md"
           disabled={!dirty || !name.trim() || updateMut.isPending}
           title={m.common_save()}
           aria-label={m.common_save()}
@@ -193,34 +162,31 @@ function CustomerRow({
             })
           }
         >
-          <Save size={14} />
-        </button>
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--icon-sm"
+          <Save />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-md"
           title={m.common_delete()}
           aria-label={m.common_delete()}
-          style={{ color: 'var(--s-err)' }}
+          className="hover:bg-danger-soft hover:text-danger"
           onClick={() => removeMut.mutate({ id: customer.id })}
         >
-          <Trash2 size={14} />
-        </button>
+          <Trash2 />
+        </Button>
       </div>
-      <input
-        className="tv-input"
+      <Input
         value={contact}
         placeholder={m.customers_contact_placeholder()}
         onChange={(e) => setContact(e.target.value)}
         aria-label={m.customers_contact_placeholder()}
       />
-      <textarea
-        className="tv-input"
+      <Textarea
         value={notes}
+        rows={2}
         placeholder={m.customers_notes_placeholder()}
         onChange={(e) => setNotes(e.target.value)}
         aria-label={m.customers_notes_placeholder()}
-        rows={2}
-        style={{ resize: 'vertical', minHeight: 34 }}
       />
     </div>
   )

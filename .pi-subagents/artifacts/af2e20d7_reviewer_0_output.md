@@ -1,7 +1,0 @@
-## Review
-
-- **Hoch – Enrollment-Autorisierung ist zu weit und verhindert zentrale Kontrolle:** Sämtliche Token-Operationen verwenden `authed`; jeder Member kann damit permanente externe Bearer-Tokens erzeugen. Gleichzeitig beschränken `list`, `scripts`, `remove` und `revoke` den Zugriff auf `createdBy`, sodass Administratoren fremde Tokens weder sehen noch widerrufen/löschen können (`src/orpc/router/enrollments.ts:39-211`). Wird ein Benutzer nur gesperrt, bleibt sein Token weiterhin aktiv; erst das Löschen des Accounts entfernt es per Cascade (`src/db/schema.ts:142-145`). Das widerspricht dem dokumentierten Admin-Modell (`docs/research/rustdesk-client-enrollment.md:176`) und lässt kompromittierte permanente Tokens praktisch unkontrollierbar. Auch die UI zeigt Enrollment allen Rollen an (`src/components/address-book/address-book.tsx:437-446,986-991`).
-
-- **Hoch – Race Condition bei Legacy-Permanent-Tokens:** Beim erneuten Skriptabruf wird ein fehlendes `tokenCipher` ohne Row-Lock bzw. Compare-and-swap rotiert (`src/orpc/router/enrollments.ts:120-168`). Zwei parallele Abrufe können beide einen neuen Token erzeugen und nacheinander speichern; nur der zuletzt gespeicherte Hash bleibt gültig, während der andere Aufruf bereits Skripte mit einem sofort ungültigen Token zurückgibt. Damit ist Anforderung 2 unter Nebenläufigkeit nicht zuverlässig erfüllt.
-
-Keine Änderungen vorgenommen. Typecheck und alle 36 Tests laufen erfolgreich; DB-/Autorisierungs-/Nebenläufigkeitstests für diese Fälle fehlen.

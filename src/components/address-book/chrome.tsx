@@ -1,21 +1,17 @@
-import {
-  History,
-  Mail,
-  Monitor,
-  Moon,
-  Plus,
-  Rocket,
-  Search,
-  Sun,
-  Users,
-} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Moon, Plus, Search, Sun } from 'lucide-react'
 
+import { BrandGlyph } from '#/components/brand-mark'
+import { Button, Divider, Input, Kbd } from '#/components/ui'
 import type { Theme } from '#/lib/theme'
 import { m } from '#/paraglide/messages'
-import { BrandLogo } from './ui-bits'
 import { UserMenu, type UserMenuProps } from './user-menu'
 
-/** Window chrome: the top bar, the icon rail and the status bar. */
+/**
+ * The single piece of window chrome. Everything that used to live in a second
+ * icon rail is reachable from the user menu, so the app has one vertical
+ * navigation instead of two.
+ */
 
 export interface TopBarProps {
   search: string
@@ -34,215 +30,78 @@ export function TopBar({
   onToggleTheme,
   menu,
 }: TopBarProps) {
+  const searchRef = useRef<HTMLInputElement>(null)
+  const [isMac, setIsMac] = useState(true)
+
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent))
+  }, [])
+
+  // Cmd/Ctrl+K jumps to search from anywhere; Escape gives the list back.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'k') return
+      // Only the platform's own modifier. Accepting both would swallow Ctrl+K
+      // on macOS, where it is kill-to-end-of-line inside any text field.
+      if (isMac ? !event.metaKey : !event.ctrlKey) return
+      event.preventDefault()
+      searchRef.current?.focus()
+      searchRef.current?.select()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isMac])
+
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: 44,
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        padding: '0 14px',
-        background: 'var(--bg-chrome)',
-        borderBottom: '1px solid var(--bd-1)',
-      }}
-    >
-      <span
-        style={{
-          pointerEvents: 'none',
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 1,
-          backgroundImage: 'var(--brand-gradient)',
-          opacity: 0.7,
-        }}
-      />
-      <BrandLogo />
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: 460 }}>
-          <Search
-            size={14}
-            style={{
-              position: 'absolute',
-              left: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--fg-4)',
-              pointerEvents: 'none',
-            }}
-          />
-          <input
-            className="tv-input"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder={m.search_placeholder()}
-            style={{ height: 28, paddingLeft: 32 }}
-          />
-        </div>
-      </div>
-      <div
-        style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
-      >
-        <button
-          type="button"
-          className="tv-btn tv-btn--default tv-btn--sm"
-          onClick={onAdd}
+    <header className="flex h-12 shrink-0 items-center gap-3 border-line border-b bg-surface pr-3 pl-4">
+      {/* Aligned to the sidebar's width so the glyph sits over the nav column. */}
+      <span className="flex w-56 shrink-0 items-center gap-2 text-text">
+        <BrandGlyph className="size-[18px]" />
+        <span className="font-semibold text-xs tracking-tight">
+          rustdesk<span className="text-faint">/</span>book
+        </span>
+      </span>
+
+      <div className="relative min-w-0 max-w-lg flex-1">
+        <Search className="pointer-events-none absolute top-2 left-2.5 size-3.5 text-faint" />
+        <Input
+          ref={searchRef}
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && e.currentTarget.blur()}
+          placeholder={m.search_placeholder()}
+          aria-label={m.search_placeholder()}
+          className="h-7 bg-sunken pr-14 pl-8 text-xs"
+        />
+        {/* Centred by the box rather than a hand-tuned offset, so it stays
+            centred if the field's height ever changes. Hidden from assistive
+            tech — the input's own label already says what this field is. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-0.5"
         >
-          <Plus size={14} strokeWidth={1.75} />
+          <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
+          <Kbd>K</Kbd>
+        </span>
+      </div>
+
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <Button variant="accent" onClick={onAdd}>
+          <Plus />
           {m.device_add()}
-        </button>
-        <button
-          type="button"
-          className="tv-btn tv-btn--ghost tv-btn--icon-sm"
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onToggleTheme}
           title={m.theme_toggle()}
           aria-label={m.theme_toggle()}
         >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <span
-          style={{
-            width: 1,
-            height: 20,
-            background: 'var(--bd-1)',
-            margin: '0 2px',
-          }}
-        />
+          {theme === 'dark' ? <Sun /> : <Moon />}
+        </Button>
+        <Divider vertical className="mx-1" />
         <UserMenu {...menu} />
       </div>
-    </div>
-  )
-}
-
-export interface AppRailProps {
-  isAdmin: boolean
-  onEnrollment: () => void
-  onUsers: () => void
-  onAudit: () => void
-  onInvite: () => void
-}
-
-export function AppRail({
-  isAdmin,
-  onEnrollment,
-  onUsers,
-  onAudit,
-  onInvite,
-}: AppRailProps) {
-  return (
-    <div
-      style={{
-        width: 52,
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3,
-        padding: '8px 0',
-        background: 'var(--bg-sunken)',
-        borderRight: '1px solid var(--bd-1)',
-      }}
-    >
-      <div
-        style={{
-          position: 'relative',
-          width: 34,
-          height: 34,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 8,
-          background: 'var(--brand-soft)',
-          color: 'var(--brand)',
-        }}
-        title={m.nav_title()}
-      >
-        <span
-          style={{
-            position: 'absolute',
-            top: 6,
-            left: -9,
-            bottom: 6,
-            width: 3,
-            borderRadius: '0 3px 3px 0',
-            backgroundImage: 'var(--brand-gradient)',
-          }}
-        />
-        <Monitor size={17} strokeWidth={1.75} />
-      </div>
-      <div style={{ flex: 1 }} />
-      <button
-        type="button"
-        className="tv-rail-ico"
-        title={m.enrollment_menu()}
-        onClick={onEnrollment}
-      >
-        <Rocket size={17} strokeWidth={1.5} />
-      </button>
-      {isAdmin && (
-        <>
-          <button
-            type="button"
-            className="tv-rail-ico"
-            title={m.users_menu()}
-            onClick={onUsers}
-          >
-            <Users size={17} strokeWidth={1.5} />
-          </button>
-          <button
-            type="button"
-            className="tv-rail-ico"
-            title={m.audit_menu()}
-            onClick={onAudit}
-          >
-            <History size={17} strokeWidth={1.5} />
-          </button>
-          <button
-            type="button"
-            className="tv-rail-ico"
-            title={m.rail_invites()}
-            onClick={onInvite}
-          >
-            <Mail size={17} strokeWidth={1.5} />
-          </button>
-        </>
-      )}
-    </div>
-  )
-}
-
-export function StatusBar({ total }: { total: number }) {
-  return (
-    <div
-      style={{
-        height: 24,
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        padding: '0 12px',
-        background: 'var(--bg-chrome)',
-        borderTop: '1px solid var(--bd-1)',
-        fontSize: 11,
-        color: 'var(--fg-4)',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        <span className="tv-dot tv-dot--ok" style={{ width: 5, height: 5 }} />{' '}
-        {m.sb_server_connected()}
-      </span>
-      <span style={{ color: 'var(--fg-3)' }}>
-        {m.sb_devices({ count: total })}
-      </span>
-      <span className="mono">{m.app_name()}</span>
-      <div style={{ flex: 1 }} />
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        {m.sb_selfhosted()}
-      </span>
-    </div>
+    </header>
   )
 }

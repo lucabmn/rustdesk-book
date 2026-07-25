@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 
+import { AuthLayout, FormError } from '#/components/auth-layout'
+import { Button, Field, Input } from '#/components/ui'
 import { authClient } from '#/lib/auth-client'
-import { client, orpc } from '#/orpc/client'
 import { fetchSession } from '#/lib/auth-server'
-import { BrandMark } from '#/components/brand-mark'
-import { LanguageSwitcher } from '#/components/language-switcher'
+import { client, orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 
 export const Route = createFileRoute('/login')({
@@ -53,105 +53,65 @@ function LoginPage() {
   }
 
   return (
-    <div className="tv-auth-wrap">
-      <form className="tv-auth-card" onSubmit={onSubmit}>
-        <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <BrandMark />
-            <LanguageSwitcher />
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>
-              {needsBootstrap ? m.auth_admin_title() : m.auth_signin_title()}
-            </div>
-            <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
-              {needsBootstrap
-                ? m.auth_admin_subtitle()
-                : m.auth_signin_subtitle()}
-            </div>
-          </div>
-        </header>
-
+    <AuthLayout
+      title={needsBootstrap ? m.auth_admin_title() : m.auth_signin_title()}
+      subtitle={
+        needsBootstrap ? m.auth_admin_subtitle() : m.auth_signin_subtitle()
+      }
+    >
+      <form className="flex flex-col gap-4" onSubmit={onSubmit}>
         {needsBootstrap && (
-          <div className="tv-field">
-            <label className="tv-label" htmlFor="name">
-              {m.common_name()}
-            </label>
-            <input
+          <Field label={m.common_name()} htmlFor="name">
+            <Input
               id="name"
-              className="tv-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
               required
             />
-          </div>
+          </Field>
         )}
 
-        <div className="tv-field">
-          <label className="tv-label" htmlFor="email">
-            {m.common_email()}
-          </label>
-          <input
+        <Field label={m.common_email()} htmlFor="email">
+          <Input
             id="email"
             type="email"
-            className="tv-input"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             required
           />
-        </div>
+        </Field>
 
-        <div className="tv-field">
-          <label className="tv-label" htmlFor="password">
-            {m.common_password()}
-          </label>
-          <input
+        <Field
+          label={m.common_password()}
+          htmlFor="password"
+          hint={needsBootstrap ? m.auth_password_hint() : undefined}
+        >
+          <Input
             id="password"
             type="password"
-            className="tv-input mono"
+            className="font-mono"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete={needsBootstrap ? 'new-password' : 'current-password'}
             required
             minLength={needsBootstrap ? 10 : undefined}
           />
-          {needsBootstrap && (
-            <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-              {m.auth_password_hint()}
-            </span>
-          )}
-        </div>
+        </Field>
 
-        {error && (
-          <div
-            style={{
-              fontSize: 12,
-              color: 'var(--s-err)',
-              background: 'var(--s-err-bg)',
-              padding: '8px 10px',
-              borderRadius: 6,
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <FormError>{error}</FormError>}
 
-        <button
+        <Button
           type="submit"
-          className="tv-btn tv-btn--default tv-btn--lg tv-btn--block"
+          variant="accent"
+          size="lg"
+          className="w-full"
           disabled={busy}
         >
           {needsBootstrap ? m.auth_create_and_signin() : m.auth_signin_title()}
-        </button>
+        </Button>
       </form>
-    </div>
+    </AuthLayout>
   )
 }

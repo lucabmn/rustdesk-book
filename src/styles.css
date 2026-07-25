@@ -1,13 +1,234 @@
-/* rustdesk-book uses the Tenvima design system as its single visual language. */
-@import './styles/tenvima/colors.css';
-@import './styles/tenvima/typography.css';
-@import './styles/tenvima/spacing.css';
-@import './styles/tenvima/base.css';
-@import './styles/tenvima/components.css';
-@import './styles/tenvima/app.css';
+@import 'tailwindcss';
 
-html,
-body,
-#app {
-  min-height: 100%;
+/*
+ * Design language: dense, operational, one accent.
+ *
+ * Rules this file encodes, so components don't have to re-decide them:
+ *  - Separation comes from borders, not shadows. Shadows are only for things
+ *    that genuinely float (popovers, dialogs, toasts).
+ *  - Exactly one accent hue. It marks the primary action and the active item,
+ *    nothing else. Status colours (ok/warn/danger) are semantic, not decorative.
+ *  - Small radii (6px), tight vertical rhythm, tabular numerals for anything
+ *    a user scans down a column: ids, counts, timestamps.
+ */
+
+/* The app toggles `data-theme` on <html>; keep Tailwind's `dark:` in sync. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces, from furthest back to closest to the user. */
+  --canvas: oklch(0.985 0.002 265);
+  --sunken: oklch(0.965 0.003 265);
+  --surface: oklch(1 0 0);
+  --elevated: oklch(1 0 0);
+
+  /* Hairlines. `line` is the default; `line-strong` is for real separation. */
+  --line: oklch(0.912 0.004 265);
+  --line-strong: oklch(0.855 0.006 265);
+
+  /* Text, from loudest to quietest. */
+  --text: oklch(0.235 0.008 265);
+  --muted: oklch(0.505 0.008 265);
+  --faint: oklch(0.635 0.008 265);
+
+  /* The single accent. */
+  --accent: oklch(0.525 0.176 258);
+  --accent-hover: oklch(0.475 0.176 258);
+  --accent-fg: oklch(0.99 0 0);
+  --accent-soft: oklch(0.95 0.03 258);
+  --accent-line: oklch(0.78 0.09 258);
+
+  /* Semantic status. */
+  --ok: oklch(0.575 0.145 152);
+  --ok-soft: oklch(0.955 0.035 152);
+  --warn: oklch(0.635 0.145 72);
+  --warn-soft: oklch(0.96 0.05 82);
+  --danger: oklch(0.545 0.2 25);
+  --danger-hover: oklch(0.495 0.2 25);
+  --danger-soft: oklch(0.958 0.03 25);
+
+  /* Interaction wash — used for hover rows and ghost buttons. */
+  --hover: oklch(0.955 0.004 265);
+  --active: oklch(0.93 0.005 265);
+
+  --shadow-pop: 0 1px 2px oklch(0.2 0.01 265 / 0.06),
+    0 8px 24px -6px oklch(0.2 0.01 265 / 0.14);
+  --shadow-overlay: 0 2px 4px oklch(0.2 0.01 265 / 0.08),
+    0 24px 56px -12px oklch(0.2 0.01 265 / 0.22);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --canvas: oklch(0.185 0.006 265);
+  --sunken: oklch(0.205 0.007 265);
+  --surface: oklch(0.232 0.008 265);
+  --elevated: oklch(0.268 0.009 265);
+
+  --line: oklch(0.315 0.009 265);
+  --line-strong: oklch(0.385 0.011 265);
+
+  --text: oklch(0.955 0.003 265);
+  --muted: oklch(0.715 0.008 265);
+  --faint: oklch(0.578 0.009 265);
+
+  --accent: oklch(0.665 0.155 258);
+  --accent-hover: oklch(0.715 0.155 258);
+  --accent-fg: oklch(0.16 0.02 258);
+  --accent-soft: oklch(0.315 0.065 258);
+  --accent-line: oklch(0.44 0.105 258);
+
+  --ok: oklch(0.715 0.145 152);
+  --ok-soft: oklch(0.305 0.055 152);
+  --warn: oklch(0.775 0.135 78);
+  --warn-soft: oklch(0.325 0.055 78);
+  --danger: oklch(0.665 0.175 25);
+  --danger-hover: oklch(0.715 0.175 25);
+  --danger-soft: oklch(0.315 0.065 25);
+
+  --hover: oklch(0.262 0.008 265);
+  --active: oklch(0.295 0.009 265);
+
+  --shadow-pop: 0 1px 2px oklch(0 0 0 / 0.4), 0 8px 24px -6px oklch(0 0 0 / 0.5);
+  --shadow-overlay: 0 2px 4px oklch(0 0 0 / 0.45),
+    0 24px 56px -12px oklch(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-sunken: var(--sunken);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+
+  --shadow-pop: var(--shadow-pop);
+  --shadow-overlay: var(--shadow-overlay);
+
+  /* One radius, one step down for things nested inside it. */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono:
+    ui-monospace, 'SF Mono', SFMono-Regular, 'JetBrains Mono', Menlo, Consolas,
+    monospace;
+
+  /* Tool-sized type. Nothing here is bigger than 20px on purpose. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.125rem;
+  --text-xl--line-height: 1.625rem;
+
+  --animate-spin-slow: spin 0.8s linear infinite;
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  html {
+    background: var(--canvas);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--canvas);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* One focus treatment for the whole app, so nothing has to reinvent it. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+
+  /* Ids, counts and timestamps line up when scanned down a column. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Scrollbars that read as part of the surface rather than the OS. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--faint);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }

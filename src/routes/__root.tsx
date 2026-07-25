@@ -36,7 +36,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={getLocale()} data-theme="light">
+    <html lang={getLocale()} data-theme="dark">
       <head>
         {/* Applies the stored theme before first paint; the content is a
             module-local constant, never user input.

@@ -1,7 +1,7 @@
-import { auditActionLabel } from '#/lib/i18n-labels'
+import { Badge, Section } from '#/components/ui'
 import { formatLastSeen } from '#/lib/format'
+import { auditActionLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
-import { Section } from './drawer-parts'
 
 export interface HistoryEntry {
   id: string
@@ -16,56 +16,25 @@ export function DeviceHistoryList({ history }: { history: HistoryEntry[] }) {
   return (
     <Section title={m.drawer_history()}>
       {history.length === 0 ? (
-        <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-          {m.drawer_history_none()}
-        </span>
+        <p className="text-faint text-xs">{m.drawer_history_none()}</p>
       ) : (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-          }}
-        >
+        <ul className="flex flex-col gap-1.5">
           {history.map((h) => (
-            <div
-              key={h.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 12,
-              }}
-            >
-              <span
-                className={
-                  h.action === 'connect'
-                    ? 'tv-chip tv-chip--info'
-                    : 'tv-chip tv-chip--warn'
-                }
-              >
+            <li key={h.id} className="flex items-center gap-2 text-xs">
+              {/* A revealed password is the entry worth noticing, so it alone
+                  carries a warning tone. */}
+              <Badge tone={h.action === 'connect' ? 'neutral' : 'warn'}>
                 {auditActionLabel(h.action)}
-              </span>
-              <span
-                style={{
-                  color: 'var(--fg-2)',
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
+              </Badge>
+              <span className="min-w-0 flex-1 truncate text-muted">
                 {h.userName ?? h.userEmail ?? '—'}
               </span>
-              <span
-                style={{
-                  color: 'var(--fg-4)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <span className="tnum whitespace-nowrap text-faint">
                 {formatLastSeen(h.createdAt)}
               </span>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </Section>
   )

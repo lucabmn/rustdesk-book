@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react'
 
+import { Button, Section } from '#/components/ui'
 import { m } from '#/paraglide/messages'
-import { Section } from './drawer-parts'
 
 export interface DevicePasswordFieldProps {
   hasPassword: boolean
@@ -23,43 +23,24 @@ export function DevicePasswordField({
   return (
     <Section title={m.th_password()}>
       {hasPassword ? (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 10px',
-            border: '1px solid var(--bd-1)',
-            borderRadius: 6,
-            background: 'var(--bg-sunken)',
-          }}
-        >
-          <span
-            className="mono"
-            style={{
-              flex: 1,
-              letterSpacing: 1,
-              color: 'var(--fg-1)',
-            }}
-          >
+        <div className="flex items-center gap-2 rounded-md border border-line bg-sunken py-1.5 pr-1.5 pl-2.5">
+          <span className="flex-1 truncate font-mono text-text text-xs tracking-wider">
             {password ?? '••••••••'}
           </span>
-          <button
-            type="button"
-            className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={onToggleReveal}
             disabled={revealing}
             aria-label={
               password ? m.drawer_hide_password() : m.drawer_show_password()
             }
           >
-            {password ? <EyeOff size={15} /> : <Eye size={15} />}
-          </button>
+            {password ? <EyeOff /> : <Eye />}
+          </Button>
         </div>
       ) : (
-        <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-          {m.drawer_no_password()}
-        </span>
+        <p className="text-faint text-xs">{m.drawer_no_password()}</p>
       )}
     </Section>
   )

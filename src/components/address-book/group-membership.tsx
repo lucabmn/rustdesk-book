@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Check, Plus } from 'lucide-react'
 
+import { TagChip } from '#/components/ui'
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
@@ -30,41 +32,24 @@ export function GroupMembership({ deviceId }: { deviceId: string }) {
   )
 
   if (groups.length === 0) {
-    return (
-      <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-        {m.group_none_hint()}
-      </span>
-    )
+    return <p className="text-faint text-xs">{m.group_none_hint()}</p>
   }
 
   return (
-    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+    <div className="flex flex-wrap gap-1">
       {groups.map((g) => {
         const on = memberIds.has(g.id)
         return (
-          <button
-            type="button"
+          <TagChip
             key={g.id}
+            active={on}
             onClick={() =>
               setMut.mutate({ groupId: g.id, deviceId, member: !on })
             }
-            aria-pressed={on}
-            style={{
-              height: 24,
-              padding: '0 10px',
-              borderRadius: 999,
-              border: `1px solid ${on ? 'var(--brand)' : 'var(--bd-1)'}`,
-              background: on ? 'var(--brand-soft)' : 'var(--bg-sunken)',
-              color: on ? 'var(--brand)' : 'var(--fg-2)',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 11.5,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
           >
-            {on ? '✓ ' : '+ '}
+            {on ? <Check className="size-3" /> : <Plus className="size-3" />}
             {g.name}
-          </button>
+          </TagChip>
         )
       })}
     </div>

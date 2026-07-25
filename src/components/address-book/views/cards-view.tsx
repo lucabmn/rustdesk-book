@@ -1,11 +1,16 @@
-import { Monitor, Pencil, Power } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 
-import { formatRustdeskId, osLabel, STATUS_META } from '#/lib/device-meta'
-import { statusLabel } from '#/lib/i18n-labels'
+import { activatable, Button, Card, StatusBadge } from '#/components/ui'
+import { osLabel } from '#/lib/device-meta'
+import { formatLastSeen } from '#/lib/format'
 import type { Device } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
-import { formatLastSeen } from '#/lib/format'
-import { activatable, DeviceTags, FavoriteButton } from '../ui-bits'
+import {
+  ConnectButton,
+  DeviceId,
+  DeviceTags,
+  FavoriteButton,
+} from '../device-bits'
 
 export interface CardsViewProps {
   devices: Device[]
@@ -13,6 +18,15 @@ export interface CardsViewProps {
   onConnect: (device: Device) => void
   onEdit: (device: Device) => void
   onToggleFavorite: (device: Device) => void
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <>
+      <dt className="text-muted">{label}</dt>
+      <dd className="truncate text-right text-text">{value}</dd>
+    </>
+  )
 }
 
 /** Card grid — the touch-friendly, scan-at-a-glance view. */
@@ -24,129 +38,57 @@ export function CardsView({
   onToggleFavorite,
 }: CardsViewProps) {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill,minmax(288px,1fr))',
-        gap: 14,
-      }}
-    >
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(272px,1fr))] gap-3">
       {devices.map((d) => (
-        <div
+        <Card
           key={d.id}
-          className="tv-card tv-row-click"
           {...activatable(() => onOpen(d))}
-          style={{ gap: 10, padding: '14px 0' }}
+          className="cursor-pointer transition-colors hover:border-line-strong"
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 9,
-              padding: '0 14px',
-            }}
-          >
-            <span
-              className="tv-avatar tv-avatar--sm"
-              style={{ background: 'var(--bg-sunken)', color: 'var(--fg-3)' }}
-            >
-              <Monitor size={14} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: 13,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+          <div className="flex items-start gap-2 px-3.5 pt-3">
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium text-sm text-text">
                 {d.alias}
               </div>
-              <div
-                className="mono"
-                style={{ fontSize: 11.5, color: 'var(--fg-3)' }}
-              >
-                {formatRustdeskId(d.rustdeskId)}
-              </div>
+              <DeviceId id={d.rustdeskId} className="text-2xs" />
             </div>
+            <StatusBadge status={d.status} />
             <FavoriteButton
               active={d.isFavorite}
               onToggle={() => onToggleFavorite(d)}
             />
-            <span className={STATUS_META[d.status].chip}>
-              {statusLabel(d.status)}
-            </span>
           </div>
-          <div
-            style={{
-              padding: '0 14px',
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr',
-              gap: '4px 10px',
-              fontSize: 12,
-              color: 'var(--fg-3)',
-            }}
-          >
-            <span>{m.label_customer()}</span>
-            <span style={{ color: 'var(--fg-2)', textAlign: 'right' }}>
-              {d.customer || '—'}
-            </span>
-            <span>{m.label_os()}</span>
-            <span style={{ color: 'var(--fg-2)', textAlign: 'right' }}>
-              {osLabel(d.osKey)}
-            </span>
-            <span>{m.label_last()}</span>
-            <span style={{ color: 'var(--fg-2)', textAlign: 'right' }}>
-              {formatLastSeen(d.lastSeen)}
-            </span>
-          </div>
+
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 px-3.5 py-3 text-xs">
+            <Row label={m.label_customer()} value={d.customer || '—'} />
+            <Row label={m.label_os()} value={osLabel(d.osKey)} />
+            <Row label={m.label_last()} value={formatLastSeen(d.lastSeen)} />
+          </dl>
+
           {d.tags.length > 0 && (
-            <div
-              style={{
-                padding: '0 14px',
-                display: 'flex',
-                gap: 4,
-                flexWrap: 'wrap',
-              }}
-            >
+            <div className="px-3.5 pb-3">
               <DeviceTags tags={d.tags} />
             </div>
           )}
-          <div
-            style={{
-              padding: '10px 14px 0',
-              marginTop: 2,
-              borderTop: '1px solid var(--bd-subtle)',
-              display: 'flex',
-              gap: 6,
-            }}
-          >
-            <button
-              type="button"
-              className="tv-btn tv-btn--default tv-btn--sm"
-              style={{ flex: 1, minWidth: 0 }}
-              onClick={(e) => {
-                e.stopPropagation()
-                onConnect(d)
-              }}
-            >
-              <Power size={14} strokeWidth={1.75} />
-              {m.common_connect()}
-            </button>
-            <button
-              type="button"
-              className="tv-btn tv-btn--outline tv-btn--icon-sm"
+
+          <div className="flex gap-1.5 border-line border-t px-3.5 py-2.5">
+            <ConnectButton
+              onClick={() => onConnect(d)}
+              className="h-7 flex-1 text-xs"
+            />
+            <Button
+              size="icon-sm"
+              title={m.common_edit()}
+              aria-label={m.common_edit()}
               onClick={(e) => {
                 e.stopPropagation()
                 onEdit(d)
               }}
             >
-              <Pencil size={14} />
-            </button>
+              <Pencil />
+            </Button>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   )

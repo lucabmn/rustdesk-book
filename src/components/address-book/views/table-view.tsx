@@ -1,15 +1,26 @@
 import { Pencil, Trash2 } from 'lucide-react'
 
-import { formatRustdeskId, osLabel } from '#/lib/device-meta'
+import {
+  Button,
+  StatusDot,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+} from '#/components/ui'
+import { osLabel } from '#/lib/device-meta'
+import { formatLastSeen } from '#/lib/format'
 import type { Device } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
-import { formatLastSeen } from '#/lib/format'
 import {
   ConnectButton,
+  DeviceId,
   DeviceTags,
   FavoriteButton,
-  StatusDot,
-} from '../ui-bits'
+  PasswordMask,
+} from '../device-bits'
 
 export interface TableViewProps {
   devices: Device[]
@@ -30,94 +41,78 @@ export function TableView({
   onToggleFavorite,
 }: TableViewProps) {
   return (
-    <div className="tv-card tv-flush">
-      <div style={{ overflowX: 'auto' }}>
-        <table className="tv-table" style={{ minWidth: 960 }}>
-          <thead>
-            <tr>
-              <th style={{ width: 34 }} />
-              <th>{m.th_id()}</th>
-              <th>{m.th_alias()}</th>
-              <th>{m.th_customer()}</th>
-              <th>{m.th_tags()}</th>
-              <th>{m.th_os()}</th>
-              <th>{m.th_last_seen()}</th>
-              <th>{m.th_password()}</th>
-              <th style={{ textAlign: 'right' }}>{m.th_action()}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {devices.map((d) => (
-              <tr key={d.id} className="tv-row-click" onClick={() => onOpen(d)}>
-                <td>
-                  <StatusDot status={d.status} />
-                </td>
-                <td
-                  className="mono"
-                  style={{ fontSize: 12, color: 'var(--fg-2)' }}
+    <Table className="min-w-[960px]">
+      <THead>
+        <TH className="w-9" />
+        <TH>{m.th_id()}</TH>
+        <TH>{m.th_alias()}</TH>
+        <TH>{m.th_customer()}</TH>
+        <TH>{m.th_tags()}</TH>
+        <TH>{m.th_os()}</TH>
+        <TH>{m.th_last_seen()}</TH>
+        <TH>{m.th_password()}</TH>
+        <TH align="right">{m.th_action()}</TH>
+      </THead>
+      <TBody>
+        {devices.map((d) => (
+          // The row actions live in the last cell and stop propagation, so a
+          // click anywhere else safely means "inspect this device".
+          <TR key={d.id} interactive onClick={() => onOpen(d)}>
+            <TD>
+              <StatusDot status={d.status} />
+            </TD>
+            <TD>
+              <DeviceId id={d.rustdeskId} />
+            </TD>
+            <TD className="font-medium">{d.alias}</TD>
+            <TD className="text-muted">{d.customer || '—'}</TD>
+            <TD>
+              <DeviceTags tags={d.tags} />
+            </TD>
+            <TD className="text-muted">{osLabel(d.osKey)}</TD>
+            <TD className="tnum whitespace-nowrap text-muted">
+              {formatLastSeen(d.lastSeen)}
+            </TD>
+            <TD>
+              <PasswordMask hasPassword={d.hasPassword} />
+            </TD>
+            <TD>
+              <div className="flex justify-end gap-1">
+                <FavoriteButton
+                  active={d.isFavorite}
+                  onToggle={() => onToggleFavorite(d)}
+                />
+                <ConnectButton onClick={() => onConnect(d)} />
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  title={m.common_edit()}
+                  aria-label={m.common_edit()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEdit(d)
+                  }}
                 >
-                  {formatRustdeskId(d.rustdeskId)}
-                </td>
-                <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>
-                  {d.alias}
-                </td>
-                <td style={{ color: 'var(--fg-2)' }}>{d.customer || '—'}</td>
-                <td>
-                  <DeviceTags tags={d.tags} />
-                </td>
-                <td style={{ color: 'var(--fg-2)' }}>{osLabel(d.osKey)}</td>
-                <td style={{ color: 'var(--fg-3)' }}>
-                  {formatLastSeen(d.lastSeen)}
-                </td>
-                <td
-                  className="mono"
-                  style={{ color: 'var(--fg-4)', letterSpacing: 1 }}
+                  <Pencil />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  title={m.common_delete()}
+                  aria-label={m.common_delete()}
+                  className="hover:bg-danger-soft hover:text-danger"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(d)
+                  }}
                 >
-                  {d.hasPassword ? '••••••••' : '—'}
-                </td>
-                <td>
-                  <span
-                    style={{
-                      display: 'flex',
-                      gap: 4,
-                      justifyContent: 'flex-end',
-                    }}
-                  >
-                    <FavoriteButton
-                      active={d.isFavorite}
-                      onToggle={() => onToggleFavorite(d)}
-                    />
-                    <ConnectButton onClick={() => onConnect(d)} />
-                    <button
-                      type="button"
-                      className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                      title={m.common_edit()}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onEdit(d)
-                      }}
-                    >
-                      <Pencil size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      className="tv-btn tv-btn--ghost tv-btn--icon-xs"
-                      title={m.common_delete()}
-                      style={{ color: 'var(--s-err)' }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onDelete(d)
-                      }}
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+                  <Trash2 />
+                </Button>
+              </div>
+            </TD>
+          </TR>
+        ))}
+      </TBody>
+    </Table>
   )
 }

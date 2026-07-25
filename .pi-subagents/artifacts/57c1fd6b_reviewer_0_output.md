@@ -1,0 +1,4 @@
+## Review
+- **Hoch:** Löschen eines Tokens entfernt per Cascade auch aktive Claims (`src/orpc/router/enrollments.ts:188`, `src/db/schema.ts:211-214`), wodurch ein bereits nach Claim geändertes Client-Passwort nicht mehr finalisiert werden kann.
+- **Hoch:** Die Kunden-Combobox erhält nur Kunden mit vorhandenen Geräten aus den Device-Statistiken (`src/components/address-book/address-book.tsx:96-102`, `src/orpc/router/devices.ts:171-195`); vorbereitete Kunden ohne Geräte fehlen somit beim ersten Enrollment.
+- Beim erneuten Skript-Download ist kein weiterer hoher Fehler erkennbar; Berechtigung, Statusprüfung und Legacy-Rotation sind unter `SELECT FOR UPDATE` transaktional abgesichert (`src/orpc/router/enrollments.ts:128-185`).

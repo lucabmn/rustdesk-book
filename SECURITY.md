@@ -32,6 +32,16 @@ entstehen nur über zeitlich begrenzte Einladungslinks.
 `MCP_API_KEY` gesetzt ist, und verlangt sonst einen Bearer-Token. Die Tools sind
 lesend und geben niemals Passwörter zurück.
 
+**Client-Enrollment verwendet getrennte Bearer-Tokens.** Deployment-Tokens werden
+mit 256 Bit Zufall erzeugt. Einmal-Tokens werden nur gehasht gespeichert;
+permanente Tokens werden für spätere Skript-Downloads zusätzlich mit
+`APP_ENCRYPTION_KEY` verschlüsselt. Einmal-Tokens dürfen genau ein Gerät
+registrieren; permanente Tokens können widerrufen oder gelöscht werden. Vor dem
+Ändern des RustDesk-Passworts reserviert das Skript einen kurzlebigen Claim. Bis
+zur bestätigten Registrierung liegt eine Recovery-Datei ausschließlich für
+root/SYSTEM vor. Deployment-Skripte enthalten den Bearer-Token im Klartext und
+müssen daher zugriffsgeschützt verteilt und nach Gebrauch gelöscht werden.
+
 ### Was die Verschlüsselung *nicht* leistet
 
 Die Verschlüsselung schützt die Daten **im Ruhezustand** – also Datenbank und

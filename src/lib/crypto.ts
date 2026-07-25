@@ -25,8 +25,13 @@ const KEY_BYTES = 32
 const IV_BYTES = 12
 const TAG_BYTES = 16
 
-function loadKey(): Buffer {
-  const raw = process.env.APP_ENCRYPTION_KEY
+/**
+ * Read and validate the encryption key from the environment. Exported so the
+ * validation rules can be tested without reloading this module — the process
+ * still fails fast, because {@link key} calls it at import time.
+ */
+export function loadEncryptionKey(env = process.env): Buffer {
+  const raw = env.APP_ENCRYPTION_KEY
   if (!raw) {
     throw new Error(
       'APP_ENCRYPTION_KEY is not set. Generate one with `openssl rand -base64 32` ' +
@@ -53,7 +58,7 @@ function loadKey(): Buffer {
 
 // Fail fast at module load: a misconfigured key must never be discovered
 // lazily on the first write.
-const key = loadKey()
+const key = loadEncryptionKey()
 
 /** Encrypt a UTF-8 secret. Returns a self-describing base64 payload. */
 export function encryptSecret(plaintext: string): string {

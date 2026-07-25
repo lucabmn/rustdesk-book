@@ -58,6 +58,16 @@ export function lastSyncedAt(): number {
   return lastSyncAt
 }
 
+/**
+ * Drop the TTL/in-flight bookkeeping. Test seam: it lets a suite exercise the
+ * poller repeatedly without reloading the module, and is a no-op in practice
+ * because the process only ever wants one shared poll schedule.
+ */
+export function resetSyncState(): void {
+  lastSyncAt = 0
+  inFlight = null
+}
+
 /** Coerce one raw peer object into our shape, tolerating field-name variance. */
 export function normalizePeer(raw: unknown): LivePeer | null {
   if (!raw || typeof raw !== 'object') return null
@@ -99,12 +109,10 @@ async function fetchPeers(cfg: SyncConfig): Promise<LivePeer[]> {
   const arr = Array.isArray(data)
     ? data
     : ((data as Record<string, unknown>)?.peers ??
-        (data as Record<string, unknown>)?.data ??
-        [])
+      (data as Record<string, unknown>)?.data ??
+      [])
   if (!Array.isArray(arr)) return []
-  return arr
-    .map(normalizePeer)
-    .filter((p): p is LivePeer => p !== null)
+  return arr.map(normalizePeer).filter((p): p is LivePeer => p !== null)
 }
 
 /** Apply live statuses to the devices table. Returns the number updated. */

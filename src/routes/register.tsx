@@ -71,12 +71,20 @@ function RegisterPage() {
     <div className="tv-auth-wrap">
       <div className="tv-auth-card">
         <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <BrandMark />
             <LanguageSwitcher />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>{m.auth_register_title()}</div>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>
+              {m.auth_register_title()}
+            </div>
             <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
               {inviteQuery.data
                 ? m.auth_register_invite_for({ email: inviteQuery.data.email })

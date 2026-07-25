@@ -64,7 +64,9 @@ export function InviteDialog({
         <Dialog.Overlay className="tv-dialog-overlay" />
         <Dialog.Content className="tv-dialog" style={{ maxWidth: 480 }}>
           <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">{m.invite_title()}</Dialog.Title>
+            <Dialog.Title className="tv-dialog__title">
+              {m.invite_title()}
+            </Dialog.Title>
             <Dialog.Description className="tv-dialog__description">
               {m.invite_description()}
             </Dialog.Description>
@@ -94,6 +96,7 @@ export function InviteDialog({
               <option value="admin">{m.common_role_admin()}</option>
             </select>
             <button
+              type="button"
               className="tv-btn tv-btn--default tv-btn--sm"
               disabled={!email.trim() || createMut.isPending}
               onClick={() => createMut.mutate({ email: email.trim(), role })}
@@ -122,12 +125,18 @@ export function InviteDialog({
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 500 }}>{inv.email}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 500 }}>
+                    {inv.email}
+                  </div>
                   <div style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-                    {m.invite_valid_until({ role: roleLabel(inv.role), date: new Date(inv.expiresAt).toLocaleDateString() })}
+                    {m.invite_valid_until({
+                      role: roleLabel(inv.role),
+                      date: new Date(inv.expiresAt).toLocaleDateString(),
+                    })}
                   </div>
                 </div>
                 <button
+                  type="button"
                   className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                   title={m.invite_copy_link()}
                   onClick={() => {
@@ -138,6 +147,7 @@ export function InviteDialog({
                   <Copy size={13} />
                 </button>
                 <button
+                  type="button"
                   className="tv-btn tv-btn--ghost tv-btn--icon-xs"
                   title={m.invite_revoke()}
                   style={{ color: 'var(--s-err)' }}
@@ -151,6 +161,7 @@ export function InviteDialog({
 
           <Dialog.Close asChild>
             <button
+              type="button"
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
               aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}

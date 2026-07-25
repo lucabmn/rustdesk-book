@@ -1,5 +1,8 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
+  // Only loaded by `bun test`; it imports `bun:test`, whose types are not part
+  // of this project's toolchain.
+  "exclude": ["src/test/bun-setup.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

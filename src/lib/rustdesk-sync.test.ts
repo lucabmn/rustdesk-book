@@ -19,8 +19,16 @@ describe('normalizePeer', () => {
   })
 
   it('parses epoch seconds and milliseconds for last_online', () => {
-    const secs = normalizePeer({ id: '100000002', online: false, last_online: 1_700_000_000 })
-    const ms = normalizePeer({ id: '100000003', online: false, last_online: 1_700_000_000_000 })
+    const secs = normalizePeer({
+      id: '100000002',
+      online: false,
+      last_online: 1_700_000_000,
+    })
+    const ms = normalizePeer({
+      id: '100000003',
+      online: false,
+      last_online: 1_700_000_000_000,
+    })
     expect(secs!.lastSeen!.getTime()).toBe(1_700_000_000_000)
     expect(ms!.lastSeen!.getTime()).toBe(1_700_000_000_000)
   })
@@ -33,7 +41,9 @@ describe('normalizePeer', () => {
   })
 
   it("treats 'online' string and 1 as online", () => {
-    expect(normalizePeer({ id: '100000004', status: 'online' })!.status).toBe('online')
+    expect(normalizePeer({ id: '100000004', status: 'online' })!.status).toBe(
+      'online',
+    )
     expect(normalizePeer({ id: '100000005', online: 1 })!.status).toBe('online')
   })
 })

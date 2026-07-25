@@ -3,9 +3,12 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js'
 
+const REQUEST_TIMEOUT_MS = 30_000
+
 export async function handleMcpRequest(
   request: Request,
   server: McpServer,
+  { timeoutMs = REQUEST_TIMEOUT_MS }: { timeoutMs?: number } = {},
 ): Promise<Response> {
   try {
     const jsonRpcRequest = (await request.json()) as JSONRPCMessage
@@ -13,10 +16,21 @@ export async function handleMcpRequest(
     const [clientTransport, serverTransport] =
       InMemoryTransport.createLinkedPair()
 
-    let responseData: JSONRPCMessage | null = null
+    // Notifications carry no id and get no reply — acknowledge and stop.
+    const requestId = 'id' in jsonRpcRequest ? jsonRpcRequest.id : undefined
+    if (requestId === undefined) {
+      return new Response(null, { status: 202 })
+    }
+
+    // Wait for the reply that matches this request id rather than a fixed
+    // timer: a slow tool (DB query) would otherwise return a null body.
+    let settle: (message: JSONRPCMessage | null) => void
+    const replied = new Promise<JSONRPCMessage | null>((resolve) => {
+      settle = resolve
+    })
 
     clientTransport.onmessage = (message: JSONRPCMessage) => {
-      responseData = message
+      if ('id' in message && message.id === requestId) settle(message)
     }
 
     await server.connect(serverTransport)
@@ -26,10 +40,22 @@ export async function handleMcpRequest(
 
     await clientTransport.send(jsonRpcRequest)
 
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    const timeout = setTimeout(() => settle(null), timeoutMs)
+    const responseData = await replied.finally(() => clearTimeout(timeout))
 
     await clientTransport.close()
     await serverTransport.close()
+
+    if (!responseData) {
+      return Response.json(
+        {
+          jsonrpc: '2.0',
+          error: { code: -32603, message: 'MCP request timed out' },
+          id: requestId,
+        },
+        { status: 504 },
+      )
+    }
 
     return Response.json(responseData, {
       headers: {

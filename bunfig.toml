@@ -1,0 +1,4 @@
+# `pnpm test` (vitest) is the supported runner and the one CI uses; this makes
+# `bun test` work too, since Bun ignores vitest.config.ts.
+[test]
+preload = ["./src/test/bun-setup.ts"]

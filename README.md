@@ -28,6 +28,7 @@ protokollierte Anfrage. Details dazu in [SECURITY.md](./SECURITY.md).
 - Drei Ansichten (Tabelle, nach Kunde gruppiert, Karten), Volltextsuche und
   Filter nach Status, OS, Kunde, Tag, Favoriten und Gruppe
 - Import/Export als JSON (Export ohne Passwörter)
+- RustDesk-OSS-Clients per Windows-, Linux- oder macOS-Skript ausrollen; einmalige oder permanente Enrollment-Tokens
 - Einladungsbasierte Registrierung; erstes Konto wird zum Administrator
 - Heller und dunkler Modus
 - Optionaler, lesender MCP-Server: „Habe ich ein Gerät für Kunde X?“ direkt aus
@@ -91,6 +92,7 @@ Das Container-Image wird bei jedem Release nach
 | `BETTER_AUTH_SECRET` |   ja    | Secret zum Signieren der Sessions. Muss sich vom Verschlüsselungsschlüssel unterscheiden. |
 | `BETTER_AUTH_URL`    |   ja    | Öffentliche Basis-URL der Instanz.                                           |
 | `MCP_API_KEY`        |  nein   | Bearer-Token für `/mcp`. Ohne diesen ist der MCP-Endpunkt deaktiviert.        |
+| `TRUST_PROXY_HEADERS` | nein   | `true` vertraut Proxy-IP-Headern für Enrollment-Rate-Limits; nur hinter einem vertrauenswürdigen Reverse Proxy aktivieren. |
 
 > **Wichtig:** Geht `APP_ENCRYPTION_KEY` verloren, sind alle gespeicherten
 > Passwörter unwiederbringlich verloren. Sichere ihn getrennt von der Datenbank.

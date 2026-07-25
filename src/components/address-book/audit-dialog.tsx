@@ -15,7 +15,9 @@ export function AuditDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const query = useQuery(orpc.audit.list.queryOptions({ input: {}, enabled: open }))
+  const query = useQuery(
+    orpc.audit.list.queryOptions({ input: {}, enabled: open }),
+  )
   const entries = query.data ?? []
 
   return (
@@ -24,14 +26,18 @@ export function AuditDialog({
         <Dialog.Overlay className="tv-dialog-overlay" />
         <Dialog.Content className="tv-dialog" style={{ maxWidth: 640 }}>
           <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">{m.audit_title()}</Dialog.Title>
+            <Dialog.Title className="tv-dialog__title">
+              {m.audit_title()}
+            </Dialog.Title>
             <Dialog.Description className="tv-dialog__description">
               {m.audit_description()}
             </Dialog.Description>
           </div>
 
           {entries.length === 0 ? (
-            <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>{m.audit_none()}</span>
+            <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
+              {m.audit_none()}
+            </span>
           ) : (
             <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
               <table className="tv-table">
@@ -46,7 +52,9 @@ export function AuditDialog({
                 <tbody>
                   {entries.map((e) => (
                     <tr key={e.id}>
-                      <td style={{ color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>
+                      <td
+                        style={{ color: 'var(--fg-3)', whiteSpace: 'nowrap' }}
+                      >
                         {new Date(e.createdAt).toLocaleString()}
                       </td>
                       <td>
@@ -63,9 +71,16 @@ export function AuditDialog({
                       <td>
                         {e.deviceAlias ? (
                           <span>
-                            <span style={{ fontWeight: 600 }}>{e.deviceAlias}</span>{' '}
-                            <span className="mono" style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>
-                              {e.deviceRustdeskId ? formatRustdeskId(e.deviceRustdeskId) : ''}
+                            <span style={{ fontWeight: 600 }}>
+                              {e.deviceAlias}
+                            </span>{' '}
+                            <span
+                              className="mono"
+                              style={{ color: 'var(--fg-3)', fontSize: 11.5 }}
+                            >
+                              {e.deviceRustdeskId
+                                ? formatRustdeskId(e.deviceRustdeskId)
+                                : ''}
                             </span>
                           </span>
                         ) : (
@@ -84,6 +99,7 @@ export function AuditDialog({
 
           <Dialog.Close asChild>
             <button
+              type="button"
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
               aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}

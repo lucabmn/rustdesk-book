@@ -56,9 +56,7 @@ export const list = authed
   })
 
 export const create = adminProcedure
-  .input(
-    z.object({ name: NameSchema, contact: OptText, notes: OptText }),
-  )
+  .input(z.object({ name: NameSchema, contact: OptText, notes: OptText }))
   .output(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     await assertNameFree(context.db, input.name)
@@ -93,7 +91,8 @@ export const update = adminProcedure
       })
       .where(eq(customers.id, input.id))
       .returning({ id: customers.id })
-    if (!row) throw new ORPCError('NOT_FOUND', { message: 'Kunde nicht gefunden.' })
+    if (!row)
+      throw new ORPCError('NOT_FOUND', { message: 'Kunde nicht gefunden.' })
     return { ok: true }
   })
 

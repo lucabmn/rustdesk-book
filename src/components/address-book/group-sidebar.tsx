@@ -78,6 +78,7 @@ export function GroupSidebar({
           {m.section_groups()}
         </span>
         <button
+          type="button"
           className="tv-btn tv-btn--ghost tv-btn--icon-xs"
           title={m.group_create()}
           aria-label={m.group_create()}
@@ -91,6 +92,7 @@ export function GroupSidebar({
         <div style={{ display: 'flex', gap: 4, padding: '0 14px 6px' }}>
           <input
             className="tv-input"
+            // biome-ignore lint/a11y/noAutofocus: the field only exists once the user opened this inline editor, so focus follows their action
             autoFocus
             value={name}
             placeholder={m.group_new_placeholder()}
@@ -105,6 +107,7 @@ export function GroupSidebar({
             style={{ height: 26 }}
           />
           <button
+            type="button"
             className="tv-btn tv-btn--default tv-btn--icon-sm"
             onClick={submit}
             disabled={createMut.isPending}
@@ -116,7 +119,13 @@ export function GroupSidebar({
       )}
 
       {groups.length === 0 && !adding && (
-        <div style={{ padding: '0 14px 6px', fontSize: 11.5, color: 'var(--fg-4)' }}>
+        <div
+          style={{
+            padding: '0 14px 6px',
+            fontSize: 11.5,
+            color: 'var(--fg-4)',
+          }}
+        >
           {m.group_none()}
         </div>
       )}
@@ -127,6 +136,7 @@ export function GroupSidebar({
           style={{ display: 'flex', alignItems: 'center', paddingRight: 8 }}
         >
           <button
+            type="button"
             className="tv-navitem"
             data-active={activeGroupId === g.id}
             style={{ flex: 1, minWidth: 0 }}
@@ -137,6 +147,7 @@ export function GroupSidebar({
             <span className="tv-navitem__count">{g.count}</span>
           </button>
           <button
+            type="button"
             className="tv-btn tv-btn--ghost tv-btn--icon-xs"
             title={m.group_delete()}
             aria-label={m.group_delete()}
@@ -150,6 +161,7 @@ export function GroupSidebar({
 
       {adding && groups.length === 0 && (
         <button
+          type="button"
           className="tv-btn tv-btn--ghost tv-btn--xs"
           style={{ margin: '0 14px' }}
           onClick={() => {

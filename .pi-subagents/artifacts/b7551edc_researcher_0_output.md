@@ -1,0 +1,1 @@
+Abgebrochen: In dieser Child-Session waren weder Webrecherche- noch Shell-Werkzeuge verfügbar. Es wurden keine Dateien geändert.

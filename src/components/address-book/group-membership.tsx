@@ -43,6 +43,7 @@ export function GroupMembership({ deviceId }: { deviceId: string }) {
         const on = memberIds.has(g.id)
         return (
           <button
+            type="button"
             key={g.id}
             onClick={() =>
               setMut.mutate({ groupId: g.id, deviceId, member: !on })

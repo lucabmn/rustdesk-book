@@ -50,11 +50,13 @@ export function CustomerCombobox({
 
   // Re-sync the displayed text when the committed value changes from outside
   // (form reset, filter cleared) — but never while the user is mid-edit.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: syncing on `value` alone is the point — re-running on setQuery identity would fight the user's edit
   useEffect(() => {
     if (!focusedRef.current) setQuery(value)
   }, [value])
 
   // Close on click outside; discard an uncommitted query in select mode.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the listener is (re)bound purely on open/close; `close` is stable for its lifetime
   useEffect(() => {
     if (!open) return
     function onDocMouseDown(e: MouseEvent) {
@@ -71,7 +73,11 @@ export function CustomerCombobox({
   if (clearLabel) rows.push({ value: '', label: clearLabel, muted: true })
   for (const name of matches) rows.push({ value: name, label: name })
   if (offerCreate) {
-    rows.push({ value: query.trim(), label: m.combobox_create({ name: query.trim() }), muted: true })
+    rows.push({
+      value: query.trim(),
+      label: m.combobox_create({ name: query.trim() }),
+      muted: true,
+    })
   }
   const optionId = (i: number) => `${listId}-opt-${i}`
 
@@ -102,7 +108,9 @@ export function CustomerCombobox({
     if (!q) return -1
     const exact = rows.findIndex((r) => r.value.toLowerCase() === q)
     if (exact >= 0) return exact
-    return matches.length === 1 ? rows.findIndex((r) => r.value === matches[0]) : -1
+    return matches.length === 1
+      ? rows.findIndex((r) => r.value === matches[0])
+      : -1
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -196,7 +204,13 @@ export function CustomerCombobox({
             </button>
           ))}
           {showEmpty && (
-            <div style={{ padding: '7px 8px', fontSize: 12.5, color: 'var(--fg-3)' }}>
+            <div
+              style={{
+                padding: '7px 8px',
+                fontSize: 12.5,
+                color: 'var(--fg-3)',
+              }}
+            >
               {m.combobox_empty()}
             </div>
           )}

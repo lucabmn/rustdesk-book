@@ -90,7 +90,8 @@ export const update = adminProcedure
     if (demotingAdmin) {
       if (input.id === context.user.id) {
         throw new ORPCError('FORBIDDEN', {
-          message: 'Du kannst dir nicht selbst die Administratorrechte entziehen.',
+          message:
+            'Du kannst dir nicht selbst die Administratorrechte entziehen.',
         })
       }
       if ((await adminCount(context.db)) <= 1) {
@@ -151,7 +152,7 @@ export const ban = adminProcedure
 export const unban = adminProcedure
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
-    await context.db
+    const [row] = await context.db
       .update(user)
       .set({
         banned: false,
@@ -160,6 +161,10 @@ export const unban = adminProcedure
         updatedAt: new Date(),
       })
       .where(eq(user.id, input.id))
+      .returning({ id: user.id })
+    if (!row) {
+      throw new ORPCError('NOT_FOUND', { message: 'Benutzer nicht gefunden.' })
+    }
     return { ok: true }
   })
 

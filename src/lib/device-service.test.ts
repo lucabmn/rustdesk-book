@@ -16,6 +16,7 @@ const row: DeviceRow = {
   lastSeen: new Date('2026-01-01T10:00:00Z'),
   passwordCipher: 'BASE64_CIPHERTEXT_VALUE',
   notes: 'Kassen-PC',
+  enrollmentTokenId: null,
   createdBy: 'user-1',
   createdAt: new Date('2026-01-01T09:00:00Z'),
   updatedAt: new Date('2026-01-01T09:30:00Z'),
@@ -32,7 +33,9 @@ describe('toPublicDevice', () => {
   })
 
   it('reports hasPassword=false when no secret is stored', () => {
-    expect(toPublicDevice({ ...row, passwordCipher: null }).hasPassword).toBe(false)
+    expect(toPublicDevice({ ...row, passwordCipher: null }).hasPassword).toBe(
+      false,
+    )
   })
 
   it('serializes timestamps to ISO strings', () => {
@@ -43,9 +46,9 @@ describe('toPublicDevice', () => {
 
   it('projects the resolved customer name and id', () => {
     expect(toPublicDevice(row).customer).toBe(null)
-    expect(toPublicDevice(row, undefined, 'Bäckerei Krause GmbH').customer).toBe(
-      'Bäckerei Krause GmbH',
-    )
+    expect(
+      toPublicDevice(row, undefined, 'Bäckerei Krause GmbH').customer,
+    ).toBe('Bäckerei Krause GmbH')
     expect(toPublicDevice(row).customerId).toBe(row.customerId)
   })
 

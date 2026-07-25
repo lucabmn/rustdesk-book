@@ -16,6 +16,8 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiEnrollClaimRouteImport } from './routes/api.enroll.claim'
+import { Route as ApiEnrollFinalizeRouteImport } from './routes/api.enroll.finalize'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +55,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEnrollClaimRoute = ApiEnrollClaimRouteImport.update({
+  id: '/api/enroll/claim',
+  path: '/api/enroll/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEnrollFinalizeRoute = ApiEnrollFinalizeRouteImport.update({
+  id: '/api/enroll/finalize',
+  path: '/api/enroll/finalize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
@@ -67,6 +79,8 @@ export interface FileRoutesByFullPath {
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/enroll/claim': typeof ApiEnrollClaimRoute
+  '/api/enroll/finalize': typeof ApiEnrollFinalizeRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +91,8 @@ export interface FileRoutesByTo {
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/enroll/claim': typeof ApiEnrollClaimRoute
+  '/api/enroll/finalize': typeof ApiEnrollFinalizeRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
 }
 export interface FileRoutesById {
@@ -88,6 +104,8 @@ export interface FileRoutesById {
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/enroll/claim': typeof ApiEnrollClaimRoute
+  '/api/enroll/finalize': typeof ApiEnrollFinalizeRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +118,8 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/api/health'
     | '/api/auth/$'
+    | '/api/enroll/claim'
+    | '/api/enroll/finalize'
     | '/api/rpc/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +130,8 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/api/health'
     | '/api/auth/$'
+    | '/api/enroll/claim'
+    | '/api/enroll/finalize'
     | '/api/rpc/$'
   id:
     | '__root__'
@@ -120,6 +142,8 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/api/health'
     | '/api/auth/$'
+    | '/api/enroll/claim'
+    | '/api/enroll/finalize'
     | '/api/rpc/$'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +155,8 @@ export interface RootRouteChildren {
   ApiSplatRoute: typeof ApiSplatRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiEnrollClaimRoute: typeof ApiEnrollClaimRoute
+  ApiEnrollFinalizeRoute: typeof ApiEnrollFinalizeRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
 }
 
@@ -185,6 +211,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/enroll/claim': {
+      id: '/api/enroll/claim'
+      path: '/api/enroll/claim'
+      fullPath: '/api/enroll/claim'
+      preLoaderRoute: typeof ApiEnrollClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/enroll/finalize': {
+      id: '/api/enroll/finalize'
+      path: '/api/enroll/finalize'
+      fullPath: '/api/enroll/finalize'
+      preLoaderRoute: typeof ApiEnrollFinalizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -203,6 +243,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSplatRoute: ApiSplatRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiEnrollClaimRoute: ApiEnrollClaimRoute,
+  ApiEnrollFinalizeRoute: ApiEnrollFinalizeRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
 }
 export const routeTree = rootRouteImport

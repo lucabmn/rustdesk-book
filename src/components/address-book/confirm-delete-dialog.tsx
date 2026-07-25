@@ -28,12 +28,16 @@ export function ConfirmDeleteDialog({
           </div>
           <div className="tv-dialog__footer">
             <AlertDialog.Cancel asChild>
-              <button className="tv-btn tv-btn--outline tv-btn--sm">
+              <button
+                type="button"
+                className="tv-btn tv-btn--outline tv-btn--sm"
+              >
                 {m.common_cancel()}
               </button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
               <button
+                type="button"
                 className="tv-btn tv-btn--destructive tv-btn--sm"
                 onClick={() => device && onConfirm(device)}
               >

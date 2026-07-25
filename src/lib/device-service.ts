@@ -6,7 +6,14 @@
 import { and, desc, eq } from 'drizzle-orm'
 
 import type { db as Database } from '#/db'
-import { customers, devices } from '#/db/schema'
+import {
+  auditLog,
+  customers,
+  deviceFavorites,
+  devices,
+  type AuditAction,
+} from '#/db/schema'
+import { ORPCError } from '@orpc/server'
 import type { Device, DeviceListFilterSchema } from '#/orpc/schema'
 import { osLabel, type DeviceStatus } from '#/lib/device-meta'
 import type { z } from 'zod'
@@ -100,4 +107,83 @@ export async function queryDevices(
   }
 
   return rows
+}
+
+/**
+ * Resolve a free-text customer name to a customer id, creating the customer
+ * on first use. Empty/whitespace clears the assignment (null). This keeps the
+ * device form's name-based combobox working while customers live in their own
+ * table — one canonical row per name.
+ */
+export async function resolveCustomerId(
+  db: typeof Database,
+  name: string | null | undefined,
+): Promise<string | null> {
+  const trimmed = name?.trim()
+  if (!trimmed) return null
+  const [existing] = await db
+    .select({ id: customers.id })
+    .from(customers)
+    .where(eq(customers.name, trimmed))
+    .limit(1)
+  if (existing) return existing.id
+  const [created] = await db
+    .insert(customers)
+    .values({ name: trimmed })
+    .onConflictDoNothing()
+    .returning({ id: customers.id })
+  if (created) return created.id
+  // Lost a race — the row now exists, fetch it.
+  const [row] = await db
+    .select({ id: customers.id })
+    .from(customers)
+    .where(eq(customers.name, trimmed))
+    .limit(1)
+  return row?.id ?? null
+}
+
+/** Fetch a customer's display name by id (null id → null). */
+export async function customerNameOf(
+  db: typeof Database,
+  id: string | null,
+): Promise<string | null> {
+  if (!id) return null
+  const [row] = await db
+    .select({ name: customers.name })
+    .from(customers)
+    .where(eq(customers.id, id))
+    .limit(1)
+  return row?.name ?? null
+}
+
+/** Set of device ids the given user has starred. */
+export async function favoriteIdsFor(
+  db: typeof Database,
+  userId: string,
+): Promise<Set<string>> {
+  const rows = await db
+    .select({ deviceId: deviceFavorites.deviceId })
+    .from(deviceFavorites)
+    .where(eq(deviceFavorites.userId, userId))
+  return new Set(rows.map((r) => r.deviceId))
+}
+
+export async function loadDeviceRow(db: typeof Database, id: string) {
+  const [row] = await db
+    .select()
+    .from(devices)
+    .where(eq(devices.id, id))
+    .limit(1)
+  if (!row)
+    throw new ORPCError('NOT_FOUND', { message: 'Gerät nicht gefunden.' })
+  return row
+}
+
+export async function audit(
+  db: typeof Database,
+  action: AuditAction,
+  deviceId: string,
+  userId: string,
+) {
+  await db.insert(auditLog).values({ action, deviceId, userId })
 }

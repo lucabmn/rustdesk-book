@@ -171,7 +171,9 @@ export function DeviceFormDialog({
                 type="password"
                 value={form.password}
                 onChange={(e) => set('password', e.target.value)}
-                placeholder={device ? m.form_password_ph_edit() : m.form_password_ph_new()}
+                placeholder={
+                  device ? m.form_password_ph_edit() : m.form_password_ph_new()
+                }
                 autoComplete="new-password"
               />
             </Field>
@@ -187,9 +189,15 @@ export function DeviceFormDialog({
 
           <div className="tv-dialog__footer">
             <Dialog.Close asChild>
-              <button className="tv-btn tv-btn--outline tv-btn--sm">{m.common_cancel()}</button>
+              <button
+                type="button"
+                className="tv-btn tv-btn--outline tv-btn--sm"
+              >
+                {m.common_cancel()}
+              </button>
             </Dialog.Close>
             <button
+              type="button"
               className="tv-btn tv-btn--default tv-btn--sm"
               onClick={submit}
               disabled={busy}
@@ -200,6 +208,7 @@ export function DeviceFormDialog({
 
           <Dialog.Close asChild>
             <button
+              type="button"
               className="tv-btn tv-btn--ghost tv-btn--icon-sm"
               aria-label={m.common_close()}
               style={{ position: 'absolute', top: 8, right: 8 }}

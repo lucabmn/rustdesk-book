@@ -1,10 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { Dialog } from 'radix-ui'
-import { X } from 'lucide-react'
 
-import { orpc } from '#/orpc/client'
-import { auditActionLabel } from '#/lib/i18n-labels'
+import {
+  Badge,
+  Dialog,
+  DialogBody,
+  EmptyState,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+} from '#/components/ui'
 import { formatRustdeskId } from '#/lib/device-meta'
+import { auditActionLabel } from '#/lib/i18n-labels'
+import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 
 /** Admin-only view of the reveal/connect audit trail. */
@@ -21,94 +31,58 @@ export function AuditDialog({
   const entries = query.data ?? []
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="tv-dialog-overlay" />
-        <Dialog.Content className="tv-dialog" style={{ maxWidth: 640 }}>
-          <div className="tv-dialog__header">
-            <Dialog.Title className="tv-dialog__title">
-              {m.audit_title()}
-            </Dialog.Title>
-            <Dialog.Description className="tv-dialog__description">
-              {m.audit_description()}
-            </Dialog.Description>
-          </div>
-
-          {entries.length === 0 ? (
-            <span style={{ fontSize: 12.5, color: 'var(--fg-4)' }}>
-              {m.audit_none()}
-            </span>
-          ) : (
-            <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
-              <table className="tv-table">
-                <thead>
-                  <tr>
-                    <th>{m.audit_th_time()}</th>
-                    <th>{m.th_action()}</th>
-                    <th>{m.audit_th_device()}</th>
-                    <th>{m.audit_th_user()}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map((e) => (
-                    <tr key={e.id}>
-                      <td
-                        style={{ color: 'var(--fg-3)', whiteSpace: 'nowrap' }}
-                      >
-                        {new Date(e.createdAt).toLocaleString()}
-                      </td>
-                      <td>
-                        <span
-                          className={
-                            e.action === 'connect'
-                              ? 'tv-chip tv-chip--info'
-                              : 'tv-chip tv-chip--warn'
-                          }
-                        >
-                          {auditActionLabel(e.action)}
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={m.audit_title()}
+      description={m.audit_description()}
+      width={720}
+    >
+      <DialogBody>
+        {entries.length === 0 ? (
+          <EmptyState>{m.audit_none()}</EmptyState>
+        ) : (
+          <Table>
+            <THead>
+              <TH>{m.audit_th_time()}</TH>
+              <TH>{m.th_action()}</TH>
+              <TH>{m.audit_th_device()}</TH>
+              <TH>{m.audit_th_user()}</TH>
+            </THead>
+            <TBody>
+              {entries.map((e) => (
+                <TR key={e.id}>
+                  <TD className="tnum whitespace-nowrap text-muted">
+                    {new Date(e.createdAt).toLocaleString()}
+                  </TD>
+                  <TD>
+                    <Badge tone={e.action === 'connect' ? 'neutral' : 'warn'}>
+                      {auditActionLabel(e.action)}
+                    </Badge>
+                  </TD>
+                  <TD>
+                    {e.deviceAlias ? (
+                      <span className="flex items-baseline gap-1.5">
+                        <span className="font-medium">{e.deviceAlias}</span>
+                        <span className="tnum font-mono text-2xs text-faint">
+                          {e.deviceRustdeskId
+                            ? formatRustdeskId(e.deviceRustdeskId)
+                            : ''}
                         </span>
-                      </td>
-                      <td>
-                        {e.deviceAlias ? (
-                          <span>
-                            <span style={{ fontWeight: 600 }}>
-                              {e.deviceAlias}
-                            </span>{' '}
-                            <span
-                              className="mono"
-                              style={{ color: 'var(--fg-3)', fontSize: 11.5 }}
-                            >
-                              {e.deviceRustdeskId
-                                ? formatRustdeskId(e.deviceRustdeskId)
-                                : ''}
-                            </span>
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--fg-4)' }}>—</span>
-                        )}
-                      </td>
-                      <td style={{ color: 'var(--fg-2)' }}>
-                        {e.userName ?? e.userEmail ?? '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <Dialog.Close asChild>
-            <button
-              type="button"
-              className="tv-btn tv-btn--ghost tv-btn--icon-sm"
-              aria-label={m.common_close()}
-              style={{ position: 'absolute', top: 8, right: 8 }}
-            >
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+                      </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </TD>
+                  <TD className="text-muted">
+                    {e.userName ?? e.userEmail ?? '—'}
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
+      </DialogBody>
+    </Dialog>
   )
 }

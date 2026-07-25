@@ -1,5 +1,16 @@
 import { Ban, Pencil, ShieldCheck, Trash2, Undo2 } from 'lucide-react'
 
+import {
+  Avatar,
+  Badge,
+  Button,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+} from '#/components/ui'
 import { roleLabel } from '#/lib/i18n-labels'
 import { m } from '#/paraglide/messages'
 import type { ManagedUser } from './users-dialog'
@@ -23,162 +34,112 @@ export function UserTable({
   onDelete,
 }: UserTableProps) {
   return (
-    <table className="tv-table" style={{ minWidth: 680 }}>
-      <thead>
-        <tr>
-          <th>{m.users_th_user()}</th>
-          <th>{m.users_th_role()}</th>
-          <th>{m.users_th_status()}</th>
-          <th style={{ textAlign: 'right' }}>{m.users_th_devices()}</th>
-          <th>{m.users_th_joined()}</th>
-          <th style={{ textAlign: 'right' }}>{m.th_action()}</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table className="min-w-[680px]">
+      <THead>
+        <TH>{m.users_th_user()}</TH>
+        <TH>{m.users_th_role()}</TH>
+        <TH>{m.users_th_status()}</TH>
+        <TH align="right">{m.users_th_devices()}</TH>
+        <TH>{m.users_th_joined()}</TH>
+        <TH align="right">{m.th_action()}</TH>
+      </THead>
+      <TBody>
         {users.map((u) => {
+          // An admin must not be able to lock or delete themselves out.
           const isSelf = u.id === currentUserId
           return (
-            <tr key={u.id}>
-              <td>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                  }}
-                >
-                  <span
-                    className="tv-avatar tv-avatar--sm"
-                    style={{
-                      background: 'var(--brand-soft)',
-                      color: 'var(--brand)',
-                      fontSize: 11,
-                    }}
-                  >
-                    {u.name.slice(0, 2).toUpperCase()}
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
+            <TR key={u.id}>
+              <TD>
+                <div className="flex items-center gap-2.5 py-1">
+                  <Avatar initials={u.name.slice(0, 2).toUpperCase()} />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 font-medium">
                       {u.name}
-                      {isSelf && (
-                        <span className="tv-badge tv-badge--secondary">
-                          {m.users_self_badge()}
-                        </span>
-                      )}
+                      {isSelf && <Badge>{m.users_self_badge()}</Badge>}
                     </div>
-                    <div style={{ fontSize: 11.5, color: 'var(--fg-3)' }}>
+                    <div className="truncate text-2xs text-muted">
                       {u.email}
                     </div>
                   </div>
                 </div>
-              </td>
-              <td>
-                <span
-                  className={
-                    u.role === 'admin'
-                      ? 'tv-chip tv-chip--info'
-                      : 'tv-chip tv-chip--neutral'
-                  }
-                >
-                  {u.role === 'admin' && (
-                    <ShieldCheck size={11} strokeWidth={2} />
-                  )}
+              </TD>
+              <TD>
+                <Badge tone={u.role === 'admin' ? 'accent' : 'neutral'}>
+                  {u.role === 'admin' && <ShieldCheck className="size-3" />}
                   {roleLabel(u.role)}
-                </span>
-              </td>
-              <td>
+                </Badge>
+              </TD>
+              <TD>
                 {u.banned ? (
-                  <span
-                    className="tv-chip tv-chip--warn"
+                  <Badge
+                    tone="warn"
                     title={
                       u.banReason
-                        ? m.users_banned_reason({
-                            reason: u.banReason,
-                          })
+                        ? m.users_banned_reason({ reason: u.banReason })
                         : undefined
                     }
                   >
                     {m.users_status_banned()}
-                  </span>
+                  </Badge>
                 ) : (
-                  <span className="tv-chip tv-chip--ok">
-                    {m.users_status_active()}
-                  </span>
+                  <Badge tone="ok">{m.users_status_active()}</Badge>
                 )}
-              </td>
-              <td
-                className="mono tnum"
-                style={{ textAlign: 'right', color: 'var(--fg-2)' }}
-              >
-                {u.deviceCount}
-              </td>
-              <td style={{ color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>
+              </TD>
+              <TD className="tnum text-right text-muted">{u.deviceCount}</TD>
+              <TD className="tnum whitespace-nowrap text-muted">
                 {new Date(u.createdAt).toLocaleDateString()}
-              </td>
-              <td>
-                <span
-                  style={{
-                    display: 'flex',
-                    gap: 4,
-                    justifyContent: 'flex-end',
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+              </TD>
+              <TD>
+                <div className="flex justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
                     title={m.users_edit()}
+                    aria-label={m.users_edit()}
                     onClick={() => onEdit(u)}
                   >
-                    <Pencil size={13} />
-                  </button>
+                    <Pencil />
+                  </Button>
                   {u.banned ? (
-                    <button
-                      type="button"
-                      className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       title={m.users_unban()}
+                      aria-label={m.users_unban()}
                       onClick={() => onUnban(u)}
                     >
-                      <Undo2 size={13} />
-                    </button>
+                      <Undo2 />
+                    </Button>
                   ) : (
-                    <button
-                      type="button"
-                      className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       title={m.users_ban()}
+                      aria-label={m.users_ban()}
                       disabled={isSelf}
-                      style={{
-                        color: isSelf ? undefined : 'var(--s-warn)',
-                      }}
+                      className="hover:bg-warn-soft hover:text-warn"
                       onClick={() => onBan(u)}
                     >
-                      <Ban size={13} />
-                    </button>
+                      <Ban />
+                    </Button>
                   )}
-                  <button
-                    type="button"
-                    className="tv-btn tv-btn--ghost tv-btn--icon-xs"
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
                     title={m.common_delete()}
+                    aria-label={m.common_delete()}
                     disabled={isSelf}
-                    style={{
-                      color: isSelf ? undefined : 'var(--s-err)',
-                    }}
+                    className="hover:bg-danger-soft hover:text-danger"
                     onClick={() => onDelete(u)}
                   >
-                    <Trash2 size={13} />
-                  </button>
-                </span>
-              </td>
-            </tr>
+                    <Trash2 />
+                  </Button>
+                </div>
+              </TD>
+            </TR>
           )
         })}
-      </tbody>
-    </table>
+      </TBody>
+    </Table>
   )
 }

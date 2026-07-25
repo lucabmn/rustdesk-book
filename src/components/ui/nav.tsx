@@ -30,9 +30,7 @@ export function NavItem({
       )}
       {...props}
     >
-      <Icon
-        className={cn('size-3.5 shrink-0', active ? '' : 'text-faint')}
-      />
+      <Icon className={cn('size-3.5 shrink-0', active ? '' : 'text-faint')} />
       <span className="min-w-0 flex-1 truncate text-xs">{label}</span>
       {count !== undefined ? (
         <span className="tnum shrink-0 text-2xs text-faint">{count}</span>
@@ -48,10 +46,9 @@ export function NavItem({
 export function Segmented({
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: React.ComponentProps<'fieldset'>) {
   return (
-    <div
-      role="group"
+    <fieldset
       className={cn(
         'inline-flex items-center gap-px rounded-md border border-line bg-sunken p-px',
         className,

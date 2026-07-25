@@ -24,10 +24,7 @@ export function activatable(onActivate: () => void) {
 }
 
 /** A bordered surface. The default container for anything list-shaped. */
-export function Card({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+export function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       className={cn('rounded-lg border border-line bg-surface', className)}

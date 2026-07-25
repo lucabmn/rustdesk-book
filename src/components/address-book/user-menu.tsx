@@ -39,7 +39,11 @@ export function UserMenu({
   return (
     <Menu>
       <MenuTrigger asChild>
-        <button type="button" aria-label={m.user_menu()} className="rounded-full">
+        <button
+          type="button"
+          aria-label={m.user_menu()}
+          className="rounded-full"
+        >
           <Avatar initials={initials} />
         </button>
       </MenuTrigger>

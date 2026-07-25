@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Laptop } from 'lucide-react'
 
+import { Button, Field, Input, Select, Textarea } from '#/components/ui'
 import { m } from '#/paraglide/messages'
 import { CustomerCombobox } from './customer-combobox'
 
@@ -48,44 +49,28 @@ export function EnrollmentForm({
   }
 
   return (
-    <>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 10,
-        }}
-      >
-        <div className="tv-field">
-          <label className="tv-label" htmlFor="enrollment-name">
-            {m.enrollment_name()}
-          </label>
-          <input
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={m.enrollment_name()} htmlFor="enrollment-name">
+          <Input
             id="enrollment-name"
-            className="tv-input"
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder={m.enrollment_name_placeholder()}
           />
-        </div>
-        <div className="tv-field">
-          <label className="tv-label" htmlFor="enrollment-kind">
-            {m.enrollment_type()}
-          </label>
-          <select
+        </Field>
+        <Field label={m.enrollment_type()} htmlFor="enrollment-kind">
+          <Select
             id="enrollment-kind"
-            className="tv-select"
             value={kind}
             onChange={(event) => setKind(event.target.value as typeof kind)}
           >
             <option value="single">{m.enrollment_type_single()}</option>
             <option value="permanent">{m.enrollment_type_permanent()}</option>
-          </select>
-        </div>
-        <div className="tv-field">
-          <label className="tv-label" htmlFor="enrollment-customer">
-            {m.form_customer_label()}
-          </label>
+          </Select>
+        </Field>
+
+        <Field label={m.form_customer_label()} htmlFor="enrollment-customer">
           <CustomerCombobox
             id="enrollment-customer"
             value={customer}
@@ -94,75 +79,61 @@ export function EnrollmentForm({
             placeholder={m.form_customer_ph()}
             commitMode="change"
             allowCreate
+            className="h-8 text-sm"
             aria-label={m.form_customer_label()}
           />
-        </div>
-        <div className="tv-field">
-          <label className="tv-label" htmlFor="enrollment-tags">
-            {m.form_tags_label()}
-          </label>
-          <input
+        </Field>
+        <Field label={m.form_tags_label()} htmlFor="enrollment-tags">
+          <Input
             id="enrollment-tags"
-            className="tv-input"
             value={tags}
             onChange={(event) => setTags(event.target.value)}
             placeholder={m.form_tags_ph()}
           />
-        </div>
-        <div className="tv-field" style={{ gridColumn: '1 / -1' }}>
-          <label className="tv-label" htmlFor="enrollment-config">
-            {m.enrollment_config()}
-          </label>
-          <textarea
+        </Field>
+
+        <Field
+          label={m.enrollment_config()}
+          htmlFor="enrollment-config"
+          hint={m.enrollment_config_hint()}
+          className="col-span-2"
+        >
+          <Textarea
             id="enrollment-config"
-            className="tv-input"
             value={rustdeskConfig}
             onChange={(event) => setRustdeskConfig(event.target.value)}
             placeholder={m.enrollment_config_placeholder()}
-            style={{ minHeight: 62, resize: 'vertical' }}
+            className="min-h-16 font-mono text-xs"
           />
-          <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-            {m.enrollment_config_hint()}
-          </span>
-        </div>
-        <label
-          style={{
-            gridColumn: '1 / -1',
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={installIfMissing}
-            onChange={(event) => setInstallIfMissing(event.target.checked)}
-          />
-          <span>
-            <strong>{m.enrollment_install_missing()}</strong>
-            <span
-              style={{
-                display: 'block',
-                fontSize: 11,
-                color: 'var(--fg-4)',
-              }}
-            >
-              {m.enrollment_install_missing_hint()}
-            </span>
-          </span>
-        </label>
+        </Field>
       </div>
 
-      <button
-        type="button"
-        className="tv-btn tv-btn--default tv-btn--sm"
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-line bg-sunken p-2.5">
+        <input
+          type="checkbox"
+          checked={installIfMissing}
+          onChange={(event) => setInstallIfMissing(event.target.checked)}
+          className="mt-px size-3.5 accent-accent"
+        />
+        <span>
+          <span className="block font-medium text-text text-xs">
+            {m.enrollment_install_missing()}
+          </span>
+          <span className="block text-2xs text-muted">
+            {m.enrollment_install_missing_hint()}
+          </span>
+        </span>
+      </label>
+
+      <Button
+        variant="accent"
+        size="md"
+        className="self-start"
         disabled={!name.trim() || busy}
         onClick={submit}
-        style={{ alignSelf: 'flex-start' }}
       >
-        <Laptop size={14} /> {m.enrollment_create()}
-      </button>
-    </>
+        <Laptop /> {m.enrollment_create()}
+      </Button>
+    </div>
   )
 }

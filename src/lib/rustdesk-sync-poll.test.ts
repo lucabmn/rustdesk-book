@@ -1,33 +1,32 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { devices } from '#/db/schema'
+import * as sync from '#/lib/rustdesk-sync'
 import { createTestDb, type TestDb } from '#/test/db'
 
 let db: TestDb
 
-/**
- * The sync module keeps its TTL/in-flight state in module scope, so every test
- * imports a fresh copy.
- */
-async function freshModule() {
-  vi.resetModules()
-  return import('#/lib/rustdesk-sync')
-}
+const realFetch = globalThis.fetch
+const realConsoleError = console.error
 
+/** Swap `fetch` for a stub that answers with the given peers payload. */
 function mockPeers(body: unknown, ok = true) {
-  const fetchMock = vi.fn(async () =>
-    ok
+  const calls: Array<[string, RequestInit]> = []
+  const fetchMock = async (url: string, init: RequestInit) => {
+    calls.push([url, init])
+    return ok
       ? new Response(JSON.stringify(body), {
           headers: { 'content-type': 'application/json' },
         })
-      : new Response('nope', { status: 503 }),
-  )
-  vi.stubGlobal('fetch', fetchMock)
-  return fetchMock
+      : new Response('nope', { status: 503 })
+  }
+  globalThis.fetch = fetchMock as unknown as typeof fetch
+  return { calls }
 }
 
 beforeEach(async () => {
   db = await createTestDb()
+  sync.resetSyncState()
   process.env.RUSTDESK_API_URL = 'https://rustdesk.example.com/'
   delete process.env.RUSTDESK_API_KEY
   delete process.env.RUSTDESK_API_PATH
@@ -40,8 +39,8 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await db.$close()
-  vi.unstubAllGlobals()
-  vi.restoreAllMocks()
+  globalThis.fetch = realFetch
+  console.error = realConsoleError
   delete process.env.RUSTDESK_API_URL
   delete process.env.RUSTDESK_SYNC_TTL
 })
@@ -49,13 +48,13 @@ afterEach(async () => {
 describe('syncConfig', () => {
   it('is disabled without a server URL', async () => {
     delete process.env.RUSTDESK_API_URL
-    const sync = await freshModule()
+    sync.resetSyncState()
     expect(sync.syncConfig()).toBeNull()
     expect(sync.isSyncEnabled()).toBe(false)
   })
 
   it('normalizes the URL and applies the defaults', async () => {
-    const sync = await freshModule()
+    sync.resetSyncState()
     expect(sync.syncConfig()).toEqual({
       url: 'https://rustdesk.example.com',
       key: null,
@@ -66,25 +65,25 @@ describe('syncConfig', () => {
 
   it('falls back to the default TTL for nonsense values', async () => {
     process.env.RUSTDESK_SYNC_TTL = 'not-a-number'
-    expect((await freshModule()).syncConfig()?.ttlMs).toBe(30_000)
+    expect(sync.syncConfig()?.ttlMs).toBe(30_000)
     process.env.RUSTDESK_SYNC_TTL = '-5'
-    expect((await freshModule()).syncConfig()?.ttlMs).toBe(30_000)
+    expect(sync.syncConfig()?.ttlMs).toBe(30_000)
     process.env.RUSTDESK_SYNC_TTL = '90'
-    expect((await freshModule()).syncConfig()?.ttlMs).toBe(90_000)
+    expect(sync.syncConfig()?.ttlMs).toBe(90_000)
   })
 })
 
 describe('maybeSyncStatuses', () => {
   it('does nothing when sync is disabled', async () => {
     delete process.env.RUSTDESK_API_URL
-    const sync = await freshModule()
-    const fetchMock = mockPeers([])
+    sync.resetSyncState()
+    const fetch = mockPeers([])
     expect(await sync.maybeSyncStatuses(db as never)).toBe(0)
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetch.calls).toHaveLength(0)
   })
 
   it('applies live statuses and counts only real transitions', async () => {
-    const sync = await freshModule()
+    sync.resetSyncState()
     mockPeers([
       { id: '123456789', online: true },
       { id: '222222222', online: true },
@@ -100,14 +99,11 @@ describe('maybeSyncStatuses', () => {
   it('sends the API key and honours a custom path', async () => {
     process.env.RUSTDESK_API_KEY = 'secret-key'
     process.env.RUSTDESK_API_PATH = '/custom/peers'
-    const sync = await freshModule()
-    const fetchMock = mockPeers({ peers: [{ id: '123456789', online: true }] })
+    sync.resetSyncState()
+    const fetch = mockPeers({ peers: [{ id: '123456789', online: true }] })
 
     await sync.maybeSyncStatuses(db as never)
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ]
+    const [url, init] = fetch.calls[0]
     expect(url).toBe('https://rustdesk.example.com/custom/peers')
     expect((init.headers as Record<string, string>).Authorization).toBe(
       'Bearer secret-key',
@@ -115,43 +111,43 @@ describe('maybeSyncStatuses', () => {
   })
 
   it('accepts the { data: [...] } envelope and skips unknown peers', async () => {
-    const sync = await freshModule()
+    sync.resetSyncState()
     mockPeers({ data: [{ id: '999999999', online: true }] })
     expect(await sync.maybeSyncStatuses(db as never)).toBe(0)
   })
 
   it('tolerates a non-array payload', async () => {
-    const sync = await freshModule()
+    sync.resetSyncState()
     mockPeers({ peers: 'nope' })
     expect(await sync.maybeSyncStatuses(db as never)).toBe(0)
   })
 
   it('respects the TTL and can be forced past it', async () => {
-    const sync = await freshModule()
-    const fetchMock = mockPeers([{ id: '123456789', online: true }])
+    sync.resetSyncState()
+    const fetch = mockPeers([{ id: '123456789', online: true }])
 
     expect(await sync.maybeSyncStatuses(db as never)).toBe(1)
     expect(await sync.maybeSyncStatuses(db as never)).toBe(0)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetch.calls).toHaveLength(1)
 
     await sync.maybeSyncStatuses(db as never, true)
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetch.calls).toHaveLength(2)
   })
 
   it('shares one in-flight poll between concurrent callers', async () => {
-    const sync = await freshModule()
-    const fetchMock = mockPeers([{ id: '123456789', online: true }])
+    sync.resetSyncState()
+    const fetch = mockPeers([{ id: '123456789', online: true }])
     const [a, b] = await Promise.all([
       sync.maybeSyncStatuses(db as never),
       sync.maybeSyncStatuses(db as never),
     ])
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetch.calls).toHaveLength(1)
     expect(a).toBe(b)
   })
 
   it('never throws when the server is unreachable', async () => {
-    const sync = await freshModule()
-    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    sync.resetSyncState()
+    console.error = () => undefined
     mockPeers(null, false)
     expect(await sync.maybeSyncStatuses(db as never)).toBe(0)
     // Failure still stamps the attempt so a dead server is not polled per request.
@@ -164,7 +160,7 @@ describe('maybeSyncStatuses', () => {
   })
 
   it('leaves untouched devices alone when nothing changed', async () => {
-    const sync = await freshModule()
+    sync.resetSyncState()
     // Same status, no fresh lastSeen → no write at all.
     mockPeers([{ id: '123456789', online: false, last_online: null }])
     expect(await sync.maybeSyncStatuses(db as never)).toBe(0)

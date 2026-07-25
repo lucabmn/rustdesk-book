@@ -1,15 +1,19 @@
-import { vi } from 'vitest'
+import { mock } from 'bun:test'
 
 import { invitedRegistration } from '#/lib/registration-context'
 import { normalizeTestEnv } from './env'
 import { currentUser, signUpCalls } from './session'
 
+/**
+ * Preload for `bun test` (wired up in bunfig.toml). Bun does not read
+ * vitest.config.ts, so the environment and the better-auth mock that the
+ * vitest setup provides are established here instead. Keep this in sync with
+ * `setup.ts`.
+ */
+
 normalizeTestEnv()
 
-// better-auth is replaced wholesale in tests: the procedures under test only
-// consume `getSession` and `signUpEmail`, and driving a real cookie/session
-// flow would couple every router test to the auth implementation.
-vi.mock('#/lib/auth', () => ({
+mock.module('#/lib/auth', () => ({
   auth: {
     api: {
       getSession: async () => {

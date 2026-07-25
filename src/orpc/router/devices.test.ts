@@ -275,10 +275,9 @@ describe('remove / get / import', () => {
 
 describe('sync', () => {
   it('reports sync as disabled when no server is configured', async () => {
-    expect(await callRpc(devices.syncInfo)).toEqual({
-      enabled: false,
-      lastSyncedAt: 0,
-    })
+    // lastSyncedAt is process-wide bookkeeping, so only `enabled` is asserted
+    // here — the poller's own suite covers the timestamp.
+    expect(await callRpc(devices.syncInfo)).toMatchObject({ enabled: false })
     expect(await callRpc(devices.syncNow)).toEqual({
       enabled: false,
       updated: 0,

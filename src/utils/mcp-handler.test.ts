@@ -59,8 +59,7 @@ describe('handleMcpRequest', () => {
     // Never settles, so the handler can only end in its timeout branch.
     server.registerTool('hang', {}, () => new Promise(() => {}))
 
-    vi.useFakeTimers()
-    const pending = handleMcpRequest(
+    const res = await handleMcpRequest(
       call({
         jsonrpc: '2.0',
         id: 9,
@@ -68,10 +67,8 @@ describe('handleMcpRequest', () => {
         params: { name: 'hang', arguments: {} },
       }),
       server,
+      { timeoutMs: 20 },
     )
-    await vi.advanceTimersByTimeAsync(30_000)
-    const res = await pending
-    vi.useRealTimers()
 
     expect(res.status).toBe(504)
     expect((await res.json()).error.message).toBe('MCP request timed out')

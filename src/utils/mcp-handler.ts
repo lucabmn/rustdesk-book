@@ -8,6 +8,7 @@ const REQUEST_TIMEOUT_MS = 30_000
 export async function handleMcpRequest(
   request: Request,
   server: McpServer,
+  { timeoutMs = REQUEST_TIMEOUT_MS }: { timeoutMs?: number } = {},
 ): Promise<Response> {
   try {
     const jsonRpcRequest = (await request.json()) as JSONRPCMessage
@@ -39,7 +40,7 @@ export async function handleMcpRequest(
 
     await clientTransport.send(jsonRpcRequest)
 
-    const timeout = setTimeout(() => settle(null), REQUEST_TIMEOUT_MS)
+    const timeout = setTimeout(() => settle(null), timeoutMs)
     const responseData = await replied.finally(() => clearTimeout(timeout))
 
     await clientTransport.close()

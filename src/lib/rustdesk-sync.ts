@@ -58,6 +58,16 @@ export function lastSyncedAt(): number {
   return lastSyncAt
 }
 
+/**
+ * Drop the TTL/in-flight bookkeeping. Test seam: it lets a suite exercise the
+ * poller repeatedly without reloading the module, and is a no-op in practice
+ * because the process only ever wants one shared poll schedule.
+ */
+export function resetSyncState(): void {
+  lastSyncAt = 0
+  inFlight = null
+}
+
 /** Coerce one raw peer object into our shape, tolerating field-name variance. */
 export function normalizePeer(raw: unknown): LivePeer | null {
   if (!raw || typeof raw !== 'object') return null

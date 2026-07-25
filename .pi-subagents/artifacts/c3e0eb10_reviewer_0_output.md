@@ -1,4 +1,0 @@
-## Review
-- **Hoch:** `src/lib/deployment-script.ts:153-190,315-357,452-494` – Recovery verwendet einen abgelaufenen Claim dauerhaft weiter. Nach >30 Minuten scheitert jedes erneute Finalize mit 401; das Skript claimt nicht neu, obwohl das Gerätepasswort bereits geändert wurde.
-- **Hoch:** `src/lib/deployment-script.ts:172` – `RandomNumberGenerator.Fill()` ist unter Windows PowerShell 5.1/.NET Framework nicht verfügbar; typische GPO-/SYSTEM-Ausführung bricht bei der Passworterzeugung ab.
-- **Hoch:** `src/lib/enrollment.ts:122-140,230-242` – Claims reservieren eine RustDesk-ID nur innerhalb desselben Tokens. Zwei verschiedene permanente Tokens können dasselbe Gerät parallel claimen, unterschiedliche Passwörter setzen und erst beim zweiten Finalize kollidieren; dadurch kann das gespeicherte Passwort vom tatsächlichen abweichen.

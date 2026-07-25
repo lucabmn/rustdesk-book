@@ -111,9 +111,15 @@ export function Avatar({
 }
 
 /** Keyboard hint, e.g. the search shortcut. */
+/**
+ * Keyboard hint, e.g. the search shortcut. The leading is pinned to the font
+ * size on purpose: `text-[10px]` only sets font-size, so without it the chip
+ * inherits the body's 20px line-height and grows to 24px — taller than the
+ * 28px control it usually sits inside.
+ */
 export function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded border border-line bg-sunken px-1 py-px font-sans font-medium text-[10px] text-faint">
+    <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded border border-line bg-sunken px-1 font-sans font-medium text-[10px] text-faint leading-none">
       {children}
     </kbd>
   )

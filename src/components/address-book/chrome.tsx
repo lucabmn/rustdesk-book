@@ -40,15 +40,17 @@ export function TopBar({
   // Cmd/Ctrl+K jumps to search from anywhere; Escape gives the list back.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault()
-        searchRef.current?.focus()
-        searchRef.current?.select()
-      }
+      if (event.key !== 'k') return
+      // Only the platform's own modifier. Accepting both would swallow Ctrl+K
+      // on macOS, where it is kill-to-end-of-line inside any text field.
+      if (isMac ? !event.metaKey : !event.ctrlKey) return
+      event.preventDefault()
+      searchRef.current?.focus()
+      searchRef.current?.select()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [isMac])
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-line border-b bg-surface pr-3 pl-4">
@@ -71,7 +73,13 @@ export function TopBar({
           aria-label={m.search_placeholder()}
           className="h-7 bg-sunken pr-14 pl-8 text-xs"
         />
-        <span className="pointer-events-none absolute top-1.5 right-2 flex gap-0.5">
+        {/* Centred by the box rather than a hand-tuned offset, so it stays
+            centred if the field's height ever changes. Hidden from assistive
+            tech — the input's own label already says what this field is. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-0.5"
+        >
           <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
           <Kbd>K</Kbd>
         </span>

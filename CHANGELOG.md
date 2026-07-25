@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In-memory (PGlite) test database that runs the real migrations, plus an oRPC
   call helper — every router and the enrollment flow are now covered end to end
 - Coverage reporting with thresholds enforced in CI (97% statements)
-- Docker build check, dependency review and Dependabot in CI
+- Docker build check and Dependabot in CI
 
 ### Changed
 - Address book split from one 1325-line component into a shell, chrome,

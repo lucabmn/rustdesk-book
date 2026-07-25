@@ -67,12 +67,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  dependency-review:
-    name: Dependency review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
+  # Vulnerable-dependency review on pull requests requires the repository's
+  # dependency graph, which is off by default on private repositories and makes
+  # the action fail outright rather than skip. Enable it under
+  # Settings → Code security, then add back:
+  #
+  #   dependency-review:
+  #     name: Dependency review
+  #     runs-on: ubuntu-latest
+  #     if: github.event_name == 'pull_request'
+  #     steps:
+  #       - uses: actions/checkout@v4
+  #       - uses: actions/dependency-review-action@v4
+  #         with:
+  #           fail-on-severity: high
+  #
+  # Until then Dependabot (.github/dependabot.yml) is the safety net.

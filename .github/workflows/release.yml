@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           # A tag-push checkout does not necessarily carry the branch refs.
-          git fetch --no-tags --depth=0 origin \
+          git fetch --no-tags origin \
             "+refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
           tag="${GITHUB_REF_NAME}"
           owns=false

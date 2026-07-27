@@ -17,6 +17,7 @@ import {
 } from '#/lib/enrollment'
 import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
+import { auditEntries } from '#/test/audit'
 
 let db: TestDb
 
@@ -345,5 +346,42 @@ describe('finalizeEnrollment guards', () => {
     })
     const [device] = await db.select().from(devices)
     expect(device.customerId).toBe(existing.id)
+  })
+})
+
+describe('audit trail', () => {
+  it('records a consumed token, without a session and without the token', async () => {
+    process.env.TRUST_PROXY_HEADERS = 'true'
+    try {
+      const { token, row } = await seedToken('single')
+      const claim = await claimEnrollment(db as never, token, claimInput)
+      if (claim.alreadyEnrolled) throw new Error('unexpected')
+      await finalizeEnrollment(
+        db as never,
+        claim.claimToken,
+        { password: 'pw-123456' },
+        new Headers({ 'x-forwarded-for': '5.6.7.8' }),
+      )
+      const [entry] = await auditEntries(db)
+      expect(entry).toMatchObject({
+        action: 'enrollment_token_used',
+        userId: null,
+        targetType: 'enrollment_token',
+        targetId: row.id,
+        ipAddress: '5.6.7.8',
+      })
+      const serialized = JSON.stringify(entry)
+      expect(serialized).not.toContain(token)
+      expect(serialized).not.toContain('pw-123456')
+    } finally {
+      delete process.env.TRUST_PROXY_HEADERS
+    }
+  })
+
+  it('records nothing when the claim is rejected', async () => {
+    await expect(
+      finalizeEnrollment(db as never, 'rdc_nope', { password: 'pw-123456' }),
+    ).rejects.toThrow(EnrollmentError)
+    expect(await auditEntries(db)).toHaveLength(0)
   })
 })

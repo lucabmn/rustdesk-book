@@ -7,6 +7,7 @@ import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
 import { rpc } from '#/test/rpc'
 import { signIn } from '#/test/session'
+import { auditActions, auditEntries } from '#/test/audit'
 
 let db: TestDb
 let callRpc: ReturnType<typeof rpc>
@@ -161,5 +162,57 @@ describe('remove', () => {
     await expect(callRpc(users.remove, { id: 'admin-1' })).rejects.toThrow(
       /letzte Administrator/,
     )
+  })
+})
+
+describe('audit trail', () => {
+  it('records a role change, a ban, an unban and a deletion', async () => {
+    await callRpc(users.update, {
+      id: 'member-1',
+      name: 'Member',
+      role: 'admin',
+    })
+    const [roleEntry] = await auditEntries(db)
+    expect(roleEntry).toMatchObject({
+      action: 'user_role_changed',
+      targetType: 'user',
+      targetId: 'member-1',
+      targetLabel: 'member@example.com',
+    })
+    expect(roleEntry.metadata).toEqual({
+      fields: ['role'],
+      from: 'member',
+      to: 'admin',
+    })
+
+    await callRpc(users.ban, { id: 'member-1', reason: 'spam' })
+    await callRpc(users.unban, { id: 'member-1' })
+    await callRpc(users.remove, { id: 'member-1' })
+    expect(await auditActions(db)).toEqual([
+      'user_role_changed',
+      'user_banned',
+      'user_unbanned',
+      'user_deleted',
+    ])
+  })
+
+  it('records a rename that left the role alone as no role change', async () => {
+    await callRpc(users.update, {
+      id: 'member-1',
+      name: 'Renamed',
+      role: 'member',
+    })
+    expect(await auditActions(db)).toEqual([])
+  })
+
+  it('records nothing for a rejected call', async () => {
+    await expect(callRpc(users.remove, { id: 'admin-1' })).rejects.toThrow(
+      /eigenes Konto/,
+    )
+    signIn({ id: 'member-1', email: 'member@example.com', role: 'member' })
+    await expect(callRpc(users.ban, { id: 'admin-1' })).rejects.toThrow(
+      /Administratorrechte/,
+    )
+    expect(await auditActions(db)).toEqual([])
   })
 })

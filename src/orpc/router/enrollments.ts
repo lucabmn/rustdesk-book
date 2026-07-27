@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { authed } from '#/orpc/context'
 import { enrollmentClaims, enrollmentTokens } from '#/db/schema'
+import { recordAuditEvent } from '#/lib/audit-service'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
 import {
   enrollmentTokenPrefix,
@@ -43,6 +44,31 @@ function accessibleToken(
     : and(eq(enrollmentTokens.id, id), eq(enrollmentTokens.createdBy, userId))
 }
 
+type AuditingContext = {
+  headers: Headers
+  user: { id: string; name: string; email: string }
+}
+
+/** Actor + target snapshot for an audit event about an enrollment token. */
+function enrollmentAuditEvent(
+  context: AuditingContext,
+  row: { id: string; name: string },
+) {
+  return {
+    actor: {
+      id: context.user.id,
+      name: context.user.name,
+      email: context.user.email,
+    },
+    target: {
+      type: 'enrollment_token' as const,
+      id: row.id,
+      label: row.name,
+    },
+    headers: context.headers,
+  }
+}
+
 const CreateEnrollmentSchema = z.object({
   name: z.string().trim().min(1).max(120),
   kind: TokenKindSchema,
@@ -78,6 +104,18 @@ export const create = authed
         createdBy: context.user.id,
       })
       .returning({ id: enrollmentTokens.id })
+
+    // The token VALUE is returned to the caller but never recorded — only its
+    // prefix, which is what the token list shows too.
+    await recordAuditEvent(context.db, {
+      action: 'enrollment_token_created',
+      ...enrollmentAuditEvent(context, { id: row.id, name: input.name }),
+      metadata: {
+        kind: input.kind,
+        tokenPrefix: enrollmentTokenPrefix(token),
+        customer: input.customer || null,
+      },
+    })
 
     return {
       id: row.id,
@@ -227,6 +265,12 @@ export const revoke = authed
       .update(enrollmentTokens)
       .set({ revokedAt: new Date() })
       .where(accessibleToken(input.id, context.user.id, context.user.role))
-      .returning({ id: enrollmentTokens.id })
+      .returning({ id: enrollmentTokens.id, name: enrollmentTokens.name })
+    if (row) {
+      await recordAuditEvent(context.db, {
+        action: 'enrollment_token_revoked',
+        ...enrollmentAuditEvent(context, row),
+      })
+    }
     return { ok: Boolean(row) }
   })

@@ -192,9 +192,12 @@ export function useAddressBook(initialView: ViewMode) {
       }
       toast(m.toast_id_copied())
     },
-    exportDevices() {
+    async exportDevices() {
       try {
-        const blob = new Blob([serializeDevices(devices)], {
+        // Fetched from the server rather than serialized from local state, so
+        // the audit entry records what actually left the server.
+        const exported = await client.devices.exportDevices()
+        const blob = new Blob([serializeDevices(exported.devices)], {
           type: 'application/json',
         })
         const a = document.createElement('a')
@@ -202,7 +205,7 @@ export function useAddressBook(initialView: ViewMode) {
         a.download = EXPORT_FILENAME
         a.click()
         setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-        toast(m.toast_exported({ count: devices.length }))
+        toast(m.toast_exported({ count: exported.devices.length }))
       } catch {
         toast(m.toast_export_failed())
       }

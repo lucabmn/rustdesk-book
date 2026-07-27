@@ -9,6 +9,7 @@ import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
 import { rpc } from '#/test/rpc'
 import { signIn } from '#/test/session'
+import { auditActions, auditEntries } from '#/test/audit'
 
 let db: TestDb
 let callRpc: ReturnType<typeof rpc>
@@ -244,5 +245,40 @@ describe('remove', () => {
     expect(await callRpc(enrollments.remove, { id: created.id })).toEqual({
       ok: false,
     })
+  })
+})
+
+describe('audit trail', () => {
+  it('records creation with the prefix only, never the token', async () => {
+    const created = await create()
+    const [entry] = await auditEntries(db)
+    expect(entry).toMatchObject({
+      action: 'enrollment_token_created',
+      targetType: 'enrollment_token',
+      targetId: created.id,
+      targetLabel: 'Fleet rollout',
+    })
+    expect(JSON.stringify(entry)).not.toContain(created.token)
+    expect(entry.metadata).toMatchObject({ kind: 'permanent' })
+  })
+
+  it('records a revocation once, and nothing for a foreign token', async () => {
+    const created = await create()
+    await callRpc(enrollments.revoke, { id: created.id })
+    expect(await auditActions(db)).toEqual([
+      'enrollment_token_created',
+      'enrollment_token_revoked',
+    ])
+
+    // A member may not revoke someone else's token: the update matches no row.
+    signIn({ id: 'user-2', email: 'two@example.com', role: 'member' })
+    const other = await create({ name: 'Other' })
+    signIn({ id: 'user-1', email: 'one@example.com', role: 'member' })
+    await callRpc(enrollments.revoke, { id: other.id })
+    expect(await auditActions(db)).toEqual([
+      'enrollment_token_created',
+      'enrollment_token_revoked',
+      'enrollment_token_created',
+    ])
   })
 })

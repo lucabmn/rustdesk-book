@@ -11,6 +11,7 @@ import {
   enrollmentClaims,
   enrollmentTokens,
 } from '#/db/schema'
+import { recordAuditEvent } from '#/lib/audit-service'
 import { encryptSecret } from '#/lib/crypto'
 import {
   EnrollmentError,
@@ -24,6 +25,8 @@ export async function finalizeEnrollment(
   db: typeof Database,
   rawClaimToken: string,
   input: EnrollmentFinalizeInput,
+  /** Headers of the deployment request, for the audit entry's IP/user agent. */
+  headers: Headers = new Headers(),
 ): Promise<{ deviceId: string; rustdeskId: string; created: boolean }> {
   const now = new Date()
   const claimHash = hashEnrollmentToken(rawClaimToken)
@@ -184,6 +187,25 @@ export async function finalizeEnrollment(
         lastUsedAt: now,
       })
       .where(eq(enrollmentTokens.id, token.id))
+
+    // Written inside the same transaction as the consumption itself: no
+    // session exists here, the deployment script authenticated with a token.
+    await recordAuditEvent(tx, {
+      action: 'enrollment_token_used',
+      actor: { id: null, name: null, email: null },
+      target: {
+        type: 'enrollment_token',
+        id: token.id,
+        label: token.name,
+      },
+      headers,
+      metadata: {
+        rustdeskId: claim.rustdeskId,
+        deviceId,
+        deviceCreated: created,
+        tokenPrefix: token.tokenPrefix,
+      },
+    })
 
     return { deviceId, rustdeskId: claim.rustdeskId, created }
   })

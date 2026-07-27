@@ -3,7 +3,8 @@ import { and, asc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { authed } from '#/orpc/context'
-import { deviceGroupMembers, deviceGroups } from '#/db/schema'
+import { recordAuditEvent } from '#/lib/audit-service'
+import { deviceGroupMembers, deviceGroups, devices } from '#/db/schema'
 
 const NameSchema = z.string().trim().min(1).max(80)
 
@@ -121,14 +122,21 @@ export const setMembership = authed
     }),
   )
   .handler(async ({ input, context }) => {
-    await loadOwnedGroup(context.db, context.user.id, input.groupId)
+    const group = await loadOwnedGroup(
+      context.db,
+      context.user.id,
+      input.groupId,
+    )
+    let changed: { deviceId: string } | undefined
     if (input.member) {
-      await context.db
+      const [row] = await context.db
         .insert(deviceGroupMembers)
         .values({ groupId: input.groupId, deviceId: input.deviceId })
         .onConflictDoNothing()
+        .returning({ deviceId: deviceGroupMembers.deviceId })
+      changed = row
     } else {
-      await context.db
+      const [row] = await context.db
         .delete(deviceGroupMembers)
         .where(
           and(
@@ -136,6 +144,31 @@ export const setMembership = authed
             eq(deviceGroupMembers.deviceId, input.deviceId),
           ),
         )
+        .returning({ deviceId: deviceGroupMembers.deviceId })
+      changed = row
+    }
+    // Idempotent calls that moved nothing leave no entry.
+    if (changed) {
+      const [device] = await context.db
+        .select({ alias: devices.alias })
+        .from(devices)
+        .where(eq(devices.id, input.deviceId))
+        .limit(1)
+      await recordAuditEvent(context.db, {
+        action: 'device_group_changed',
+        actor: {
+          id: context.user.id,
+          name: context.user.name,
+          email: context.user.email,
+        },
+        target: {
+          type: 'device',
+          id: input.deviceId,
+          label: device?.alias ?? null,
+        },
+        headers: context.headers,
+        metadata: { group: group.name, member: input.member },
+      })
     }
     return { member: input.member }
   })

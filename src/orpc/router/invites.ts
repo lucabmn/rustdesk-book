@@ -4,6 +4,7 @@ import { desc, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { adminProcedure } from '#/orpc/context'
+import { recordAuditEvent } from '#/lib/audit-service'
 import { invitation } from '#/db/schema'
 
 const INVITE_TTL_DAYS = 7
@@ -21,12 +22,28 @@ export const create = adminOnly
   .handler(async ({ input, context }) => {
     const token = randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000)
-    await context.db.insert(invitation).values({
-      email: input.email,
-      token,
-      role: input.role,
-      invitedBy: context.user.id,
-      expiresAt,
+    const [row] = await context.db
+      .insert(invitation)
+      .values({
+        email: input.email,
+        token,
+        role: input.role,
+        invitedBy: context.user.id,
+        expiresAt,
+      })
+      .returning({ id: invitation.id })
+    // The invite token is a credential: the entry names the invitee, never
+    // the token value.
+    await recordAuditEvent(context.db, {
+      action: 'invite_created',
+      actor: {
+        id: context.user.id,
+        name: context.user.name,
+        email: context.user.email,
+      },
+      target: { type: 'invitation', id: row.id, label: input.email },
+      headers: context.headers,
+      metadata: { role: input.role, expiresAt: expiresAt.toISOString() },
     })
     return { token, email: input.email }
   })
@@ -57,6 +74,26 @@ export const list = adminOnly.handler(async ({ context }) => {
 export const revoke = adminOnly
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
-    await context.db.delete(invitation).where(eq(invitation.id, input.id))
+    const [row] = await context.db
+      .delete(invitation)
+      .where(eq(invitation.id, input.id))
+      .returning({ id: invitation.id, email: invitation.email })
+    if (row) {
+      await recordAuditEvent(context.db, {
+        action: 'invite_revoked',
+        actor: {
+          id: context.user.id,
+          name: context.user.name,
+          email: context.user.email,
+        },
+        target: {
+          type: 'invitation',
+          id: row.id,
+          label: row.email,
+          deleted: true,
+        },
+        headers: context.headers,
+      })
+    }
     return { ok: true }
   })

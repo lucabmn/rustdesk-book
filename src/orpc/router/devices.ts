@@ -8,7 +8,7 @@ import {
   DeviceListFilterSchema,
   DeviceSchema,
 } from '#/orpc/schema'
-import { recordAuditEvent } from '#/lib/audit-service'
+import { changedFields, recordAuditEvent } from '#/lib/audit-service'
 import {
   customerNameOf,
   favoriteIdsFor,
@@ -29,14 +29,42 @@ import { deviceFavorites, devices } from '#/db/schema'
 
 const IdInput = z.object({ id: z.string().uuid() })
 
-type AuditedDevice = Awaited<ReturnType<typeof loadDeviceRow>>
+type AuditedDevice = { id: string; alias: string }
 type AuditingContext = {
   headers: Headers
   user: { id: string; name: string; email: string }
 }
 
+/**
+ * The auditable shape of a device — everything except the password, which is
+ * only ever reported as "changed" and never by value.
+ */
+function deviceSnapshot(row: {
+  rustdeskId: string
+  alias: string
+  customerId: string | null
+  osKey: string | null
+  tags: string[]
+  status: string
+  notes: string | null
+}) {
+  return {
+    rustdeskId: row.rustdeskId,
+    alias: row.alias,
+    customerId: row.customerId,
+    osKey: row.osKey,
+    tags: row.tags,
+    status: row.status,
+    notes: row.notes,
+  }
+}
+
 /** Actor + target snapshot for an audit event about a single device. */
-function deviceAuditEvent(context: AuditingContext, row: AuditedDevice) {
+function deviceAuditEvent(
+  context: AuditingContext,
+  row: AuditedDevice,
+  deleted = false,
+) {
   return {
     actor: {
       id: context.user.id,
@@ -47,6 +75,7 @@ function deviceAuditEvent(context: AuditingContext, row: AuditedDevice) {
       type: 'device' as const,
       id: row.id,
       label: row.alias,
+      deleted,
     },
     headers: context.headers,
   }
@@ -177,6 +206,14 @@ export const create = authed
         createdBy: context.user.id,
       })
       .returning()
+    await recordAuditEvent(context.db, {
+      action: 'device_created',
+      ...deviceAuditEvent(context, row),
+      metadata: {
+        rustdeskId: row.rustdeskId,
+        withPassword: Boolean(row.passwordCipher),
+      },
+    })
     return toPublicDevice(row, undefined, input.customer?.trim() || null)
   })
 
@@ -207,13 +244,52 @@ export const update = authed
       })
       .where(eq(devices.id, input.id))
       .returning()
+
+    // Field NAMES only — a changed password is reported as a separate action,
+    // never as a value.
+    const fields = changedFields(deviceSnapshot(existing), deviceSnapshot(row))
+    if (fields.length) {
+      await recordAuditEvent(context.db, {
+        action: 'device_updated',
+        ...deviceAuditEvent(context, row),
+        metadata: { fields },
+      })
+    }
+    if (existing.customerId !== row.customerId) {
+      await recordAuditEvent(context.db, {
+        action: 'device_reassigned',
+        ...deviceAuditEvent(context, row),
+        metadata: { customer: data.customer?.trim() || null },
+      })
+    }
+    if (data.password) {
+      await recordAuditEvent(context.db, {
+        action: 'device_password_changed',
+        ...deviceAuditEvent(context, row),
+      })
+    }
     return toPublicDevice(row, undefined, data.customer?.trim() || null)
   })
 
 export const remove = authed
   .input(IdInput)
   .handler(async ({ input, context }) => {
-    await context.db.delete(devices).where(eq(devices.id, input.id))
+    // Deleted rows are read first: the audit entry needs the label, and a
+    // delete that matched nothing must not be recorded as a deletion.
+    const [row] = await context.db
+      .delete(devices)
+      .where(eq(devices.id, input.id))
+      .returning({
+        id: devices.id,
+        alias: devices.alias,
+        rustdeskId: devices.rustdeskId,
+      })
+    if (!row) return { ok: true }
+    await recordAuditEvent(context.db, {
+      action: 'device_deleted',
+      ...deviceAuditEvent(context, row, true),
+      metadata: { rustdeskId: row.rustdeskId },
+    })
     return { ok: true }
   })
 
@@ -292,5 +368,47 @@ export const importDevices = authed
       })),
     )
     if (rows.length) await context.db.insert(devices).values(rows)
+    // One entry for the import as a whole — the issue lists it under "Daten",
+    // separate from a device being created by hand.
+    if (rows.length) {
+      await recordAuditEvent(context.db, {
+        action: 'import_data',
+        actor: {
+          id: context.user.id,
+          name: context.user.name,
+          email: context.user.email,
+        },
+        target: { type: 'data', id: null, label: 'devices' },
+        headers: context.headers,
+        metadata: { imported: rows.length },
+      })
+    }
     return { imported: rows.length }
+  })
+
+/**
+ * Export the address book as JSON. Server-side so the audit entry records the
+ * number of devices that actually left the server, not a client-reported one.
+ * Passwords are not part of the projection.
+ */
+export const exportDevices = authed
+  .output(z.object({ devices: z.array(DeviceSchema) }))
+  .handler(async ({ context }) => {
+    const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
+    const rows = await queryDevices(context.db, {})
+    const exported = rows.map((row) =>
+      toPublicDevice(row, favoriteIds, row.customerName),
+    )
+    await recordAuditEvent(context.db, {
+      action: 'export_data',
+      actor: {
+        id: context.user.id,
+        name: context.user.name,
+        email: context.user.email,
+      },
+      target: { type: 'data', id: null, label: 'devices' },
+      headers: context.headers,
+      metadata: { exported: exported.length },
+    })
+    return { devices: exported }
   })

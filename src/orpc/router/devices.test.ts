@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { auditLog, devices as devicesTable } from '#/db/schema'
@@ -6,6 +7,7 @@ import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
 import { rpc } from '#/test/rpc'
 import { signOut } from '#/test/session'
+import { auditActions, auditEntries } from '#/test/audit'
 
 let db: TestDb
 let callRpc: ReturnType<typeof rpc>
@@ -174,7 +176,10 @@ describe('secret access', () => {
       id: created.id,
     })) as { password: string }
     expect(revealed.password).toBe('s3cret')
-    const [entry] = await db.select().from(auditLog)
+    const [entry] = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'reveal_password'))
     expect(entry.action).toBe('reveal_password')
     expect(entry.userId).toBe('user-1')
     expect(entry.deviceId).toBe(created.id)
@@ -194,7 +199,10 @@ describe('secret access', () => {
         'user-agent': 'curl/8',
       })
       await withHeaders(devices.revealPassword, { id: created.id })
-      const [entry] = await db.select().from(auditLog)
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'reveal_password'))
       expect(entry.ipAddress).toBe('1.2.3.4')
       expect(entry.userAgent).toBe('curl/8')
     } finally {
@@ -205,7 +213,10 @@ describe('secret access', () => {
   it('audits a connect against the device target', async () => {
     const created = await createDevice()
     await callRpc(devices.connect, { id: created.id })
-    const [entry] = await db.select().from(auditLog)
+    const [entry] = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'connect'))
     expect(entry.action).toBe('connect')
     expect(entry.targetType).toBe('device')
     expect(entry.targetLabel).toBe(input.alias)
@@ -318,5 +329,97 @@ describe('sync', () => {
       enabled: false,
       updated: 0,
     })
+  })
+})
+
+describe('audit trail', () => {
+  const actionsSince = async (before: number) =>
+    (await auditActions(db)).slice(before)
+
+  it('records exactly one entry per device lifecycle step', async () => {
+    const created = await createDevice()
+    expect(await auditActions(db)).toEqual(['device_created'])
+
+    await callRpc(devices.update, {
+      id: created.id,
+      data: { ...input, alias: 'Renamed', password: '' },
+    })
+    expect(await actionsSince(1)).toEqual(['device_updated'])
+
+    const [entry] = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'device_updated'))
+    expect(entry.metadata).toEqual({ fields: ['alias'] })
+    expect(entry.targetLabel).toBe('Renamed')
+
+    await callRpc(devices.remove, { id: created.id })
+    expect(await actionsSince(2)).toEqual(['device_deleted'])
+  })
+
+  it('records an update that changed nothing as no entry at all', async () => {
+    const created = await createDevice()
+    await callRpc(devices.update, {
+      id: created.id,
+      data: { ...input, password: '' },
+    })
+    expect(await auditActions(db)).toEqual(['device_created'])
+  })
+
+  it('separates a reassignment and a password change from the update', async () => {
+    const created = await createDevice()
+    await callRpc(devices.update, {
+      id: created.id,
+      data: { ...input, customer: 'Other Corp', password: 'new-secret' },
+    })
+    expect(await auditActions(db)).toEqual([
+      'device_created',
+      'device_updated',
+      'device_reassigned',
+      'device_password_changed',
+    ])
+  })
+
+  it('keeps the deleted device readable and drops the dangling reference', async () => {
+    const created = await createDevice()
+    await callRpc(devices.remove, { id: created.id })
+    const [entry] = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'device_deleted'))
+    expect(entry.deviceId).toBeNull()
+    expect(entry.targetId).toBe(created.id)
+    expect(entry.targetLabel).toBe(input.alias)
+  })
+
+  it('writes no entry when the delete matched nothing', async () => {
+    await callRpc(devices.remove, {
+      id: '00000000-0000-0000-0000-000000000000',
+    })
+    expect(await auditActions(db)).toEqual([])
+  })
+
+  it('rejects an unauthenticated call without recording anything', async () => {
+    signOut()
+    await expect(callRpc(devices.create, input)).rejects.toThrow(
+      /Authentication required/,
+    )
+    expect(await auditActions(db)).toEqual([])
+  })
+
+  it('records one entry for an import and one for an export', async () => {
+    await callRpc(devices.importDevices, {
+      devices: [{ rustdeskId: '111111111', alias: 'One' }],
+    })
+    await callRpc(devices.exportDevices)
+    const entries = await auditEntries(db)
+    expect(entries.map((e) => e.action)).toEqual(['import_data', 'export_data'])
+    expect(entries[0].metadata).toEqual({ imported: 1 })
+    expect(entries[1].metadata).toEqual({ exported: 1 })
+  })
+
+  it('records no import entry when nothing was imported', async () => {
+    await callRpc(devices.importDevices, { devices: [{ alias: 'No id' }] })
+    expect(await auditActions(db)).toEqual([])
   })
 })

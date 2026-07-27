@@ -3,8 +3,12 @@
  *
  * The client IP is only taken from proxy headers when `TRUST_PROXY_HEADERS`
  * is enabled — otherwise a client could forge its own address by sending
- * `X-Forwarded-For`. (`enrollment-http.ts` derives its rate-limit key the
- * same way; that is a separate, unauthenticated path and stays independent.)
+ * `X-Forwarded-For`. Audit entries therefore record no IP until a proxy is
+ * trusted; the user agent is always recorded.
+ *
+ * `enrollment-http.ts` shares {@link clientIpFrom} for its rate-limit key
+ * and only differs in the fallback: it buckets untrusted callers together
+ * under `'global'`, an audit entry stores `null`.
  */
 export interface RequestContext {
   ipAddress: string | null

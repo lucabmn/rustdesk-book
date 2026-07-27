@@ -8,9 +8,9 @@ import type { TestDb } from './db'
  * chain — with the in-memory database as context. Input validation, auth and
  * output schemas all run, so these tests exercise the real request path.
  */
-export function rpc(db: TestDb) {
+export function rpc(db: TestDb, headers: HeadersInit = {}) {
   return <T>(procedure: T, input?: unknown): Promise<unknown> =>
     call(procedure as AnyProcedure, input as never, {
-      context: { db, headers: new Headers() },
+      context: { db, headers: new Headers(headers) },
     })
 }

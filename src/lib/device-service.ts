@@ -6,13 +6,7 @@
 import { and, desc, eq } from 'drizzle-orm'
 
 import type { db as Database } from '#/db'
-import {
-  auditLog,
-  customers,
-  deviceFavorites,
-  devices,
-  type AuditAction,
-} from '#/db/schema'
+import { customers, deviceFavorites, devices } from '#/db/schema'
 import { ORPCError } from '@orpc/server'
 import type { Device, DeviceListFilterSchema } from '#/orpc/schema'
 import { osLabel, type DeviceStatus } from '#/lib/device-meta'
@@ -177,13 +171,4 @@ export async function loadDeviceRow(db: typeof Database, id: string) {
   if (!row)
     throw new ORPCError('NOT_FOUND', { message: 'Gerät nicht gefunden.' })
   return row
-}
-
-export async function audit(
-  db: typeof Database,
-  action: AuditAction,
-  deviceId: string,
-  userId: string,
-) {
-  await db.insert(auditLog).values({ action, deviceId, userId })
 }

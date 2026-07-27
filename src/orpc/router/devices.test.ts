@@ -177,6 +177,42 @@ describe('secret access', () => {
     const [entry] = await db.select().from(auditLog)
     expect(entry.action).toBe('reveal_password')
     expect(entry.userId).toBe('user-1')
+    expect(entry.deviceId).toBe(created.id)
+    expect(entry.targetType).toBe('device')
+    expect(entry.targetId).toBe(created.id)
+    expect(entry.targetLabel).toBe(input.alias)
+    expect(entry.actorName).toBe('Test User')
+    expect(entry.actorEmail).toBe('test@example.com')
+  })
+
+  it('records the request context of the revealing request', async () => {
+    process.env.TRUST_PROXY_HEADERS = 'true'
+    try {
+      const created = await createDevice()
+      const withHeaders = rpc(db, {
+        'x-forwarded-for': '1.2.3.4',
+        'user-agent': 'curl/8',
+      })
+      await withHeaders(devices.revealPassword, { id: created.id })
+      const [entry] = await db.select().from(auditLog)
+      expect(entry.ipAddress).toBe('1.2.3.4')
+      expect(entry.userAgent).toBe('curl/8')
+    } finally {
+      delete process.env.TRUST_PROXY_HEADERS
+    }
+  })
+
+  it('audits a connect against the device target', async () => {
+    const created = await createDevice()
+    await callRpc(devices.connect, { id: created.id })
+    const [entry] = await db.select().from(auditLog)
+    expect(entry.action).toBe('connect')
+    expect(entry.targetType).toBe('device')
+    expect(entry.targetLabel).toBe(input.alias)
+    expect(entry.metadata).toEqual({
+      rustdeskId: input.rustdeskId,
+      withPassword: true,
+    })
   })
 
   it('fails when no password is stored', async () => {

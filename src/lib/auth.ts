@@ -10,7 +10,11 @@ import {
   consumeInvitations,
   resolveSignUpRole,
 } from '#/lib/auth-policy'
-import { attemptedEmailFrom, recordAuthEvent } from '#/lib/auth-audit'
+import {
+  attemptedEmailFrom,
+  authAuditAction,
+  recordAuthEvent,
+} from '#/lib/auth-audit'
 import { recordAuditEvent } from '#/lib/audit-service'
 
 /** Surface a policy error as better-auth's FORBIDDEN, keeping its message. */
@@ -35,12 +39,20 @@ type AuthHookContext = {
  * never break authentication itself, so a failure here is logged and swallowed.
  */
 async function auditAuthRequest(ctx: AuthHookContext, failed: boolean) {
+  // Checked before any work: every auth endpoint passes through this hook,
+  // and only three of them are audited. It also keeps the session lookup
+  // below off `/get-session`, which would otherwise call back into itself.
+  if (!authAuditAction(ctx.path, failed)) return
+
   const headers = ctx.headers ?? new Headers()
   try {
     const sessionUser =
       ctx.context.newSession?.user ??
       ctx.context.session?.user ??
       (await auth.api.getSession({ headers }).catch(() => null))?.user
+    // Signing out without a session changed nothing; an entry naming no one
+    // would only add noise.
+    if (ctx.path === '/sign-out' && !sessionUser) return
     await recordAuthEvent(db, {
       path: ctx.path,
       headers,

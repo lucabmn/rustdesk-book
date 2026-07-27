@@ -13,11 +13,9 @@ export const list = adminProcedure.handler(async ({ context }) => {
       createdAt: auditLog.createdAt,
       deviceAlias: devices.alias,
       deviceRustdeskId: devices.rustdeskId,
-      targetType: auditLog.targetType,
       targetLabel: auditLog.targetLabel,
       actorName: auditLog.actorName,
       actorEmail: auditLog.actorEmail,
-      metadata: auditLog.metadata,
       userName: user.name,
       userEmail: user.email,
     })
@@ -34,11 +32,9 @@ export const list = adminProcedure.handler(async ({ context }) => {
     id: r.id,
     action: r.action,
     createdAt: r.createdAt.toISOString(),
-    targetType: r.targetType ?? (r.deviceAlias ? 'device' : null),
     targetLabel: r.targetLabel ?? r.deviceAlias,
     deviceAlias: r.deviceAlias,
     deviceRustdeskId: r.deviceRustdeskId,
-    metadata: r.metadata as Record<string, unknown> | null,
     userName: r.userName ?? r.actorName,
     userEmail: r.userEmail ?? r.actorEmail,
   }))

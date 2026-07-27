@@ -8,8 +8,8 @@ import {
   DeviceListFilterSchema,
   DeviceSchema,
 } from '#/orpc/schema'
+import { recordAuditEvent } from '#/lib/audit-service'
 import {
-  audit,
   customerNameOf,
   favoriteIdsFor,
   loadDeviceRow,
@@ -28,6 +28,29 @@ import { decryptSecret, encryptSecret } from '#/lib/crypto'
 import { deviceFavorites, devices } from '#/db/schema'
 
 const IdInput = z.object({ id: z.string().uuid() })
+
+type AuditedDevice = Awaited<ReturnType<typeof loadDeviceRow>>
+type AuditingContext = {
+  headers: Headers
+  user: { id: string; name: string; email: string }
+}
+
+/** Actor + target snapshot for an audit event about a single device. */
+function deviceAuditEvent(context: AuditingContext, row: AuditedDevice) {
+  return {
+    actor: {
+      id: context.user.id,
+      name: context.user.name,
+      email: context.user.email,
+    },
+    target: {
+      type: 'device' as const,
+      id: row.id,
+      label: row.alias,
+    },
+    headers: context.headers,
+  }
+}
 
 export const list = authed
   .input(DeviceListFilterSchema.partial())
@@ -208,7 +231,11 @@ export const revealPassword = authed
         message: 'Für dieses Gerät ist kein Passwort hinterlegt.',
       })
     }
-    await audit(context.db, 'reveal_password', row.id, context.user.id)
+    await recordAuditEvent(context.db, {
+      action: 'reveal_password',
+      ...deviceAuditEvent(context, row),
+      metadata: { rustdeskId: row.rustdeskId },
+    })
     return { password: decryptSecret(row.passwordCipher) }
   })
 
@@ -234,7 +261,14 @@ export const connect = authed
       .update(devices)
       .set({ lastSeen: new Date() })
       .where(eq(devices.id, row.id))
-    await audit(context.db, 'connect', row.id, context.user.id)
+    await recordAuditEvent(context.db, {
+      action: 'connect',
+      ...deviceAuditEvent(context, row),
+      metadata: {
+        rustdeskId: row.rustdeskId,
+        withPassword: Boolean(row.passwordCipher),
+      },
+    })
     return { uri }
   })
 

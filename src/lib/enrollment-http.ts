@@ -1,4 +1,5 @@
 import { EnrollmentError } from '#/lib/enrollment'
+import { clientIpFrom } from '#/lib/request-context'
 
 const MAX_BODY_BYTES = 16 * 1024
 const RATE_WINDOW_MS = 60_000
@@ -26,14 +27,8 @@ export function bearerToken(request: Request): string {
 
 /** Small in-process safety net; production proxies should enforce a global limit too. */
 export function enforceEnrollmentRateLimit(request: Request) {
-  const trustProxy = process.env.TRUST_PROXY_HEADERS === 'true'
-  const forwarded = trustProxy
-    ? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    : null
-  const key =
-    forwarded ||
-    (trustProxy ? request.headers.get('x-real-ip') : null) ||
-    'global'
+  // Untrusted proxy headers collapse every caller into one shared bucket.
+  const key = clientIpFrom(request.headers) ?? 'global'
   const now = Date.now()
   const bucket = rateBuckets.get(key)
   if (!bucket || bucket.resetAt <= now) {

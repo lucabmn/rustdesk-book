@@ -19,8 +19,8 @@ describe('label helpers', () => {
     expect(auditActionLabel('connect')).not.toBe(
       auditActionLabel('reveal_password'),
     )
-    expect(auditActionLabel('unknown')).toBe(
-      auditActionLabel('reveal_password'),
-    )
+    // The action set is open: an unlabelled action shows its own key
+    // instead of being mislabelled as one of the known two.
+    expect(auditActionLabel('device_updated')).toBe('device_updated')
   })
 })

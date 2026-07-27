@@ -15,22 +15,22 @@ import { devices } from './devices'
  * The secret value itself is NEVER recorded.
  *
  * Every entry carries snapshots (actor name/email, target label) next to
- * the foreign keys, so the trail stays readable after the actor or the
- * target is deleted — exactly when an audit log has to hold up.
+ * the foreign keys, so a row stays readable after the actor or the target
+ * is deleted — exactly when an audit log has to hold up. The read
+ * procedures still resolve their labels through the foreign keys; moving
+ * them onto the snapshots is the contract step.
  * ------------------------------------------------------------------ */
 
-/** Known actions. Extensible: new features append entries here. */
+/**
+ * Known actions. Open set: adding one means appending an entry here and a
+ * label message — nothing else switches on the value, and the column is
+ * `text` rather than a PG enum, so no migration is needed either.
+ */
 export const AUDIT_ACTIONS = ['reveal_password', 'connect'] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
-/** Entity kinds an entry can point at. */
-export const AUDIT_TARGET_TYPES = [
-  'device',
-  'user',
-  'customer',
-  'group',
-  'invitation',
-] as const
+/** Entity kinds an entry can point at. Open set, same as the actions. */
+export const AUDIT_TARGET_TYPES = ['device', 'user'] as const
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number]
 
 export const auditLog = pgTable(

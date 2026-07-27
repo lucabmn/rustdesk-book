@@ -29,19 +29,19 @@ import { deviceFavorites, devices } from '#/db/schema'
 
 const IdInput = z.object({ id: z.string().uuid() })
 
-type DeviceRow = { id: string; alias: string; rustdeskId: string }
+type AuditedDevice = Awaited<ReturnType<typeof loadDeviceRow>>
 type AuditingContext = {
   headers: Headers
-  user: { id: string; name?: string | null; email?: string | null }
+  user: { id: string; name: string; email: string }
 }
 
 /** Actor + target snapshot for an audit event about a single device. */
-function deviceAuditEvent(context: AuditingContext, row: DeviceRow) {
+function deviceAuditEvent(context: AuditingContext, row: AuditedDevice) {
   return {
     actor: {
       id: context.user.id,
-      name: context.user.name ?? null,
-      email: context.user.email ?? null,
+      name: context.user.name,
+      email: context.user.email,
     },
     target: {
       type: 'device' as const,

@@ -13,9 +13,13 @@ export function roleLabel(role: string): string {
   return role === 'admin' ? m.common_role_admin() : m.common_role_member()
 }
 
-/** Localized audit-action label. */
+/**
+ * Localized audit-action label. The action set is open, so an action without
+ * a label falls back to its raw key rather than borrowing another action's
+ * wording — a mislabelled audit entry is worse than an untranslated one.
+ */
 export function auditActionLabel(action: string): string {
-  return action === 'connect'
-    ? m.audit_action_connect()
-    : m.audit_action_reveal_password()
+  if (action === 'connect') return m.audit_action_connect()
+  if (action === 'reveal_password') return m.audit_action_reveal_password()
+  return action
 }

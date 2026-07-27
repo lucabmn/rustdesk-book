@@ -11,12 +11,16 @@ export interface RequestContext {
   userAgent: string | null
 }
 
+/** Client address from the proxy headers, or null when they aren't trusted. */
+export function clientIpFrom(headers: Headers): string | null {
+  if (process.env.TRUST_PROXY_HEADERS !== 'true') return null
+  const forwarded = headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  return forwarded || headers.get('x-real-ip')?.trim() || null
+}
+
 export function requestContextFrom(headers: Headers): RequestContext {
-  const trustProxy = process.env.TRUST_PROXY_HEADERS === 'true'
-  const forwarded = trustProxy
-    ? headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    : null
-  const ipAddress =
-    forwarded || (trustProxy ? headers.get('x-real-ip')?.trim() : null) || null
-  return { ipAddress, userAgent: headers.get('user-agent') || null }
+  return {
+    ipAddress: clientIpFrom(headers),
+    userAgent: headers.get('user-agent') || null,
+  }
 }

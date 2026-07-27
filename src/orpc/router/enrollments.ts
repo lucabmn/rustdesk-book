@@ -4,7 +4,11 @@ import { z } from 'zod'
 
 import { authed } from '#/orpc/context'
 import { enrollmentClaims, enrollmentTokens } from '#/db/schema'
-import { recordAuditEvent } from '#/lib/audit-service'
+import {
+  actorFrom,
+  type AuditingContext,
+  recordAuditEvent,
+} from '#/lib/audit-service'
 import { decryptSecret, encryptSecret } from '#/lib/crypto'
 import {
   enrollmentTokenPrefix,
@@ -44,22 +48,13 @@ function accessibleToken(
     : and(eq(enrollmentTokens.id, id), eq(enrollmentTokens.createdBy, userId))
 }
 
-type AuditingContext = {
-  headers: Headers
-  user: { id: string; name: string; email: string }
-}
-
 /** Actor + target snapshot for an audit event about an enrollment token. */
 function enrollmentAuditEvent(
   context: AuditingContext,
   row: { id: string; name: string },
 ) {
   return {
-    actor: {
-      id: context.user.id,
-      name: context.user.name,
-      email: context.user.email,
-    },
+    actor: actorFrom(context),
     target: {
       type: 'enrollment_token' as const,
       id: row.id,

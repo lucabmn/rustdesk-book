@@ -194,9 +194,11 @@ export function useAddressBook(initialView: ViewMode) {
     },
     async exportDevices() {
       try {
-        // Fetched from the server rather than serialized from local state, so
-        // the audit entry records what actually left the server.
-        const exported = await client.devices.exportDevices()
+        // Same filter as the view it was triggered from, resolved server-side
+        // so the audit entry records what actually left the server.
+        const exported = await client.devices.exportDevices(
+          buildListInput(filters),
+        )
         const blob = new Blob([serializeDevices(exported.devices)], {
           type: 'application/json',
         })

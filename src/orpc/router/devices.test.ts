@@ -372,9 +372,10 @@ describe('audit trail', () => {
       id: created.id,
       data: { ...input, customer: 'Other Corp', password: 'new-secret' },
     })
+    // The reassignment is its own action, so it is one entry — not a
+    // device_updated naming `customerId` on top of it.
     expect(await auditActions(db)).toEqual([
       'device_created',
-      'device_updated',
       'device_reassigned',
       'device_password_changed',
     ])
@@ -411,11 +412,22 @@ describe('audit trail', () => {
     await callRpc(devices.importDevices, {
       devices: [{ rustdeskId: '111111111', alias: 'One' }],
     })
-    await callRpc(devices.exportDevices)
+    await callRpc(devices.exportDevices, {})
     const entries = await auditEntries(db)
     expect(entries.map((e) => e.action)).toEqual(['import_data', 'export_data'])
     expect(entries[0].metadata).toEqual({ imported: 1 })
     expect(entries[1].metadata).toEqual({ exported: 1 })
+  })
+
+  it('records nothing when import or export is rejected', async () => {
+    signOut()
+    await expect(
+      callRpc(devices.importDevices, { devices: [] }),
+    ).rejects.toThrow(/Authentication required/)
+    await expect(callRpc(devices.exportDevices, {})).rejects.toThrow(
+      /Authentication required/,
+    )
+    expect(await auditActions(db)).toEqual([])
   })
 
   it('records no import entry when nothing was imported', async () => {

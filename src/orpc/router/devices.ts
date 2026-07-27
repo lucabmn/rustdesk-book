@@ -8,7 +8,12 @@ import {
   DeviceListFilterSchema,
   DeviceSchema,
 } from '#/orpc/schema'
-import { changedFields, recordAuditEvent } from '#/lib/audit-service'
+import {
+  actorFrom,
+  type AuditingContext,
+  changedFields,
+  recordAuditEvent,
+} from '#/lib/audit-service'
 import {
   customerNameOf,
   favoriteIdsFor,
@@ -30,19 +35,15 @@ import { deviceFavorites, devices } from '#/db/schema'
 const IdInput = z.object({ id: z.string().uuid() })
 
 type AuditedDevice = { id: string; alias: string }
-type AuditingContext = {
-  headers: Headers
-  user: { id: string; name: string; email: string }
-}
 
 /**
- * The auditable shape of a device — everything except the password, which is
- * only ever reported as "changed" and never by value.
+ * The auditable shape of a device. The password is left out — it is only ever
+ * reported as "changed", never by value — and so is the customer, which has
+ * its own action so a reassignment is one entry rather than two.
  */
 function deviceSnapshot(row: {
   rustdeskId: string
   alias: string
-  customerId: string | null
   osKey: string | null
   tags: string[]
   status: string
@@ -51,7 +52,6 @@ function deviceSnapshot(row: {
   return {
     rustdeskId: row.rustdeskId,
     alias: row.alias,
-    customerId: row.customerId,
     osKey: row.osKey,
     tags: row.tags,
     status: row.status,
@@ -66,11 +66,7 @@ function deviceAuditEvent(
   deleted = false,
 ) {
   return {
-    actor: {
-      id: context.user.id,
-      name: context.user.name,
-      email: context.user.email,
-    },
+    actor: actorFrom(context),
     target: {
       type: 'device' as const,
       id: row.id,
@@ -81,6 +77,27 @@ function deviceAuditEvent(
   }
 }
 
+type ListFilter = z.infer<typeof DeviceListFilterSchema>
+
+/** The filtered address book as the caller may see it. Shared by list/export. */
+async function filteredDevices(
+  context: { db: typeof import('#/db').db; user: { id: string } },
+  input: Partial<ListFilter>,
+) {
+  const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
+  let rows = await queryDevices(context.db, input)
+  if (input.favorite) rows = rows.filter((r) => favoriteIds.has(r.id))
+  if (input.groupId) {
+    const members = await groupMemberIds(
+      context.db,
+      context.user.id,
+      input.groupId,
+    )
+    rows = rows.filter((r) => members.has(r.id))
+  }
+  return rows.map((row) => toPublicDevice(row, favoriteIds, row.customerName))
+}
+
 export const list = authed
   .input(DeviceListFilterSchema.partial())
   .output(z.array(DeviceSchema))
@@ -88,18 +105,7 @@ export const list = authed
     // Refresh live statuses from the configured RustDesk server (no-op and
     // instant when sync is disabled or within the TTL window).
     await maybeSyncStatuses(context.db)
-    const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
-    let rows = await queryDevices(context.db, input)
-    if (input.favorite) rows = rows.filter((r) => favoriteIds.has(r.id))
-    if (input.groupId) {
-      const members = await groupMemberIds(
-        context.db,
-        context.user.id,
-        input.groupId,
-      )
-      rows = rows.filter((r) => members.has(r.id))
-    }
-    return rows.map((row) => toPublicDevice(row, favoriteIds, row.customerName))
+    return filteredDevices(context, input)
   })
 
 export const get = authed
@@ -373,11 +379,7 @@ export const importDevices = authed
     if (rows.length) {
       await recordAuditEvent(context.db, {
         action: 'import_data',
-        actor: {
-          id: context.user.id,
-          name: context.user.name,
-          email: context.user.email,
-        },
+        actor: actorFrom(context),
         target: { type: 'data', id: null, label: 'devices' },
         headers: context.headers,
         metadata: { imported: rows.length },
@@ -392,20 +394,13 @@ export const importDevices = authed
  * Passwords are not part of the projection.
  */
 export const exportDevices = authed
+  .input(DeviceListFilterSchema.partial())
   .output(z.object({ devices: z.array(DeviceSchema) }))
-  .handler(async ({ context }) => {
-    const favoriteIds = await favoriteIdsFor(context.db, context.user.id)
-    const rows = await queryDevices(context.db, {})
-    const exported = rows.map((row) =>
-      toPublicDevice(row, favoriteIds, row.customerName),
-    )
+  .handler(async ({ input, context }) => {
+    const exported = await filteredDevices(context, input)
     await recordAuditEvent(context.db, {
       action: 'export_data',
-      actor: {
-        id: context.user.id,
-        name: context.user.name,
-        email: context.user.email,
-      },
+      actor: actorFrom(context),
       target: { type: 'data', id: null, label: 'devices' },
       headers: context.headers,
       metadata: { exported: exported.length },

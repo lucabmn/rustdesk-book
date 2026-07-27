@@ -3,7 +3,7 @@ import { and, asc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { authed } from '#/orpc/context'
-import { recordAuditEvent } from '#/lib/audit-service'
+import { actorFrom, recordAuditEvent } from '#/lib/audit-service'
 import { deviceGroupMembers, deviceGroups, devices } from '#/db/schema'
 
 const NameSchema = z.string().trim().min(1).max(80)
@@ -156,11 +156,7 @@ export const setMembership = authed
         .limit(1)
       await recordAuditEvent(context.db, {
         action: 'device_group_changed',
-        actor: {
-          id: context.user.id,
-          name: context.user.name,
-          email: context.user.email,
-        },
+        actor: actorFrom(context),
         target: {
           type: 'device',
           id: input.deviceId,

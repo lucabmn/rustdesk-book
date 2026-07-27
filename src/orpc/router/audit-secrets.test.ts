@@ -57,7 +57,7 @@ describe('secrets in the audit log', () => {
         { rustdeskId: '222222222', alias: 'Two', password: IMPORT_PASSWORD },
       ],
     })
-    await callRpc(devices.exportDevices)
+    await callRpc(devices.exportDevices, {})
     await callRpc(devices.remove, { id: created.id })
 
     const invite = (await callRpc(invites.create, {

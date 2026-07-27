@@ -29,8 +29,9 @@ describe('authAuditAction', () => {
   })
 
   it('records nothing for endpoints that changed nothing', () => {
-    // A failed sign-out or password change did not happen — an entry would
-    // claim it did.
+    // A failed password change did not happen — an entry would claim it did.
+    // (Sign-out is audited before the endpoint runs, while the session it is
+    // about still resolves, so its failed branch is not reached in practice.)
     expect(authAuditAction('/sign-out', true)).toBeNull()
     expect(authAuditAction('/change-password', true)).toBeNull()
     expect(authAuditAction('/get-session', false)).toBeNull()

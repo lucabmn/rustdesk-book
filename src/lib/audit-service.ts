@@ -20,6 +20,21 @@ export interface AuditActor {
   email: string | null
 }
 
+/** What a router handler knows about the caller and their request. */
+export interface AuditingContext {
+  headers: Headers
+  user: { id: string; name: string; email: string }
+}
+
+/** Actor snapshot of the signed-in caller. */
+export function actorFrom(context: AuditingContext): AuditActor {
+  return {
+    id: context.user.id,
+    name: context.user.name,
+    email: context.user.email,
+  }
+}
+
 export interface AuditTarget {
   type: AuditTargetType
   /** Null when the event has no single row as its subject (import/export). */

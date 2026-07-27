@@ -3,13 +3,13 @@ import { asc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { adminProcedure, authed } from '#/orpc/context'
-import { changedFields, recordAuditEvent } from '#/lib/audit-service'
+import {
+  actorFrom,
+  type AuditingContext,
+  changedFields,
+  recordAuditEvent,
+} from '#/lib/audit-service'
 import { customers, devices } from '#/db/schema'
-
-type AuditingContext = {
-  headers: Headers
-  user: { id: string; name: string; email: string }
-}
 
 /** Actor + target snapshot for an audit event about a single customer. */
 function customerAuditEvent(
@@ -18,11 +18,7 @@ function customerAuditEvent(
   deleted = false,
 ) {
   return {
-    actor: {
-      id: context.user.id,
-      name: context.user.name,
-      email: context.user.email,
-    },
+    actor: actorFrom(context),
     target: { type: 'customer' as const, id: row.id, label: row.name, deleted },
     headers: context.headers,
   }

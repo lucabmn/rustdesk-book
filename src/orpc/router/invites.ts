@@ -4,7 +4,7 @@ import { desc, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { adminProcedure } from '#/orpc/context'
-import { recordAuditEvent } from '#/lib/audit-service'
+import { actorFrom, recordAuditEvent } from '#/lib/audit-service'
 import { invitation } from '#/db/schema'
 
 const INVITE_TTL_DAYS = 7
@@ -36,11 +36,7 @@ export const create = adminOnly
     // the token value.
     await recordAuditEvent(context.db, {
       action: 'invite_created',
-      actor: {
-        id: context.user.id,
-        name: context.user.name,
-        email: context.user.email,
-      },
+      actor: actorFrom(context),
       target: { type: 'invitation', id: row.id, label: input.email },
       headers: context.headers,
       metadata: { role: input.role, expiresAt: expiresAt.toISOString() },
@@ -81,11 +77,7 @@ export const revoke = adminOnly
     if (row) {
       await recordAuditEvent(context.db, {
         action: 'invite_revoked',
-        actor: {
-          id: context.user.id,
-          name: context.user.name,
-          email: context.user.email,
-        },
+        actor: actorFrom(context),
         target: {
           type: 'invitation',
           id: row.id,

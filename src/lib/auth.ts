@@ -105,8 +105,11 @@ export const auth = betterAuth({
   },
   hooks: {
     // Sign-out is audited BEFORE the endpoint runs, while the session it is
-    // about still resolves; everything else after, so the entry only exists
-    // once the endpoint actually did something.
+    // about still resolves — afterwards the actor would be unknowable. The
+    // trade-off is that a sign-out that then errors still leaves an entry;
+    // an entry naming no one would be the worse of the two. Everything else
+    // is audited after, so the entry only exists once the endpoint did
+    // something.
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== '/sign-out') return
       await auditAuthRequest(ctx, false)

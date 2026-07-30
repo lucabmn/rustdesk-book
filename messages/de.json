@@ -45,6 +45,7 @@
 
   "nav_title": "Adressbuch",
   "nav_subtitle": "Selfhosted · RustDesk",
+  "nav_open": "Filter und Navigation",
   "nav_all_devices": "Alle Geräte",
   "nav_favorites": "Favoriten",
   "favorite_add": "Zu Favoriten hinzufügen",
@@ -74,6 +75,7 @@
   "view_cards": "Karten",
   "action_import": "Import",
   "action_export": "Export",
+  "action_more": "Weitere Aktionen",
   "sync_now": "Status abrufen",
   "toast_synced": "{count} Geräte-Status aktualisiert",
   "filter_all_status": "Alle Status",

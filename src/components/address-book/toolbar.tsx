@@ -4,12 +4,22 @@ import {
   Download,
   LayoutGrid,
   List,
+  MoreHorizontal,
   RefreshCw,
   Upload,
   X,
 } from 'lucide-react'
 
-import { Button, Divider, Segmented, SegmentedItem } from '#/components/ui'
+import {
+  Button,
+  Divider,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+  Segmented,
+  SegmentedItem,
+} from '#/components/ui'
 import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 import type { ViewMode } from './use-address-book'
@@ -59,8 +69,10 @@ export function ContentHeader({
 }: ContentHeaderProps) {
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const openImport = () => fileRef.current?.click()
+
   return (
-    <div className="flex h-12 shrink-0 items-center gap-3 border-line border-b bg-surface px-4">
+    <div className="flex h-12 shrink-0 items-center gap-2 border-line border-b bg-surface px-3 sm:gap-3 sm:px-4">
       <div className="flex min-w-0 items-baseline gap-2.5">
         <h1 className="truncate font-semibold text-base text-text">
           {heading}
@@ -78,13 +90,19 @@ export function ContentHeader({
       </div>
 
       {hasActiveFilters && (
-        <Button variant="ghost" size="xs" onClick={onResetFilters}>
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={onResetFilters}
+          title={m.filter_reset()}
+          aria-label={m.filter_reset()}
+        >
           <X />
-          {m.filter_reset()}
+          <span className="hidden sm:inline">{m.filter_reset()}</span>
         </Button>
       )}
 
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
         <Segmented>
           {VIEWS.map(({ key, icon: Icon, label }) => (
             <SegmentedItem
@@ -99,38 +117,74 @@ export function ContentHeader({
           ))}
         </Segmented>
 
-        <Divider vertical />
+        <Divider vertical className="hidden sm:block" />
 
-        {syncEnabled && (
+        {/* Three icon buttons is a third of a phone's width, and none of them
+            is why the screen was opened. Below `sm` they fold into one menu;
+            above it they stay one tap away. */}
+        <Menu>
+          <MenuTrigger asChild>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="sm:hidden"
+              title={m.action_more()}
+              aria-label={m.action_more()}
+            >
+              <MoreHorizontal />
+            </Button>
+          </MenuTrigger>
+          <MenuContent>
+            {syncEnabled && (
+              <MenuItem onClick={onSyncNow} disabled={syncPending}>
+                <RefreshCw className={cn(syncPending && 'animate-spin')} />
+                {m.sync_now()}
+              </MenuItem>
+            )}
+            <MenuItem onClick={openImport}>
+              <Upload />
+              {m.action_import()}
+            </MenuItem>
+            <MenuItem onClick={onExport}>
+              <Download />
+              {m.action_export()}
+            </MenuItem>
+          </MenuContent>
+        </Menu>
+
+        <div className="hidden items-center gap-2 sm:flex">
+          {syncEnabled && (
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={onSyncNow}
+              disabled={syncPending}
+              title={m.sync_now()}
+              aria-label={m.sync_now()}
+            >
+              <RefreshCw className={cn(syncPending && 'animate-spin')} />
+            </Button>
+          )}
           <Button
             size="icon-sm"
             variant="ghost"
-            onClick={onSyncNow}
-            disabled={syncPending}
-            title={m.sync_now()}
-            aria-label={m.sync_now()}
+            onClick={openImport}
+            title={m.action_import()}
+            aria-label={m.action_import()}
           >
-            <RefreshCw className={cn(syncPending && 'animate-spin')} />
+            <Upload />
           </Button>
-        )}
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          onClick={() => fileRef.current?.click()}
-          title={m.action_import()}
-          aria-label={m.action_import()}
-        >
-          <Upload />
-        </Button>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          onClick={onExport}
-          title={m.action_export()}
-          aria-label={m.action_export()}
-        >
-          <Download />
-        </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={onExport}
+            title={m.action_export()}
+            aria-label={m.action_export()}
+          >
+            <Download />
+          </Button>
+        </div>
+
         <input
           type="file"
           accept=".json"

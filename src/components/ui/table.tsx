@@ -50,7 +50,7 @@ export function TH({
     <th
       scope="col"
       className={cn(
-        'h-8 whitespace-nowrap px-3 font-medium text-2xs text-faint uppercase tracking-wide touch:h-10',
+        'h-8 whitespace-nowrap px-2 font-medium text-2xs text-faint uppercase tracking-wide sm:px-3 touch:h-10',
         align === 'right' && 'text-right',
         className,
       )}
@@ -88,7 +88,7 @@ export function TD({ className, ...props }: React.ComponentProps<'td'>) {
   return (
     <td
       className={cn(
-        'h-[34px] whitespace-nowrap px-3 text-text touch:h-12',
+        'h-[34px] whitespace-nowrap px-2 text-text sm:px-3 touch:h-12',
         className,
       )}
       {...props}

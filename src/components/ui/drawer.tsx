@@ -22,7 +22,6 @@ export function Drawer({
   footer,
   width = 380,
   side = 'right',
-  className,
   children,
 }: {
   open: boolean
@@ -36,7 +35,6 @@ export function Drawer({
   width?: number
   /** Which edge it docks to. Records come from the right, navigation the left. */
   side?: 'left' | 'right'
-  className?: string
   children: React.ReactNode
 }) {
   return (
@@ -56,7 +54,6 @@ export function Drawer({
             // A ceiling expressed as a class, not `style.maxWidth` — an inline
             // style outranks the stylesheet and cannot be overridden per use.
             'max-w-(--sheet-w)',
-            className,
           )}
           style={{ '--sheet-w': `${width}px` } as React.CSSProperties}
         >

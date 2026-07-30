@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-30
+
+### Added
+- The app works on a phone. `touch:` and `mouse:` variants in `styles.css`
+  drive it: controls grow under `touch:`, and anything a hover revealed is
+  unconditional there, through a shared `hoverReveal` class
+- The filter sidebar folds into a left sheet below `lg`, reached from the top
+  bar and rendered from the same body as the permanent column
+- Safe-area handling — `viewport-fit=cover` plus `pb-safe`/`px-safe`, so
+  footers, the toast and the shell clear a notch and the home indicator
+- Audit coverage for every security-relevant action: authentication (sign-in,
+  failed sign-in, sign-out, password change), devices, customers, users,
+  invitations, enrollment tokens and import/export. Entries record the *names*
+  of changed fields, never their values, and a mutation that changed nothing
+  writes no entry
+- Export moved to a server-side procedure, so the audited count is observed
+  rather than reported by the client
+
+### Changed
+- Dialogs dock to the bottom edge and slide up below `sm`; from `sm` they are
+  the centred panel they were
+- The table drops columns by priority instead of squeezing them, bounds a long
+  alias so it cannot push the action column off the edge, and makes Connect
+  icon-only until there is room for its label. It now fits its container at
+  every width a finger uses — 375, 430, 640, 768 and 820px
+- Grouped rows stack their id and alias below `sm`, cards go one per row, and
+  the content header's sync, import and export fold into one menu on a phone
+- Text fields return to 16px under `touch:`, so iOS stops zooming the viewport
+  in on focus and leaving it there
+- `dvh` replaces `vh` for the shell, drawers and dialogs, so a mobile browser's
+  collapsing address bar is no longer counted as usable height
+
+### Fixed
+- Row actions were revealed by `:hover` alone, which on a touch screen left
+  Connect, edit and delete unreachable rather than merely subtle
+- Dialog and drawer widths came from `style.maxWidth`, and an inline style
+  outranks the stylesheet — it silently cancelled any responsive width
+- `theme-color` was keyed off `prefers-color-scheme`, but the theme comes from
+  `data-theme` and defaults to dark, so a phone set to light drew a light
+  address bar around a dark app
+- The user-menu trigger was a 28px tap target
+
 ## [0.5.0] - 2026-07-25
 
 ### Added

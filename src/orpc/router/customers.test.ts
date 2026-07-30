@@ -6,6 +6,7 @@ import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
 import { rpc } from '#/test/rpc'
 import { signIn } from '#/test/session'
+import { auditActions, auditEntries } from '#/test/audit'
 
 let db: TestDb
 let callRpc: ReturnType<typeof rpc>
@@ -116,5 +117,52 @@ describe('remove', () => {
     expect(await db.select().from(customersTable)).toHaveLength(0)
     const [device] = await db.select().from(devices)
     expect(device.customerId).toBeNull()
+  })
+})
+
+describe('audit trail', () => {
+  it('records create, update and delete once each', async () => {
+    const { id } = await create('Acme')
+    expect(await auditActions(db)).toEqual(['customer_created'])
+
+    await callRpc(customers.update, {
+      id,
+      name: 'Acme GmbH',
+      contact: '',
+      notes: '',
+    })
+    const entries = await auditEntries(db)
+    expect(entries.map((e) => e.action)).toEqual([
+      'customer_created',
+      'customer_updated',
+    ])
+    expect(entries[1].metadata).toEqual({ fields: ['name'] })
+    expect(entries[1].targetLabel).toBe('Acme GmbH')
+
+    await callRpc(customers.remove, { id })
+    expect(await auditActions(db)).toEqual([
+      'customer_created',
+      'customer_updated',
+      'customer_deleted',
+    ])
+  })
+
+  it('records nothing when an update changed no field', async () => {
+    const { id } = await create('Acme')
+    await callRpc(customers.update, {
+      id,
+      name: 'Acme',
+      contact: '',
+      notes: '',
+    })
+    expect(await auditActions(db)).toEqual(['customer_created'])
+  })
+
+  it('records nothing for a rejected call', async () => {
+    await create('Acme')
+    await expect(create('Acme')).rejects.toThrow(/existiert bereits/)
+    signIn({ role: 'member' })
+    await expect(create('Other')).rejects.toThrow(/Administratorrechte/)
+    expect(await auditActions(db)).toEqual(['customer_created'])
   })
 })

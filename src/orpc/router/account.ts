@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { publicProcedure } from '#/orpc/context'
 import { auth } from '#/lib/auth'
+import { recordAuditEvent } from '#/lib/audit-service'
 import { invitation, user } from '#/db/schema'
 import { invitedRegistration } from '#/lib/registration-context'
 
@@ -112,5 +113,15 @@ export const acceptInvite = publicProcedure
           password: input.password,
         }),
     )
+    // The redeemed invitation. The account row is created by better-auth and
+    // audited there (`user_created`); this entry is about the invitation, so
+    // it carries the invited address rather than a user id.
+    await recordAuditEvent(context.db, {
+      action: 'invite_accepted',
+      actor: { id: null, name: input.name, email: invite.email },
+      target: { type: 'invitation', id: invite.id, label: invite.email },
+      headers: context.headers,
+      metadata: { role: invite.role },
+    })
     return { email: invite.email }
   })

@@ -6,6 +6,7 @@ import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
 import { rpc } from '#/test/rpc'
 import { resetSignUpCalls, signOut, signUpCalls } from '#/test/session'
+import { auditActions, auditEntries } from '#/test/audit'
 
 let db: TestDb
 let callRpc: ReturnType<typeof rpc>
@@ -139,5 +140,36 @@ describe('acceptInvite', () => {
       }),
     ).rejects.toThrow(/ungültig oder abgelaufen/)
     expect(signUpCalls).toHaveLength(0)
+  })
+})
+
+describe('audit trail', () => {
+  it('records a redeemed invitation against the invitation', async () => {
+    const invite = await insertInvite({ token: 'redeem-me' })
+    await callRpc(account.acceptInvite, {
+      token: 'redeem-me',
+      name: 'Invited User',
+      password: 'a-long-password',
+    })
+    const [entry] = await auditEntries(db)
+    expect(entry).toMatchObject({
+      action: 'invite_accepted',
+      // No session exists yet: the account row is created by better-auth.
+      userId: null,
+      actorEmail: invite.email,
+      targetType: 'invitation',
+      targetId: invite.id,
+    })
+  })
+
+  it('records nothing when the invitation is invalid', async () => {
+    await expect(
+      callRpc(account.acceptInvite, {
+        token: 'nope',
+        name: 'Invited User',
+        password: 'a-long-password',
+      }),
+    ).rejects.toThrow(/ungültig oder abgelaufen/)
+    expect(await auditActions(db)).toEqual([])
   })
 })

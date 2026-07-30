@@ -7,6 +7,7 @@ import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
 import { rpc } from '#/test/rpc'
 import { signIn } from '#/test/session'
+import { auditActions, auditEntries } from '#/test/audit'
 
 let db: TestDb
 let callRpc: ReturnType<typeof rpc>
@@ -71,5 +72,38 @@ describe('revoke', () => {
     const [row] = await db.select().from(invitation)
     await callRpc(invites.revoke, { id: row.id })
     expect(await db.select().from(invitation)).toHaveLength(0)
+  })
+})
+
+describe('audit trail', () => {
+  it('records creation and revocation without the token value', async () => {
+    const invite = await create('new@example.com')
+    const [row] = await db.select().from(invitation)
+    const [entry] = await auditEntries(db)
+    expect(entry).toMatchObject({
+      action: 'invite_created',
+      targetType: 'invitation',
+      targetId: row.id,
+      targetLabel: 'new@example.com',
+    })
+    expect(JSON.stringify(entry)).not.toContain(invite.token)
+
+    await callRpc(invites.revoke, { id: row.id })
+    expect(await auditActions(db)).toEqual(['invite_created', 'invite_revoked'])
+  })
+
+  it('records nothing when the revoked invitation did not exist', async () => {
+    await callRpc(invites.revoke, {
+      id: '00000000-0000-0000-0000-000000000000',
+    })
+    expect(await auditActions(db)).toEqual([])
+  })
+
+  it('records nothing for a call rejected as non-admin', async () => {
+    signIn({ role: 'member' })
+    await expect(create('new@example.com')).rejects.toThrow(
+      /Administratorrechte/,
+    )
+    expect(await auditActions(db)).toEqual([])
   })
 })

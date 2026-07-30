@@ -3,7 +3,26 @@ import { asc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { adminProcedure, authed } from '#/orpc/context'
+import {
+  actorFrom,
+  type AuditingContext,
+  changedFields,
+  recordAuditEvent,
+} from '#/lib/audit-service'
 import { customers, devices } from '#/db/schema'
+
+/** Actor + target snapshot for an audit event about a single customer. */
+function customerAuditEvent(
+  context: AuditingContext,
+  row: { id: string; name: string },
+  deleted = false,
+) {
+  return {
+    actor: actorFrom(context),
+    target: { type: 'customer' as const, id: row.id, label: row.name, deleted },
+    headers: context.headers,
+  }
+}
 
 const NameSchema = z.string().trim().min(1).max(160)
 const OptText = z.string().trim().max(2000).optional()
@@ -68,6 +87,10 @@ export const create = adminProcedure
         notes: input.notes || null,
       })
       .returning({ id: customers.id })
+    await recordAuditEvent(context.db, {
+      action: 'customer_created',
+      ...customerAuditEvent(context, { id: row.id, name: input.name }),
+    })
     return row
   })
 
@@ -82,6 +105,15 @@ export const update = adminProcedure
   )
   .handler(async ({ input, context }) => {
     await assertNameFree(context.db, input.name, input.id)
+    const [before] = await context.db
+      .select({
+        name: customers.name,
+        contact: customers.contact,
+        notes: customers.notes,
+      })
+      .from(customers)
+      .where(eq(customers.id, input.id))
+      .limit(1)
     const [row] = await context.db
       .update(customers)
       .set({
@@ -90,9 +122,26 @@ export const update = adminProcedure
         notes: input.notes || null,
       })
       .where(eq(customers.id, input.id))
-      .returning({ id: customers.id })
+      .returning({
+        id: customers.id,
+        name: customers.name,
+        contact: customers.contact,
+        notes: customers.notes,
+      })
     if (!row)
       throw new ORPCError('NOT_FOUND', { message: 'Kunde nicht gefunden.' })
+    const fields = changedFields(before ?? {}, {
+      name: row.name,
+      contact: row.contact,
+      notes: row.notes,
+    })
+    if (fields.length) {
+      await recordAuditEvent(context.db, {
+        action: 'customer_updated',
+        ...customerAuditEvent(context, row),
+        metadata: { fields },
+      })
+    }
     return { ok: true }
   })
 
@@ -103,6 +152,15 @@ export const update = adminProcedure
 export const remove = adminProcedure
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
-    await context.db.delete(customers).where(eq(customers.id, input.id))
+    const [row] = await context.db
+      .delete(customers)
+      .where(eq(customers.id, input.id))
+      .returning({ id: customers.id, name: customers.name })
+    if (row) {
+      await recordAuditEvent(context.db, {
+        action: 'customer_deleted',
+        ...customerAuditEvent(context, row, true),
+      })
+    }
     return { ok: true }
   })

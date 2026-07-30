@@ -26,11 +26,55 @@ import { devices } from './devices'
  * label message — nothing else switches on the value, and the column is
  * `text` rather than a PG enum, so no migration is needed either.
  */
-export const AUDIT_ACTIONS = ['reveal_password', 'connect'] as const
+export const AUDIT_ACTIONS = [
+  // Devices
+  'reveal_password',
+  'connect',
+  'device_created',
+  'device_updated',
+  'device_deleted',
+  'device_reassigned',
+  'device_password_changed',
+  'device_group_changed',
+  // Authentication
+  'login',
+  'login_failed',
+  'logout',
+  'password_changed',
+  // Customers
+  'customer_created',
+  'customer_updated',
+  'customer_deleted',
+  // Users
+  'user_created',
+  'user_role_changed',
+  'user_banned',
+  'user_unbanned',
+  'user_deleted',
+  // Invitations
+  'invite_created',
+  'invite_revoked',
+  'invite_accepted',
+  // Enrollment
+  'enrollment_token_created',
+  'enrollment_token_used',
+  'enrollment_token_revoked',
+  // Data
+  'import_data',
+  'export_data',
+] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
 /** Entity kinds an entry can point at. Open set, same as the actions. */
-export const AUDIT_TARGET_TYPES = ['device', 'user'] as const
+export const AUDIT_TARGET_TYPES = [
+  'device',
+  'user',
+  'customer',
+  'invitation',
+  'enrollment_token',
+  'group',
+  'data',
+] as const
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number]
 
 export const auditLog = pgTable(

@@ -7,6 +7,7 @@ import { createTestDb, type TestDb } from '#/test/db'
 import { createUser } from '#/test/factories'
 import { rpc } from '#/test/rpc'
 import { signIn } from '#/test/session'
+import { auditActions, auditEntries } from '#/test/audit'
 
 let db: TestDb
 let callRpc: ReturnType<typeof rpc>
@@ -159,5 +160,55 @@ describe('rename / remove', () => {
     })
     await callRpc(groups.remove, { id: group.id })
     expect(await callRpc(groups.list)).toEqual([])
+  })
+})
+
+describe('audit trail', () => {
+  it('records a membership change once and ignores a repeat', async () => {
+    const group = await createGroup('Site A')
+    await callRpc(groups.setMembership, {
+      groupId: group.id,
+      deviceId,
+      member: true,
+    })
+    const [entry] = await auditEntries(db)
+    expect(entry).toMatchObject({
+      action: 'device_group_changed',
+      targetType: 'device',
+      targetId: deviceId,
+      targetLabel: 'PC',
+    })
+    expect(entry.metadata).toEqual({ group: 'Site A', member: true })
+
+    // Idempotent repeat: nothing moved, so nothing is recorded.
+    await callRpc(groups.setMembership, {
+      groupId: group.id,
+      deviceId,
+      member: true,
+    })
+    expect(await auditActions(db)).toEqual(['device_group_changed'])
+
+    await callRpc(groups.setMembership, {
+      groupId: group.id,
+      deviceId,
+      member: false,
+    })
+    expect(await auditActions(db)).toEqual([
+      'device_group_changed',
+      'device_group_changed',
+    ])
+  })
+
+  it('records nothing when the group belongs to someone else', async () => {
+    const group = await createGroup('Site A')
+    asOther()
+    await expect(
+      callRpc(groups.setMembership, {
+        groupId: group.id,
+        deviceId,
+        member: true,
+      }),
+    ).rejects.toThrow(/nicht gefunden/)
+    expect(await auditActions(db)).toEqual([])
   })
 })

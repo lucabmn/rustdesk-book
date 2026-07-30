@@ -24,6 +24,17 @@ Server nur über zwei authentifizierte Wege: das Anzeigen im Detail-Bereich und 
 Öffnen einer Sitzung. Beide Vorgänge werden im Audit-Log festgehalten (wer, welches
 Gerät, wann – niemals der Wert selbst).
 
+**Jede sicherheitsrelevante Aktion wird auditiert.** An-/Abmeldungen, fehlgeschlagene
+Anmeldeversuche und Passwortänderungen, Änderungen an Geräten, Kunden, Benutzern,
+Einladungen und Enrollment-Tokens sowie Import und Export. Jeder Eintrag nennt Actor,
+Ziel und Zeitpunkt; bei Änderungen hält das Metadata-Feld die *Namen* der geänderten
+Felder fest – Werte nur dort, wo sie selbst kein Geheimnis sind (etwa die neue Rolle
+eines Benutzers). Klartext-Passwörter, Token-Werte und Schlüssel
+tauchen in keinem Eintrag auf. Fehlgeschlagene Anmeldeversuche werden ohne Session
+mit der versuchten E-Mail-Adresse aufgezeichnet; die IP steht darin, sobald
+`TRUST_PROXY_HEADERS=true` gesetzt ist – ohne vertrauenswürdigen Proxy wäre sie
+fälschbar und bleibt daher leer.
+
 **Registrierung ist einladungsbasiert.** Das erste Konto wird beim ersten Start als
 Administrator angelegt. Danach ist die Registrierung gesperrt; weitere Konten
 entstehen nur über zeitlich begrenzte Einladungslinks.

@@ -19,7 +19,12 @@ async function post({ request }: { request: Request }) {
     const input = EnrollmentFinalizeSchema.parse(
       await parseEnrollmentPayload(request),
     )
-    const result = await finalizeEnrollment(db, claimToken, input)
+    const result = await finalizeEnrollment(
+      db,
+      claimToken,
+      input,
+      request.headers,
+    )
     return enrollmentJson({ ok: true, ...result }, result.created ? 201 : 200)
   } catch (error) {
     return enrollmentErrorResponse(error)

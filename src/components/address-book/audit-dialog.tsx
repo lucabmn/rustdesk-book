@@ -46,7 +46,7 @@ export function AuditDialog({
             <THead>
               <TH>{m.audit_th_time()}</TH>
               <TH>{m.th_action()}</TH>
-              <TH>{m.audit_th_device()}</TH>
+              <TH>{m.audit_th_target()}</TH>
               <TH>{m.audit_th_user()}</TH>
             </THead>
             <TBody>
@@ -61,9 +61,9 @@ export function AuditDialog({
                     </Badge>
                   </TD>
                   <TD>
-                    {e.deviceAlias ? (
+                    {e.targetLabel ? (
                       <span className="flex items-baseline gap-1.5">
-                        <span className="font-medium">{e.deviceAlias}</span>
+                        <span className="font-medium">{e.targetLabel}</span>
                         <span className="tnum font-mono text-2xs text-faint">
                           {e.deviceRustdeskId
                             ? formatRustdeskId(e.deviceRustdeskId)

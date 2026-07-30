@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { adminProcedure, authed } from '#/orpc/context'
 import { auditLog, devices, user } from '#/db/schema'
 
-/** Recent audit entries (reveal/connect), most recent first. Admin only. */
+/** Recent audit entries, most recent first. Admin only. */
 export const list = adminProcedure.handler(async ({ context }) => {
   const rows = await context.db
     .select({
@@ -13,6 +13,9 @@ export const list = adminProcedure.handler(async ({ context }) => {
       createdAt: auditLog.createdAt,
       deviceAlias: devices.alias,
       deviceRustdeskId: devices.rustdeskId,
+      targetLabel: auditLog.targetLabel,
+      actorName: auditLog.actorName,
+      actorEmail: auditLog.actorEmail,
       userName: user.name,
       userEmail: user.email,
     })
@@ -22,14 +25,18 @@ export const list = adminProcedure.handler(async ({ context }) => {
     .orderBy(desc(auditLog.createdAt))
     .limit(200)
 
+  // Snapshots first, live joins as the fallback: entries written before the
+  // snapshot columns existed still resolve their labels through the foreign
+  // keys, and entries about a deleted row stay readable.
   return rows.map((r) => ({
     id: r.id,
     action: r.action,
     createdAt: r.createdAt.toISOString(),
+    targetLabel: r.targetLabel ?? r.deviceAlias,
     deviceAlias: r.deviceAlias,
     deviceRustdeskId: r.deviceRustdeskId,
-    userName: r.userName,
-    userEmail: r.userEmail,
+    userName: r.userName ?? r.actorName,
+    userEmail: r.userEmail ?? r.actorEmail,
   }))
 })
 

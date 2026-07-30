@@ -3,7 +3,30 @@ import { count, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { adminProcedure } from '#/orpc/context'
+import {
+  actorFrom,
+  type AuditingContext,
+  recordAuditEvent,
+} from '#/lib/audit-service'
 import { devices, session, user } from '#/db/schema'
+
+/** Actor + target snapshot for an audit event about a single user. */
+function userAuditEvent(
+  context: AuditingContext,
+  target: { id: string; email: string },
+  deleted = false,
+) {
+  return {
+    actor: actorFrom(context),
+    target: {
+      type: 'user' as const,
+      id: target.id,
+      label: target.email,
+      deleted,
+    },
+    headers: context.headers,
+  }
+}
 
 const RoleSchema = z.enum(['admin', 'member'])
 
@@ -78,7 +101,7 @@ export const update = adminProcedure
   )
   .handler(async ({ input, context }) => {
     const [target] = await context.db
-      .select({ role: user.role })
+      .select({ role: user.role, email: user.email })
       .from(user)
       .where(eq(user.id, input.id))
       .limit(1)
@@ -105,6 +128,13 @@ export const update = adminProcedure
       .update(user)
       .set({ name: input.name, role: input.role, updatedAt: new Date() })
       .where(eq(user.id, input.id))
+    if (target.role !== input.role) {
+      await recordAuditEvent(context.db, {
+        action: 'user_role_changed',
+        ...userAuditEvent(context, { id: input.id, email: target.email }),
+        metadata: { fields: ['role'], from: target.role, to: input.role },
+      })
+    }
     return { ok: true }
   })
 
@@ -126,7 +156,7 @@ export const ban = adminProcedure
       })
     }
     const [target] = await context.db
-      .select({ id: user.id })
+      .select({ id: user.id, email: user.email })
       .from(user)
       .where(eq(user.id, input.id))
       .limit(1)
@@ -145,6 +175,11 @@ export const ban = adminProcedure
       .where(eq(user.id, input.id))
     // Revoke existing sessions so the ban is effective right away.
     await context.db.delete(session).where(eq(session.userId, input.id))
+    await recordAuditEvent(context.db, {
+      action: 'user_banned',
+      ...userAuditEvent(context, target),
+      metadata: { fields: ['banned'], withReason: Boolean(input.reason) },
+    })
     return { ok: true }
   })
 
@@ -161,10 +196,15 @@ export const unban = adminProcedure
         updatedAt: new Date(),
       })
       .where(eq(user.id, input.id))
-      .returning({ id: user.id })
+      .returning({ id: user.id, email: user.email })
     if (!row) {
       throw new ORPCError('NOT_FOUND', { message: 'Benutzer nicht gefunden.' })
     }
+    await recordAuditEvent(context.db, {
+      action: 'user_unbanned',
+      ...userAuditEvent(context, row),
+      metadata: { fields: ['banned'] },
+    })
     return { ok: true }
   })
 
@@ -182,7 +222,7 @@ export const remove = adminProcedure
       })
     }
     const [target] = await context.db
-      .select({ role: user.role })
+      .select({ role: user.role, email: user.email })
       .from(user)
       .where(eq(user.id, input.id))
       .limit(1)
@@ -196,5 +236,10 @@ export const remove = adminProcedure
     }
 
     await context.db.delete(user).where(eq(user.id, input.id))
+    await recordAuditEvent(context.db, {
+      action: 'user_deleted',
+      ...userAuditEvent(context, { id: input.id, email: target.email }, true),
+      metadata: { role: target.role },
+    })
     return { ok: true }
   })

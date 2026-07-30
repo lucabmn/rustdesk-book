@@ -12,7 +12,7 @@ import { CustomersDialog } from './customers-dialog'
 import { DeviceDetailDrawer } from './device-detail-drawer'
 import { DeviceFormDialog } from './device-form-dialog'
 import { EnrollmentDialog } from './enrollment-dialog'
-import { FilterSidebar } from './filter-sidebar'
+import { FilterSheet, FilterSidebar } from './filter-sidebar'
 import { InviteDialog } from './invite-dialog'
 import { ContentHeader } from './toolbar'
 import { useAddressBook } from './use-address-book'
@@ -37,6 +37,9 @@ export function AddressBook({
   const { filters, patch, actions, stats } = book
   const isAdmin = user.role === 'admin'
 
+  // Only ever true below `lg`, where the sidebar has folded into a sheet — the
+  // control that sets it is hidden at every wider size.
+  const [navOpen, setNavOpen] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [usersOpen, setUsersOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
@@ -46,6 +49,20 @@ export function AddressBook({
   // The table bleeds into a bounded scroll area so its header can pin; the card
   // and grouped views are collections of their own surfaces and keep padding.
   const isTable = book.view === 'table'
+
+  // Shared by the permanent sidebar and the sheet it becomes on a narrow
+  // screen, so the two can never present different filters.
+  const navProps = {
+    filters,
+    patch,
+    onToggleTag: actions.toggleTag,
+    total: stats?.total,
+    customers: stats?.customers ?? [],
+    operatingSystems: stats?.operatingSystems ?? [],
+    tags: stats?.tags ?? [],
+    isAdmin,
+    onManageCustomers: () => setCustomersOpen(true),
+  }
 
   function body() {
     if (book.isLoading) {
@@ -94,7 +111,11 @@ export function AddressBook({
   return (
     <div
       data-theme={book.theme}
-      className="flex h-screen flex-col overflow-hidden bg-canvas text-text"
+      // `dvh`, not `vh`: a mobile browser counts its collapsing address bar as
+      // usable height, so a `h-screen` shell hides its own footer until the
+      // user scrolls. `px-safe` keeps the chrome out from under a notch when
+      // the phone is held sideways.
+      className="flex h-dvh flex-col overflow-hidden bg-canvas px-safe text-text"
     >
       <TopBar
         search={filters.search}
@@ -102,6 +123,7 @@ export function AddressBook({
         onAdd={actions.openAdd}
         theme={book.theme}
         onToggleTheme={actions.toggleTheme}
+        onOpenNav={() => setNavOpen(true)}
         menu={{
           initials: initialsOf(user.name),
           name: user.name,
@@ -116,17 +138,10 @@ export function AddressBook({
       />
 
       <div className="flex min-h-0 flex-1">
-        <FilterSidebar
-          filters={filters}
-          patch={patch}
-          onToggleTag={actions.toggleTag}
-          total={stats?.total}
-          customers={stats?.customers ?? []}
-          operatingSystems={stats?.operatingSystems ?? []}
-          tags={stats?.tags ?? []}
-          isAdmin={isAdmin}
-          onManageCustomers={() => setCustomersOpen(true)}
-        />
+        <FilterSidebar {...navProps} />
+        {/* Radix renders nothing while closed, so the navigation exists once
+            in the tree at any moment despite being declared twice. */}
+        <FilterSheet {...navProps} open={navOpen} onOpenChange={setNavOpen} />
 
         <main className="flex min-w-0 flex-1 flex-col">
           <ContentHeader
@@ -149,7 +164,9 @@ export function AddressBook({
 
           <div
             className={
-              isTable ? 'min-h-0 flex-1' : 'min-h-0 flex-1 overflow-y-auto p-4'
+              isTable
+                ? 'min-h-0 flex-1'
+                : 'min-h-0 flex-1 overflow-y-auto p-3 sm:p-4'
             }
           >
             {body()}

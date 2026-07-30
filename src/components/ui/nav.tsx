@@ -22,7 +22,7 @@ export function NavItem({
       type="button"
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'group flex h-7 w-full items-center gap-2 rounded-md px-2 text-left transition-colors',
+        'group flex h-7 w-full touch-manipulation items-center gap-2 rounded-md px-2 text-left transition-colors touch:h-10',
         active
           ? 'bg-accent-soft font-medium text-accent'
           : 'text-muted hover:bg-hover hover:text-text',
@@ -68,7 +68,7 @@ export function SegmentedItem({
       type="button"
       aria-pressed={active}
       className={cn(
-        'inline-flex h-6 items-center gap-1.5 rounded-[5px] px-2 font-medium text-2xs transition-colors [&_svg]:size-3.5',
+        'inline-flex h-6 touch-manipulation items-center gap-1.5 rounded-[5px] px-2 font-medium text-2xs transition-colors touch:h-8 touch:px-2.5 [&_svg]:size-3.5',
         active
           ? 'bg-surface text-text shadow-[0_1px_2px_rgb(0_0_0/0.06)]'
           : 'text-muted hover:text-text',

@@ -38,7 +38,10 @@ export function CardsView({
   onToggleFavorite,
 }: CardsViewProps) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(272px,1fr))] gap-3">
+    // One card per row on a phone. `auto-fill` with a 272px floor would still
+    // fit a single column there, but only just — and not at all once a narrow
+    // viewport pays for the gutter.
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(272px,1fr))]">
       {devices.map((d) => (
         <Card
           key={d.id}

@@ -62,23 +62,35 @@ export function ConnectButton({
    * drawer — where Connect really is *the* action — keep the accent.
    */
   variant = 'accent',
+  /**
+   * Drop the label until `lg`. Only the table needs this: its row already
+   * spends its width on an id, an alias and up to four controls, and the label
+   * is what pushes the last of them off the edge — on a phone, and again on a
+   * tablet once the columns come back. The icon keeps its accessible name.
+   */
+  compact = false,
 }: {
   onClick: () => void
   className?: string
   variant?: 'accent' | 'outline'
+  compact?: boolean
 }) {
   return (
     <Button
       variant={variant}
       size="xs"
       className={className}
+      title={m.common_connect()}
+      aria-label={m.common_connect()}
       onClick={(e) => {
         e.stopPropagation()
         onClick()
       }}
     >
       <Power />
-      {m.common_connect()}
+      <span className={compact ? 'hidden lg:inline' : undefined}>
+        {m.common_connect()}
+      </span>
     </Button>
   )
 }

@@ -39,10 +39,12 @@ export function UserMenu({
   return (
     <Menu>
       <MenuTrigger asChild>
+        {/* The avatar is 28px, which is a miss on a finger — under `touch:` the
+            trigger grows around it rather than the mark itself getting bigger. */}
         <button
           type="button"
           aria-label={m.user_menu()}
-          className="rounded-full"
+          className="inline-flex shrink-0 touch-manipulation items-center justify-center rounded-full touch:size-10"
         >
           <Avatar initials={initials} />
         </button>

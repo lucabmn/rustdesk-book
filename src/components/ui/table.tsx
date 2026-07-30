@@ -20,7 +20,7 @@ export function Table({
   return (
     <div
       className={cn(
-        'overflow-auto',
+        'overflow-auto overscroll-contain',
         flush ? 'h-full' : 'rounded-lg border border-line bg-surface',
       )}
     >
@@ -50,7 +50,7 @@ export function TH({
     <th
       scope="col"
       className={cn(
-        'h-8 whitespace-nowrap px-3 font-medium text-2xs text-faint uppercase tracking-wide',
+        'h-8 whitespace-nowrap px-2 font-medium text-2xs text-faint uppercase tracking-wide sm:px-3 touch:h-10',
         align === 'right' && 'text-right',
         className,
       )}
@@ -87,7 +87,10 @@ export function TD({ className, ...props }: React.ComponentProps<'td'>) {
   // a cell still wrap — their own flex container governs that.
   return (
     <td
-      className={cn('h-[34px] whitespace-nowrap px-3 text-text', className)}
+      className={cn(
+        'h-[34px] whitespace-nowrap px-2 text-text sm:px-3 touch:h-12',
+        className,
+      )}
       {...props}
     />
   )

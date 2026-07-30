@@ -17,6 +17,7 @@ export {
   Card,
   Divider,
   EmptyState,
+  hoverReveal,
   Kbd,
   SectionLabel,
   Spinner,

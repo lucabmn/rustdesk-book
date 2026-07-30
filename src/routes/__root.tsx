@@ -25,7 +25,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      // `viewport-fit=cover` is what makes `env(safe-area-inset-*)` resolve to
+      // anything but zero, so the app can paint under a notch and still keep
+      // its controls clear of it.
+      {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      },
+      // No `theme-color` here on purpose: the app's theme comes from
+      // `data-theme`, not the OS, so the tag is written by `themeInitScript`
+      // below from the same source of truth and updated by `applyTheme`.
       { title: m.meta_title() },
       { name: 'description', content: m.meta_description() },
     ],

@@ -79,14 +79,25 @@ export function GroupedView({ groups, onOpen, onConnect }: GroupedViewProps) {
                     className="flex cursor-pointer items-center gap-3 border-line border-b px-3.5 py-2 transition-colors last:border-b-0 hover:bg-hover"
                   >
                     <StatusDot status={d.status} />
-                    <DeviceId id={d.rustdeskId} className="w-28 shrink-0" />
-                    <span className="w-40 shrink-0 truncate font-medium text-text text-xs">
-                      {d.alias}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-muted text-xs">
-                      {osLabel(d.osKey)}
-                    </span>
-                    <DeviceTags tags={d.tags} className="flex-nowrap" />
+                    {/* One column of fixed-width fields reads well across a
+                        desk and not at all across a phone, so below `sm` the
+                        id and alias stack and the rest gives way to Connect. */}
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
+                      <DeviceId
+                        id={d.rustdeskId}
+                        className="shrink-0 sm:w-28"
+                      />
+                      <span className="truncate font-medium text-text text-xs sm:w-40 sm:shrink-0">
+                        {d.alias}
+                      </span>
+                      <span className="hidden min-w-0 flex-1 truncate text-muted text-xs sm:block">
+                        {osLabel(d.osKey)}
+                      </span>
+                    </div>
+                    <DeviceTags
+                      tags={d.tags}
+                      className="hidden flex-nowrap lg:inline-flex"
+                    />
                     <ConnectButton
                       variant="outline"
                       onClick={() => onConnect(d)}

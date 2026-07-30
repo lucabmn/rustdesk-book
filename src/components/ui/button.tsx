@@ -9,7 +9,7 @@ import { cn } from '#/lib/utils'
  * keeps one accent hue readable as "this is the thing to press".
  */
 const button = cva(
-  'inline-flex shrink-0 select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md border font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0',
+  'inline-flex shrink-0 touch-manipulation select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md border font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
@@ -23,14 +23,16 @@ const button = cva(
           'border-transparent bg-danger text-white hover:bg-danger-hover dark:text-canvas',
         link: 'h-auto border-transparent p-0 text-accent underline-offset-4 hover:underline',
       },
+      // Every size grows under `touch:`. The desktop scale is deliberately
+      // dense, and that same density on a finger is a control you miss.
       size: {
-        xs: 'h-6 px-2 text-2xs [&_svg]:size-3',
-        sm: 'h-7 px-2.5 text-xs [&_svg]:size-3.5',
-        md: 'h-8 px-3 text-sm [&_svg]:size-4',
-        lg: 'h-9 px-4 text-sm [&_svg]:size-4',
-        'icon-xs': 'size-6 [&_svg]:size-3.5',
-        'icon-sm': 'size-7 [&_svg]:size-4',
-        'icon-md': 'size-8 [&_svg]:size-4',
+        xs: 'h-6 touch:h-8 px-2 touch:px-2.5 text-2xs [&_svg]:size-3',
+        sm: 'h-7 touch:h-9 px-2.5 touch:px-3 text-xs [&_svg]:size-3.5',
+        md: 'h-8 touch:h-10 px-3 text-sm [&_svg]:size-4',
+        lg: 'h-9 touch:h-11 px-4 text-sm [&_svg]:size-4',
+        'icon-xs': 'size-6 touch:size-9 [&_svg]:size-3.5',
+        'icon-sm': 'size-7 touch:size-9 [&_svg]:size-4',
+        'icon-md': 'size-8 touch:size-10 [&_svg]:size-4',
       },
     },
     defaultVariants: { variant: 'outline', size: 'sm' },

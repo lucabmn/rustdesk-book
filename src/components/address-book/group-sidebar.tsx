@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, FolderClosed, Plus, Trash2 } from 'lucide-react'
 
-import { Button, Input, NavItem, SectionLabel } from '#/components/ui'
+import {
+  Button,
+  hoverReveal,
+  Input,
+  NavItem,
+  SectionLabel,
+} from '#/components/ui'
 import { orpc } from '#/orpc/client'
 import { m } from '#/paraglide/messages'
 import { useToast } from './toast'
@@ -122,7 +128,7 @@ export function GroupSidebar({
                 size="icon-xs"
                 title={m.group_delete()}
                 aria-label={m.group_delete()}
-                className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover/row:opacity-100"
+                className={hoverReveal}
                 onClick={() => removeMut.mutate({ id: g.id })}
               >
                 <Trash2 />

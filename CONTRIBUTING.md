@@ -41,7 +41,12 @@ Kleine, thematisch fokussierte Commits sind einfacher zu reviewen als ein große
   `authed`-Basis abgesichert.
 - **Drizzle + PostgreSQL** (`src/db/`); Migrationen liegen in `drizzle/`.
 - **better-auth** für Sessions und die einladungsbasierte Registrierung.
-- **Tenvima Design System** (`src/styles/tenvima/`) als einzige UI-Sprache.
+- **Design-Token-Set** in `src/styles.css` (Tailwind v4) plus die Primitives in
+  `src/components/ui/` als einzige UI-Sprache. Neue Oberflächen aus diesen
+  Primitives bauen, nicht aus Inline-Klassen.
+- **Mobile**: Bedienelemente wachsen unter der `touch:`-Variante, alles was ein
+  Hover einblendet, muss dort dauerhaft sichtbar sein. Neue Ansichten bitte bei
+  375px Breite prüfen.
 
 ## Sicherheit
 

@@ -4,8 +4,18 @@ import { cn } from '#/lib/utils'
 const fieldBase =
   'w-full rounded-md border border-line bg-surface text-sm text-text transition-colors placeholder:text-faint hover:border-line-strong focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-60'
 
+/*
+ * The `touch:` heights are not paired with the desktop ones by `cn`, so a
+ * caller passing a denser `h-7` still gets the finger-sized box on a phone —
+ * which is what the global 16px field rule in styles.css needs room for.
+ */
 export function Input({ className, ...props }: React.ComponentProps<'input'>) {
-  return <input className={cn(fieldBase, 'h-8 px-2.5', className)} {...props} />
+  return (
+    <input
+      className={cn(fieldBase, 'h-8 px-2.5 touch:h-10', className)}
+      {...props}
+    />
+  )
 }
 
 export function Textarea({
@@ -30,7 +40,11 @@ export function Select({
 }: React.ComponentProps<'select'>) {
   return (
     <select
-      className={cn(fieldBase, 'h-8 cursor-pointer px-2 pr-7', className)}
+      className={cn(
+        fieldBase,
+        'h-8 cursor-pointer px-2 pr-7 touch:h-10',
+        className,
+      )}
       {...props}
     />
   )

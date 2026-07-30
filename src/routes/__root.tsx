@@ -32,19 +32,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         name: 'viewport',
         content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
-      // Colours the browser's own chrome to match each theme's `--canvas`, so
-      // the app doesn't sit in a white bar in dark mode. Kept in sync by hand
-      // with styles.css — a meta tag can't read a custom property.
-      {
-        name: 'theme-color',
-        media: '(prefers-color-scheme: light)',
-        content: '#f9fafb',
-      },
-      {
-        name: 'theme-color',
-        media: '(prefers-color-scheme: dark)',
-        content: '#111315',
-      },
+      // No `theme-color` here on purpose: the app's theme comes from
+      // `data-theme`, not the OS, so the tag is written by `themeInitScript`
+      // below from the same source of truth and updated by `applyTheme`.
       { title: m.meta_title() },
       { name: 'description', content: m.meta_description() },
     ],

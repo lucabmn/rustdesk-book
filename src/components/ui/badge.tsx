@@ -43,7 +43,7 @@ export function TagChip({
       type="button"
       aria-pressed={active}
       className={cn(
-        'inline-flex h-[22px] items-center gap-1 rounded-full border px-2.5 font-medium text-2xs transition-colors',
+        'inline-flex h-[22px] touch-manipulation items-center gap-1 rounded-full border px-2.5 font-medium text-2xs transition-colors touch:h-8 touch:px-3',
         active
           ? 'border-accent-line bg-accent-soft text-accent'
           : 'border-line bg-sunken text-muted hover:border-line-strong hover:text-text',

@@ -23,8 +23,11 @@ export function MenuContent({
       <DropdownMenu.Content
         align={align}
         sideOffset={sideOffset}
+        collisionPadding={8}
         className={cn(
-          'z-70 min-w-48 rounded-lg border border-line bg-elevated p-1 shadow-pop',
+          // Capped to the viewport so a menu opened near the screen edge on a
+          // phone stays fully on screen instead of pushing the page sideways.
+          'z-70 max-w-[calc(100vw-1rem)] min-w-48 rounded-lg border border-line bg-elevated p-1 shadow-pop',
           'data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           className,
         )}
@@ -45,7 +48,7 @@ export function MenuItem({
       <button
         type="button"
         className={cn(
-          'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-text text-xs outline-none transition-colors',
+          'flex w-full cursor-pointer touch-manipulation items-center gap-2 rounded-md px-2 py-1.5 text-left text-text text-xs outline-none transition-colors touch:py-2.5',
           'data-[highlighted]:bg-hover [&_svg]:size-3.5 [&_svg]:text-faint',
           destructive &&
             'text-danger data-[highlighted]:bg-danger-soft [&_svg]:text-danger',

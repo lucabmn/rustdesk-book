@@ -16,6 +16,21 @@
 /* The app toggles `data-theme` on <html>; keep Tailwind's `dark:` in sync. */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
+/*
+ * Input modality. `touch:` is "the primary pointer is a finger", `mouse:` is
+ * "there is a real cursor that can hover". They are declared here rather than
+ * taken from Tailwind's built-ins so a version bump can never silently stop
+ * emitting them — a dropped `touch:` rule looks identical in the diff and
+ * broken on the device.
+ *
+ * Two rules follow from them, applied throughout:
+ *  - Controls grow under `touch:`. A 24px icon button is a miss on a finger.
+ *  - Anything revealed by hover must be unconditional under `touch:`, where
+ *    hover does not exist and the control would simply be unreachable.
+ */
+@custom-variant touch (@media (pointer: coarse));
+@custom-variant mouse (@media (hover: hover) and (pointer: fine));
+
 :root {
   color-scheme: light;
 
@@ -185,6 +200,15 @@
     line-height: var(--text-sm--line-height);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+
+    /* The shell is exactly one viewport tall and scrolls internally, so a
+       page-level rubber-band or pull-to-refresh can only detach the chrome
+       from the content. Scrolling inside the list is unaffected. */
+    overscroll-behavior: none;
+
+    /* Safari paints a grey box over any tapped control for ~100ms. The app
+       has its own :active states and they read as the response. */
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* One focus treatment for the whole app, so nothing has to reinvent it. */
@@ -231,5 +255,38 @@
 
   ::-webkit-scrollbar-corner {
     background: transparent;
+  }
+}
+
+/*
+ * Safe-area helpers for notched phones. `env()` resolves to 0 wherever there
+ * is no inset, so both are inert on desktop. They add the inset on top of the
+ * app's own gutter rather than replacing it — a footer still wants its 12px
+ * even when the home indicator pushes it up.
+ */
+@utility pb-safe {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+@utility px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/*
+ * Deliberately unlayered. iOS Safari zooms the viewport in when a field whose
+ * text is under 16px takes focus, and it never zooms back out — the user is
+ * left panning a too-wide app. The design's 13px fields are a desktop
+ * decision, so on a finger the type comes back up to the platform minimum.
+ *
+ * This cannot live in `@layer base`: the fields carry `text-xs` and friends
+ * from the utilities layer, which outranks every base rule regardless of
+ * specificity. Unlayered declarations outrank all layers, which is the point.
+ */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 }

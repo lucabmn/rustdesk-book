@@ -23,6 +23,22 @@ export function activatable(onActivate: () => void) {
   }
 }
 
+/**
+ * Row affordance that keeps out of the way: with a cursor it fades in when the
+ * row is hovered or anything in it takes focus. On a finger there is no hover,
+ * so a control hidden this way is not subtle — it is unreachable, and under
+ * `touch:` none of this applies and the control is simply always there.
+ *
+ * Every reveal here beats the base `opacity-0` on selector specificity, so the
+ * order these classes land in the sheet doesn't matter. The owning row must
+ * carry `group/row`.
+ */
+export const hoverReveal = [
+  'mouse:opacity-0 mouse:transition-opacity',
+  'mouse:focus-within:opacity-100 mouse:focus-visible:opacity-100',
+  'mouse:group-hover/row:opacity-100 mouse:group-focus-within/row:opacity-100',
+].join(' ')
+
 /** A bordered surface. The default container for anything list-shaped. */
 export function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (

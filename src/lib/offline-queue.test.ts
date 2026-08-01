@@ -173,4 +173,23 @@ describe('queuedDevices', () => {
     expect(displayStatus(device)).toBe('unknown')
     expect(device.lastSeen).toBeNull()
   })
+
+  // The form leaves everything but the id and the alias optional, and a row
+  // rendered from a sparse entry must not show "undefined" anywhere.
+  it('renders an entry that was filled in with the bare minimum', () => {
+    const sparse = newQueueEntry(
+      ID,
+      { rustdeskId: '123456789', alias: 'Bare' } as DeviceInput,
+      AT,
+    )
+    const [device] = queuedDevices([sparse])
+    expect(device).toMatchObject({
+      customer: null,
+      customerId: null,
+      osKey: null,
+      tags: [],
+      status: 'offline',
+      notes: null,
+    })
+  })
 })

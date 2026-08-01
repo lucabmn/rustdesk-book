@@ -8,6 +8,8 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
+import { serviceWorkerPlugin } from './scripts/service-worker-plugin'
+
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
@@ -23,6 +25,7 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart(),
     viteReact(),
+    serviceWorkerPlugin(),
   ],
 })
 

@@ -31,7 +31,15 @@ const NOW = Date.parse('2026-01-02T12:00:00.000Z')
 
 describe('cacheableDevice', () => {
   it('keeps the fields the address book is built from', () => {
-    expect(cacheableDevice(device)).toEqual(device)
+    const { customerId: _, ...cacheable } = device
+    expect(cacheableDevice(device)).toEqual(cacheable)
+  })
+
+  // Offline a customer is a name. The key would be a reference into a table
+  // this browser does not have and cannot check.
+  it('stores the customer by name and not by key', () => {
+    expect(cacheableDevice(device)).not.toHaveProperty('customerId')
+    expect(cacheableDevice(device).customer).toBe('Acme')
   })
 
   // The acceptance criterion in issue #37, as a test: no secret reaches the

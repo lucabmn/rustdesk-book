@@ -7,6 +7,9 @@ import {
   markEntry,
   newQueueEntry,
   pendingCount,
+  type QueueEntry,
+  queueOwner,
+  queueRecord,
   queuedDevices,
   readQueue,
   removeEntry,
@@ -131,24 +134,36 @@ describe('the queue as a list', () => {
 })
 
 describe('readQueue', () => {
+  const stored = (entries: unknown[], userId: string | null = 'user-1') =>
+    JSON.parse(JSON.stringify(queueRecord(userId, entries as QueueEntry[])))
+
   it('reads back what was written', () => {
-    const stored = JSON.parse(JSON.stringify(appendEntry([], entry())))
-    expect(readQueue(stored)).toHaveLength(1)
+    expect(readQueue(stored(appendEntry([], entry())))).toHaveLength(1)
   })
 
   it('keeps the sound entries and drops the rest', () => {
-    const stored = [
-      JSON.parse(JSON.stringify(entry())),
-      { id: OTHER },
-      null,
-      'nonsense',
-    ]
-    expect(readQueue(stored).map((e) => e.id)).toEqual([ID])
+    const record = stored([entry(), { id: OTHER }, null, 'nonsense'])
+    expect(readQueue(record).map((e) => e.id)).toEqual([ID])
   })
 
   it('reports nothing for anything that is not a queue', () => {
     expect(readQueue(undefined)).toEqual([])
     expect(readQueue({ id: ID })).toEqual([])
+    expect(readQueue([entry()])).toEqual([])
+  })
+
+  // The devices in a queue go out under whoever is signed in when they do, and
+  // the audit entry names that user. Another person's queue is not touched.
+  it('refuses a queue that belongs to somebody else', () => {
+    const record = stored(appendEntry([], entry()), 'user-1')
+    expect(readQueue(record, 'user-1')).toHaveLength(1)
+    expect(readQueue(record, 'user-2')).toEqual([])
+  })
+
+  it('lets the signed-in user adopt what was queued without a session', () => {
+    const record = stored(appendEntry([], entry()), null)
+    expect(queueOwner(record)).toBeNull()
+    expect(readQueue(record, 'user-2')).toHaveLength(1)
   })
 })
 

@@ -140,14 +140,51 @@ function isQueueEntry(value: unknown): value is QueueEntry {
 }
 
 /**
+ * The queue as it is stored, with the user it belongs to.
+ *
+ * The owner is what the snapshot has had all along, and the queue needs it for
+ * a sharper reason: the devices in it are transferred under whichever session
+ * is signed in when they go out, and the audit entry names that user. Handing
+ * one person's queue to the next person at this browser would put their name
+ * on somebody else's work.
+ *
+ * It is null when the entries were written without a session — the offline
+ * view has none to read — and the next signed-in user to touch the queue in
+ * this browser adopts it, which is the same person who queued them.
+ */
+export interface QueueRecord {
+  userId: string | null
+  entries: QueueEntry[]
+}
+
+export function queueRecord(
+  userId: string | null,
+  entries: QueueEntry[],
+): QueueRecord {
+  return { userId, entries }
+}
+
+/** The owner of a stored queue, or null for "whoever is at this browser". */
+export function queueOwner(value: unknown): string | null {
+  if (typeof value !== 'object' || value === null) return null
+  const owner = (value as Partial<QueueRecord>).userId
+  return typeof owner === 'string' ? owner : null
+}
+
+/**
  * Read a stored queue back, keeping every entry that still makes sense.
  *
  * A malformed entry is dropped instead of failing the read: losing one device
- * is bad, losing the queue because of one is worse.
+ * is bad, losing the queue because of one is worse. A queue belonging to
+ * somebody else is refused whole — see {@link QueueRecord}.
  */
-export function readQueue(value: unknown): QueueEntry[] {
-  if (!Array.isArray(value)) return []
-  return value.filter(isQueueEntry)
+export function readQueue(value: unknown, userId?: string): QueueEntry[] {
+  if (typeof value !== 'object' || value === null) return []
+  const record = value as Partial<QueueRecord>
+  if (!Array.isArray(record.entries)) return []
+  const owner = queueOwner(value)
+  if (userId !== undefined && owner !== null && owner !== userId) return []
+  return record.entries.filter(isQueueEntry)
 }
 
 /**
@@ -156,7 +193,7 @@ export function readQueue(value: unknown): QueueEntry[] {
  * ordinary records — and what makes {@link displayStatus} report them as
  * unknown rather than repeat the status the form was filled in with.
  */
-export function queuedDevices(queue: QueueEntry[]): DisplayDevice[] {
+export function queuedDevices(queue: readonly QueueEntry[]): DisplayDevice[] {
   return queue.map((entry) => ({
     id: entry.id,
     rustdeskId: entry.input.rustdeskId,

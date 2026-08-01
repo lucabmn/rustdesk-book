@@ -10,11 +10,12 @@ import {
   filterDevices,
   groupByCustomer,
   hasActiveFilters,
+  localDevices,
   mergeOsOptions,
   toggleTag as toggleTagIn,
   type FilterState,
 } from '#/lib/address-book-filters'
-import { type DisplayDevice, staleDevices } from '#/lib/offline-cache'
+import type { DisplayDevice } from '#/lib/offline-cache'
 import { queuedDevices, stuckEntries } from '#/lib/offline-queue'
 import type { SyncOutcome } from '#/lib/offline-sync'
 import { useOfflineBook } from './use-offline-book'
@@ -120,15 +121,14 @@ export function useAddressBook(initialView: ViewMode, userId: string) {
   }, [listQuery.data, unfiltered, degraded, offlineBook.remember])
 
   const devices = useMemo<DisplayDevice[]>(() => {
-    const known: DisplayDevice[] =
-      degraded && offlineBook.snapshot
-        ? filterDevices(staleDevices(offlineBook.snapshot), filters)
-        : (listQuery.data ?? [])
-    // Newest first, and queued devices ahead of the rest: they are the ones
-    // the user just typed and the ones they will look for.
+    // The server's answer is already filtered by the procedure; the stored one
+    // has to be filtered here, which `localDevices` does for both halves.
+    if (degraded) {
+      return localDevices(offlineBook.snapshot, offlineBook.queue, filters)
+    }
     return [
       ...filterDevices(queuedDevices(offlineBook.queue), filters),
-      ...known,
+      ...(listQuery.data ?? []),
     ]
   }, [
     degraded,
@@ -137,6 +137,13 @@ export function useAddressBook(initialView: ViewMode, userId: string) {
     listQuery.data,
     filters,
   ])
+
+  // A group filter cannot be answered from the snapshot, so it is dropped
+  // rather than left selected while it quietly does nothing.
+  useEffect(() => {
+    if (degraded && filters.groupId)
+      setFilters((f) => ({ ...f, groupId: null }))
+  }, [degraded, filters.groupId])
 
   const stats = statsQuery.data
   const customerNames = customersQuery.data?.map((c) => c.name) ?? []

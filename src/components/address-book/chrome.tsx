@@ -4,6 +4,7 @@ import { Menu as MenuIcon, Moon, Plus, Search, Sun } from 'lucide-react'
 import { BrandGlyph } from '#/components/brand-mark'
 import { Button, Divider, Input, Kbd } from '#/components/ui'
 import type { Theme } from '#/lib/theme'
+import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 import { UserMenu, type UserMenuProps } from './user-menu'
 
@@ -12,6 +13,63 @@ import { UserMenu, type UserMenuProps } from './user-menu'
  * icon rail is reachable from the user menu, so the app has one vertical
  * navigation instead of two.
  */
+
+/**
+ * The address book's search box. Shared by the top bar and the offline
+ * document, which has its own, much smaller chrome around the same list.
+ *
+ * `shortcut` draws the hint for the key that focuses it; it is left out where
+ * nothing is listening for one.
+ */
+export function SearchField({
+  ref,
+  value,
+  onChange,
+  shortcut,
+}: {
+  ref?: React.Ref<HTMLInputElement>
+  value: string
+  onChange: (value: string) => void
+  shortcut?: string
+}) {
+  return (
+    <div className="relative min-w-0 max-w-lg flex-1">
+      {/* Centred by the box rather than a top offset — the field is taller
+          under `touch:` and a hand-tuned number would only be right once. */}
+      <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
+        <Search className="size-3.5 text-faint" />
+      </span>
+      <Input
+        ref={ref}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => e.key === 'Escape' && e.currentTarget.blur()}
+        placeholder={m.search_placeholder()}
+        aria-label={m.search_placeholder()}
+        // Not `type="search"`: that puts a native clear button exactly where
+        // the shortcut hint sits. This only relabels the on-screen return key.
+        enterKeyHint="search"
+        className={cn(
+          'h-7 bg-sunken pr-2.5 pl-8 text-xs',
+          shortcut && 'mouse:pr-14',
+        )}
+      />
+      {/* Centred by the box rather than a hand-tuned offset, so it stays
+          centred if the field's height ever changes. Hidden from assistive
+          tech — the input's own label already says what this field is, and
+          hidden outright without a keyboard to press it with. */}
+      {shortcut && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-2 hidden items-center gap-0.5 mouse:flex"
+        >
+          <Kbd>{shortcut}</Kbd>
+          <Kbd>K</Kbd>
+        </span>
+      )}
+    </div>
+  )
+}
 
 export interface TopBarProps {
   search: string
@@ -79,36 +137,12 @@ export function TopBar({
         </span>
       </span>
 
-      <div className="relative min-w-0 max-w-lg flex-1">
-        {/* Centred by the box rather than a top offset — the field is taller
-            under `touch:` and a hand-tuned number would only be right once. */}
-        <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
-          <Search className="size-3.5 text-faint" />
-        </span>
-        <Input
-          ref={searchRef}
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Escape' && e.currentTarget.blur()}
-          placeholder={m.search_placeholder()}
-          aria-label={m.search_placeholder()}
-          // Not `type="search"`: that puts a native clear button exactly where
-          // the shortcut hint sits. This only relabels the on-screen return key.
-          enterKeyHint="search"
-          className="h-7 bg-sunken pr-2.5 pl-8 text-xs mouse:pr-14"
-        />
-        {/* Centred by the box rather than a hand-tuned offset, so it stays
-            centred if the field's height ever changes. Hidden from assistive
-            tech — the input's own label already says what this field is, and
-            hidden outright without a keyboard to press it with. */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-2 hidden items-center gap-0.5 mouse:flex"
-        >
-          <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
-          <Kbd>K</Kbd>
-        </span>
-      </div>
+      <SearchField
+        ref={searchRef}
+        value={search}
+        onChange={onSearch}
+        shortcut={isMac ? '⌘' : 'Ctrl'}
+      />
 
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
         {/* Icon-only until there is room for the label. `gap` costs nothing

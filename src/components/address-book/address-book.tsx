@@ -64,6 +64,7 @@ export function AddressBook({
     tags: stats?.tags ?? [],
     isAdmin,
     onManageCustomers: () => setCustomersOpen(true),
+    offline: book.offline,
   }
 
   function body() {

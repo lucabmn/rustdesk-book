@@ -11,6 +11,8 @@ import {
   newQueueEntry,
   pendingCount as countPending,
   type QueueEntry,
+  queueOwner,
+  queueRecord,
   readQueue,
   removeEntry,
   sendableEntries,
@@ -80,6 +82,12 @@ export function useOfflineBook({ userId, onSynced }: UseOfflineBookOptions) {
   const queueRef = useRef(queue)
   queueRef.current = queue
   const syncing = useRef(false)
+  /**
+   * Who the stored queue belongs to. Read once, then carried through every
+   * write — the offline view has no session to stamp one with, and must not
+   * erase the owner that a signed-in write put there.
+   */
+  const owner = useRef<string | null>(userId ?? null)
 
   /**
    * Update the queue in memory and on disk. Returns the write, because a
@@ -90,7 +98,7 @@ export function useOfflineBook({ userId, onSynced }: UseOfflineBookOptions) {
     (next: QueueEntry[]): Promise<void> => {
       queueRef.current = next
       setQueue(next)
-      return store.write(OFFLINE_KEYS.queue, next)
+      return store.write(OFFLINE_KEYS.queue, queueRecord(owner.current, next))
     },
     [store],
   )
@@ -108,14 +116,27 @@ export function useOfflineBook({ userId, onSynced }: UseOfflineBookOptions) {
       if (cancelled) return
       const cache = readDeviceCache(devices, userId)
       setSnapshot(cache)
-      const entries = readQueue(stored)
+
+      // A queue left behind by another account is refused, and then it is the
+      // current user's browser again: ownership resets to them, so the next
+      // device they queue is not stamped with somebody else's name.
+      const storedOwner = queueOwner(stored)
+      const refused =
+        userId !== undefined && storedOwner !== null && storedOwner !== userId
+      owner.current = refused ? userId : (storedOwner ?? userId ?? null)
+      const entries = refused ? [] : readQueue(stored, userId)
+
       queueRef.current = entries
       setQueue(entries)
       setReady(true)
-      // A snapshot belonging to somebody else is not just hidden: it is
-      // dropped, so it cannot be found by anything looking later.
+
+      // Neither record is merely hidden when it turns out to belong to
+      // somebody else: it is dropped, so nothing can find it later.
       if (devices !== undefined && cache === null) {
         void store.write(OFFLINE_KEYS.devices, null)
+      }
+      if (refused) {
+        void store.write(OFFLINE_KEYS.queue, queueRecord(owner.current, []))
       }
     })()
     return () => {

@@ -30,8 +30,10 @@ export const CACHEABLE_DEVICE_FIELDS = [
   'id',
   'rustdeskId',
   'alias',
+  // The name, never `customerId`: issue #37 carries customers offline as text
+  // and nothing here needs the key. Leaving a foreign key out is also what
+  // keeps the stored book from referring to rows it cannot check.
   'customer',
-  'customerId',
   'osKey',
   'tags',
   'status',
@@ -138,5 +140,10 @@ export function displayStatus(device: {
 
 /** Every row of a snapshot, marked as the old news it is. */
 export function staleDevices(cache: DeviceCache): DisplayDevice[] {
-  return cache.devices.map((device) => ({ ...device, stale: true }))
+  return cache.devices.map((device) => ({
+    ...device,
+    // Not stored, and not invented either: offline a customer is a name.
+    customerId: null,
+    stale: true,
+  }))
 }

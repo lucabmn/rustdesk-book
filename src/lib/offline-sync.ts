@@ -103,7 +103,7 @@ export async function syncQueue(
       outcome.transferred.push(entry.id)
     } catch (error) {
       const failure = classifySyncError(error)
-      const { message, data } = asErrorLike(error)
+      const { message, data, status } = asErrorLike(error)
 
       if (failure === 'unauthorized') {
         // Untouched: the entry did nothing wrong, and the user is about to be
@@ -115,6 +115,19 @@ export async function syncQueue(
 
       if (failure === 'unreachable') {
         outcome.stoppedBy = 'unreachable'
+        // A server that answered 5xx is a different thing from one that never
+        // answered at all. The first is something the user has to be able to
+        // see and act on — nothing else will move that entry, because no
+        // `online` event is coming to start another run. The second is just
+        // being offline again, which is not the entry's fault and needs no
+        // mark: the next connection carries it.
+        if (typeof status === 'number') {
+          outcome.queue = markEntry(outcome.queue, entry.id, {
+            state: 'failed',
+            error: message,
+          })
+          outcome.failed.push(entry.id)
+        }
         return outcome
       }
 

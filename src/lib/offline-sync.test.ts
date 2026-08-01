@@ -115,6 +115,26 @@ describe('syncQueue', () => {
     expect(result.stoppedBy).toBe('unreachable')
     expect(result.queue).toHaveLength(2)
     expect(result.queue[0].state).toBe('pending')
+    // Nothing to show the user: being offline is not a stuck entry, and the
+    // next connection carries it.
+    expect(result.failed).toEqual([])
+  })
+
+  // A server that answered 5xx will not be retried by anything on its own —
+  // no `online` event is coming — so the entry has to become visible.
+  it('marks an entry the server broke on, so the user can see it', async () => {
+    const create = vi.fn(async () => {
+      throw orpcError('INTERNAL_SERVER_ERROR', 500)
+    })
+
+    const result = await syncQueue(queue(), create)
+
+    expect(result.stoppedBy).toBe('unreachable')
+    expect(result.failed).toEqual([ONE])
+    expect(result.queue[0]).toMatchObject({ id: ONE, state: 'failed' })
+    expect(result.queue[0].error).toBeTruthy()
+    // The entry behind it is untouched and still goes out on the next run.
+    expect(result.queue[1]).toMatchObject({ id: TWO, state: 'pending' })
   })
 
   it('keeps a conflicting entry and carries on with the rest', async () => {

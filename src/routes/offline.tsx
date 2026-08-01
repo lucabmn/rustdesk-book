@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 import { BrandMark } from '#/components/brand-mark'
+import { SearchField } from '#/components/address-book/chrome'
 import { DeviceFormDialog } from '#/components/address-book/device-form-dialog'
 import { OfflineNotice } from '#/components/address-book/offline-notice'
 import { QueueDialog } from '#/components/address-book/queue-dialog'
 import { ToastProvider, useToast } from '#/components/address-book/toast'
 import { useOfflineBook } from '#/components/address-book/use-offline-book'
 import { CardsView } from '#/components/address-book/views/cards-view'
-import { Button, Card, EmptyState, Input } from '#/components/ui'
-import { EMPTY_FILTERS, filterDevices } from '#/lib/address-book-filters'
-import { type DisplayDevice, staleDevices } from '#/lib/offline-cache'
-import { queuedDevices, stuckEntries } from '#/lib/offline-queue'
+import { Button, Card, EmptyState } from '#/components/ui'
+import { EMPTY_FILTERS, localDevices } from '#/lib/address-book-filters'
+import { stuckEntries } from '#/lib/offline-queue'
 import type { DeviceInput } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
 
@@ -101,13 +101,10 @@ function OfflineBookView() {
     },
   })
 
-  const filters = { ...EMPTY_FILTERS, search }
-  const devices: DisplayDevice[] = [
-    ...filterDevices(queuedDevices(book.queue), filters),
-    ...(book.snapshot
-      ? filterDevices(staleDevices(book.snapshot), filters)
-      : []),
-  ]
+  const devices = localDevices(book.snapshot, book.queue, {
+    ...EMPTY_FILTERS,
+    search,
+  })
 
   function submit(input: DeviceInput) {
     book.enqueue(input)
@@ -119,18 +116,9 @@ function OfflineBookView() {
     <div className="flex min-h-dvh flex-col bg-canvas px-safe text-text">
       <header className="flex h-12 shrink-0 items-center gap-2 border-line border-b bg-surface px-3 sm:gap-3 sm:px-4">
         <BrandMark size="sm" className="shrink-0" />
-        <div className="relative min-w-0 max-w-lg flex-1">
-          <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
-            <Search className="size-3.5 text-faint" />
-          </span>
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={m.search_placeholder()}
-            aria-label={m.search_placeholder()}
-            className="h-7 bg-sunken pr-2.5 pl-8 text-xs"
-          />
-        </div>
+        {/* The same field the top bar uses, without the shortcut hint: there
+            is no keyboard handler on this page to earn one. */}
+        <SearchField value={search} onChange={setSearch} />
         <Button
           variant="accent"
           onClick={() => setFormOpen(true)}

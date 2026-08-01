@@ -4,6 +4,13 @@
  * be unit-tested without React.
  */
 import { OS_OPTIONS, osLabel } from '#/lib/device-meta'
+import {
+  type DeviceCache,
+  type DisplayDevice,
+  displayStatus,
+  staleDevices,
+} from '#/lib/offline-cache'
+import { type QueueEntry, queuedDevices } from '#/lib/offline-queue'
 import type { Device } from '#/orpc/schema'
 
 /** Sentinel used by the select/combobox inputs for "no restriction". */
@@ -92,9 +99,15 @@ export function mergeOsOptions(stored: readonly string[] = []): string[] {
  * fields, tags matching any — so a filter does not quietly mean two different
  * things depending on the connection.
  *
- * Group membership is the one filter that cannot be answered here: it lives in
- * a table the snapshot does not carry. It is ignored rather than guessed at,
- * and the sidebar hides the groups while offline.
+ * Two filters cannot be answered from a snapshot, and neither is guessed at:
+ *
+ *  - status is matched on what the row may be *shown* as, not on what it
+ *    stored. A stale row reads as `unknown` everywhere else in the app, so
+ *    asking for the devices that are online offline correctly finds none
+ *    rather than a list of green dots from an hour ago.
+ *  - group membership lives in a table the snapshot does not carry, so it is
+ *    ignored here — and the sidebar hides the groups while offline, so it is
+ *    not something the user can ask for in the first place.
  */
 export function filterDevices<T extends Device>(
   devices: readonly T[],
@@ -102,7 +115,8 @@ export function filterDevices<T extends Device>(
 ): T[] {
   const search = filters.search.trim().toLowerCase()
   return devices.filter((device) => {
-    if (filters.status !== ANY && device.status !== filters.status) return false
+    if (filters.status !== ANY && displayStatus(device) !== filters.status)
+      return false
     if (
       filters.customer !== ANY &&
       (device.customer ?? '') !== filters.customer
@@ -128,6 +142,25 @@ export function filterDevices<T extends Device>(
       .toLowerCase()
     return haystack.includes(search)
   })
+}
+
+/**
+ * The address book as it can be assembled without a server: what was queued
+ * here, then what was stored the last time there was one.
+ *
+ * Queued devices come first because they are the ones the user just typed and
+ * the ones they will look for. Both halves go through the same filters, so a
+ * search offline covers what is on its way as well as what is already there.
+ */
+export function localDevices(
+  snapshot: DeviceCache | null,
+  queue: readonly QueueEntry[],
+  filters: FilterState,
+): DisplayDevice[] {
+  return [
+    ...filterDevices(queuedDevices(queue), filters),
+    ...(snapshot ? filterDevices(staleDevices(snapshot), filters) : []),
+  ]
 }
 
 /** Bucket devices by customer for the grouped view, alphabetically. */

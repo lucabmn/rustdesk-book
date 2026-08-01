@@ -207,4 +207,16 @@ describe('filterDevices', () => {
     expect(only({ groupId: 'a-group' })).toEqual(['1', '2'])
     expect(EMPTY_FILTERS.customer).toBe(ANY)
   })
+
+  // The list would otherwise answer a question about right now with an hour
+  // old value — the one thing `displayStatus` exists to prevent.
+  it('never matches a stale row against a live status', () => {
+    const stale = book.map((d) => ({ ...d, stale: true }))
+    expect(
+      filterDevices(stale, { ...EMPTY_FILTERS, status: 'online' }),
+    ).toEqual([])
+    expect(
+      filterDevices(stale, { ...EMPTY_FILTERS, status: 'unknown' }),
+    ).toHaveLength(2)
+  })
 })

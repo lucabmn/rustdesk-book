@@ -1,3 +1,4 @@
+import { ORPCError } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -33,13 +34,23 @@ afterEach(async () => {
   await db.$close()
 })
 
-async function createDevice(overrides: Partial<typeof input> = {}) {
+async function createDevice(
+  overrides: Partial<typeof input> & {
+    id?: string
+    offlineCreatedAt?: string
+  } = {},
+) {
   return (await callRpc(devices.create, { ...input, ...overrides })) as {
     id: string
     customer: string | null
     hasPassword: boolean
+    rustdeskId: string
+    alias: string
   }
 }
+
+const QUEUED_ID = '11111111-2222-4333-8444-555555555555'
+const OFFLINE_AT = '2026-01-02T03:04:05.000Z'
 
 describe('create', () => {
   it('stores the password as ciphertext only', async () => {
@@ -78,6 +89,110 @@ describe('create', () => {
   it('rejects banned users', async () => {
     await createUser(db, { id: 'banned-1', email: 'b@x.de', banned: true })
     await expect(createDevice()).rejects.toThrow(/gesperrt/)
+  })
+})
+
+describe('create from the offline queue', () => {
+  it('stores the device under the id the browser generated', async () => {
+    const created = await createDevice({
+      id: QUEUED_ID,
+      offlineCreatedAt: OFFLINE_AT,
+    })
+    expect(created.id).toBe(QUEUED_ID)
+    const [row] = await db.select().from(devicesTable)
+    expect(row.id).toBe(QUEUED_ID)
+  })
+
+  it('records who transferred it and that it was created offline', async () => {
+    await createDevice({ id: QUEUED_ID, offlineCreatedAt: OFFLINE_AT })
+    const [entry] = await auditEntries(db)
+    expect(entry.action).toBe('device_created')
+    expect(entry.userId).toBe('user-1')
+    expect(entry.metadata).toMatchObject({
+      offline: true,
+      offlineCreatedAt: OFFLINE_AT,
+    })
+  })
+
+  it('leaves the offline marks off an ordinary create', async () => {
+    await createDevice()
+    const [entry] = await auditEntries(db)
+    expect(entry.metadata).not.toHaveProperty('offline')
+    expect(entry.metadata).not.toHaveProperty('offlineCreatedAt')
+  })
+
+  // The whole point of the client-generated id: a reply that never arrived
+  // makes the browser send the same entry again.
+  it('creates no second device when the same entry is sent twice', async () => {
+    const first = await createDevice({
+      id: QUEUED_ID,
+      offlineCreatedAt: OFFLINE_AT,
+    })
+    const second = await createDevice({
+      id: QUEUED_ID,
+      offlineCreatedAt: OFFLINE_AT,
+    })
+
+    expect(second.id).toBe(first.id)
+    expect(second.alias).toBe(first.alias)
+    expect(await db.select().from(devicesTable)).toHaveLength(1)
+    expect(await auditActions(db)).toEqual(['device_created'])
+  })
+
+  // The replay check has to win over the duplicate check: the row a resend
+  // finds is its own, and reporting that as a conflict would ask the user to
+  // decide about a device they already created.
+  it('reports a resend as done, not as a conflict with itself', async () => {
+    await createDevice({ id: QUEUED_ID, offlineCreatedAt: OFFLINE_AT })
+    await expect(
+      createDevice({ id: QUEUED_ID, offlineCreatedAt: OFFLINE_AT }),
+    ).resolves.toMatchObject({ id: QUEUED_ID })
+  })
+
+  it('refuses an offline entry whose RustDesk id is already taken', async () => {
+    const existing = await createDevice({ alias: 'Already here' })
+    const conflict = await callRpc(devices.create, {
+      ...input,
+      id: QUEUED_ID,
+      alias: 'Captured offline',
+      offlineCreatedAt: OFFLINE_AT,
+    }).catch((error: unknown) => error)
+
+    expect(conflict).toBeInstanceOf(ORPCError)
+    const error = conflict as ORPCError<string, { existing: { id: string } }>
+    expect(error.code).toBe('CONFLICT')
+    expect(error.data.existing).toMatchObject({
+      id: existing.id,
+      alias: 'Already here',
+      rustdeskId: input.rustdeskId,
+    })
+    // Nothing was written: the entry stays in the queue until the user decides.
+    expect(await db.select().from(devicesTable)).toHaveLength(1)
+    expect(await auditActions(db)).toEqual(['device_created'])
+  })
+
+  it('never hands the stored secret to the conflicting client', async () => {
+    await createDevice()
+    const error = (await callRpc(devices.create, {
+      ...input,
+      id: QUEUED_ID,
+      offlineCreatedAt: OFFLINE_AT,
+    }).catch((e: unknown) => e)) as ORPCError<string, { existing: unknown }>
+
+    expect(error.data.existing).not.toHaveProperty('password')
+    expect(error.data.existing).not.toHaveProperty('passwordCipher')
+    expect(error.data.existing).toMatchObject({ hasPassword: true })
+  })
+
+  // Online, the list is in front of the user and a repeated id can be a
+  // deliberate second entry. The blind replay of a queue is the only place
+  // where a duplicate appears without anybody having seen it.
+  it('leaves an ordinary create free to reuse a RustDesk id', async () => {
+    await createDevice()
+    await expect(createDevice({ alias: 'Second' })).resolves.toMatchObject({
+      alias: 'Second',
+    })
+    expect(await db.select().from(devicesTable)).toHaveLength(2)
   })
 })
 

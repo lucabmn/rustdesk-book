@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
@@ -33,6 +34,11 @@ const LoginRoute = LoginRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/offline': typeof OfflineRoute
   '/register': typeof RegisterRoute
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/offline': typeof OfflineRoute
   '/register': typeof RegisterRoute
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/offline': typeof OfflineRoute
   '/register': typeof RegisterRoute
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/mcp'
+    | '/offline'
     | '/register'
     | '/api/$'
     | '/api/health'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/mcp'
+    | '/offline'
     | '/register'
     | '/api/$'
     | '/api/health'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/mcp'
+    | '/offline'
     | '/register'
     | '/api/$'
     | '/api/health'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
+  OfflineRoute: typeof OfflineRoute
   RegisterRoute: typeof RegisterRoute
   ApiSplatRoute: typeof ApiSplatRoute
   ApiHealthRoute: typeof ApiHealthRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
+  OfflineRoute: OfflineRoute,
   RegisterRoute: RegisterRoute,
   ApiSplatRoute: ApiSplatRoute,
   ApiHealthRoute: ApiHealthRoute,

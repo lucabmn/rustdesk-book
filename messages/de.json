@@ -255,5 +255,13 @@
   "toast_user_updated": "Benutzer aktualisiert",
   "toast_user_banned": "Benutzer gesperrt",
   "toast_user_unbanned": "Sperre aufgehoben",
-  "toast_user_deleted": "Benutzer gelöscht"
+  "toast_user_deleted": "Benutzer gelöscht",
+  "offline_title": "Keine Verbindung",
+  "offline_subtitle": "Die App ist gestartet, der Server ist gerade nicht erreichbar.",
+  "offline_body": "Geräte, Zugangsdaten und Kunden liegen ausschließlich auf dem Server – offline gibt es sie hier nicht. Sobald wieder Netz da ist, geht es normal weiter.",
+  "offline_retry": "Erneut versuchen",
+  "sw_update_title": "Neue Version verfügbar",
+  "sw_update_body": "Neu laden, um sie zu benutzen.",
+  "sw_update_action": "Neu laden",
+  "sw_update_dismiss": "Später"
 }

@@ -32,6 +32,9 @@ plaintext is revealed solely on an explicit, audited request. See
   permanent enrollment tokens
 - Invite-based sign-up; the first account becomes the administrator
 - Light and dark mode
+- Installable on a phone; started without a network it says so instead of
+  showing a browser error, and prompts to reload once a new version is deployed
+  (device data and passwords stay on the server — nothing is cached)
 - Optional read-only MCP server: answer "do I have a device for customer X?"
   straight from your assistant
 

@@ -1,6 +1,8 @@
 /**
- * The head tags that make the app installable. No service worker — the app is
- * online-only by design, and nothing here implies otherwise.
+ * The head tags that make the app installable. The offline half of that —
+ * the service worker and what it may store — lives in `#/lib/sw-core`; it is
+ * registered from the app, not from here, so nothing in the document head
+ * depends on it.
  *
  * The manifest and the icons it lists are static files under `public/`,
  * generated from the brand mark by `scripts/generate-icons.mjs`.

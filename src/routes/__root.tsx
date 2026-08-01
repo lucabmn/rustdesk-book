@@ -11,6 +11,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { getLocale } from '#/paraglide/runtime'
 import { m } from '#/paraglide/messages'
 import { themeInitScript } from '#/lib/theme'
+import { PWA_HEAD_LINKS, PWA_HEAD_META } from '#/lib/pwa'
 import { LocaleProvider } from '#/lib/i18n'
 
 import appCss from '../styles.css?url'
@@ -37,11 +38,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       // below from the same source of truth and updated by `applyTheme`.
       { title: m.meta_title() },
       { name: 'description', content: m.meta_description() },
+      ...PWA_HEAD_META,
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
       { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-      { rel: 'apple-touch-icon', href: '/icon.svg' },
+      ...PWA_HEAD_LINKS,
     ],
   }),
   shellComponent: RootDocument,

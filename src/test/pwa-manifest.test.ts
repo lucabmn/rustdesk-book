@@ -2,19 +2,15 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  APP_ICONS,
-  PWA_BACKGROUND_COLOR,
-  PWA_HEAD_LINKS,
-  PWA_HEAD_META,
-} from '#/lib/pwa'
+import { PWA_HEAD_LINKS, PWA_HEAD_META } from '#/lib/pwa'
+import { THEME_COLOR } from '#/lib/theme'
 
 /**
  * The manifest and its icons are shipped as static files, so nothing at build
  * time can catch a typo'd path or a `sizes` that disagrees with the actual
- * pixels — a browser just silently drops the icon. These tests read the files
- * that are really served and compare them against `src/lib/pwa.ts`, which is
- * what the document head is built from.
+ * pixels — a browser just drops the icon without a word. These tests read the
+ * files that are really served and check them against each other and against
+ * the head tags in `src/lib/pwa.ts`.
  */
 
 const publicDir = new URL('../../public/', import.meta.url)
@@ -29,9 +25,19 @@ function readPublic(href: string): Buffer {
   return readFileSync(new URL(href.replace(/^\//, ''), publicDir))
 }
 
-const manifest = JSON.parse(
-  readFileSync(new URL('manifest.webmanifest', publicDir), 'utf8'),
-)
+interface ManifestIcon {
+  src: string
+  sizes: string
+  type: string
+  purpose: string
+}
+
+const manifest: {
+  short_name: string
+  theme_color: string
+  background_color: string
+  icons: ManifestIcon[]
+} = JSON.parse(readPublic('manifest.webmanifest').toString('utf8'))
 
 describe('web app manifest', () => {
   it('declares what an installable app needs', () => {
@@ -52,25 +58,25 @@ describe('web app manifest', () => {
   })
 
   it('paints its splash in the colour the app itself opens with', () => {
-    expect(manifest.theme_color).toBe(PWA_BACKGROUND_COLOR)
-    expect(manifest.background_color).toBe(PWA_BACKGROUND_COLOR)
-  })
-
-  it('serves the same icon set the document head is built from', () => {
-    expect(manifest.icons).toEqual(APP_ICONS)
+    // A manifest holds one colour, so it is the default theme's — the live
+    // `theme-color` meta in src/lib/theme.ts is what follows a user's choice.
+    expect(manifest.theme_color).toBe(THEME_COLOR.dark)
+    expect(manifest.background_color).toBe(THEME_COLOR.dark)
   })
 
   it('covers the sizes an install prompt requires, maskable included', () => {
-    const any = APP_ICONS.filter((icon) => icon.purpose === 'any')
+    const any = manifest.icons.filter((icon) => icon.purpose === 'any')
     expect(any.some((icon) => icon.sizes === '192x192')).toBe(true)
     expect(any.some((icon) => icon.sizes === '512x512')).toBe(true)
-    expect(APP_ICONS.some((icon) => icon.purpose === 'maskable')).toBe(true)
+    expect(manifest.icons.some((icon) => icon.purpose === 'maskable')).toBe(
+      true,
+    )
   })
 
-  it('ships every declared icon at the size it claims', () => {
-    for (const icon of APP_ICONS) {
+  it('ships every declared icon at the size and type it claims', () => {
+    for (const icon of manifest.icons) {
       expect(pngSize(readPublic(icon.src)), icon.src).toBe(icon.sizes)
-      expect(icon.type).toBe('image/png')
+      expect(icon.type, icon.src).toBe('image/png')
     }
   })
 })
@@ -98,5 +104,12 @@ describe('document head', () => {
     expect(byName.get('mobile-web-app-capable')).toBe('yes')
     expect(byName.get('apple-mobile-web-app-capable')).toBe('yes')
     expect(byName.get('apple-mobile-web-app-status-bar-style')).toBe('default')
+  })
+
+  it('labels the iOS home screen with the launcher name, not the title', () => {
+    const title = PWA_HEAD_META.find(
+      (meta) => meta.name === 'apple-mobile-web-app-title',
+    )
+    expect(title?.content).toBe(manifest.short_name)
   })
 })

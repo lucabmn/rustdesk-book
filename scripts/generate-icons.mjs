@@ -29,18 +29,24 @@ import { fileURLToPath } from 'node:url'
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url))
 
 /**
- * `null` keeps the mark's own rounded tile on a transparent field. A colour
- * fills the frame edge to edge, which is what a maskable icon and an iOS home
- * screen both need — see the note on `AppIcon` in src/lib/pwa.ts.
+ * `opaque: false` keeps the mark's own rounded tile on a transparent field.
+ * `true` extends the tile's colour edge to edge behind it, which is what a
+ * maskable icon and an iOS home screen both need: the mask and iOS's own
+ * black matte would otherwise eat the rounded corners.
  */
-const TILE = '#1b1e27'
-
 const TARGETS = [
-  { file: 'icon-192.png', size: 192, background: null },
-  { file: 'icon-512.png', size: 512, background: null },
-  { file: 'icon-maskable-512.png', size: 512, background: TILE },
-  { file: 'apple-touch-icon.png', size: 180, background: TILE },
+  { file: 'icon-192.png', size: 192, opaque: false },
+  { file: 'icon-512.png', size: 512, opaque: false },
+  { file: 'icon-maskable-512.png', size: 512, opaque: true },
+  { file: 'apple-touch-icon.png', size: 180, opaque: true },
 ]
+
+/** The tile colour, read off the mark's own backdrop so it cannot drift. */
+function tileColour(svg) {
+  const fill = svg.match(/<rect[^>]*\sfill="(#[0-9a-fA-F]{3,8})"/)?.[1]
+  if (!fill) throw new Error('No tile <rect fill="#…"> found in icon.svg.')
+  return fill
+}
 
 function findChrome() {
   if (process.env.CHROME_PATH) return process.env.CHROME_PATH
@@ -73,19 +79,20 @@ function page(svg, size, background) {
     .replace(/\swidth="\d+"/, ` width="${size}"`)
     .replace(/\sheight="\d+"/, ` height="${size}"`)
   return `<!doctype html><meta charset="utf-8"><style>
-    html,body{margin:0;padding:0;background:${background ?? 'transparent'}}
+    html,body{margin:0;padding:0;background:${background}}
     svg{display:block}
   </style>${svgAtSize}`
 }
 
 const chrome = findChrome()
 const svg = readFileSync(join(publicDir, 'icon.svg'), 'utf8')
+const tile = tileColour(svg)
 const work = mkdtempSync(join(tmpdir(), 'rdb-icons-'))
 
 try {
-  for (const { file, size, background } of TARGETS) {
+  for (const { file, size, opaque } of TARGETS) {
     const html = join(work, `${file}.html`)
-    writeFileSync(html, page(svg, size, background))
+    writeFileSync(html, page(svg, size, opaque ? tile : 'transparent'))
 
     execFileSync(
       chrome,

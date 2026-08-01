@@ -35,6 +35,10 @@ export default defineConfig({
         // is covered directly.
         'src/lib/auth.ts',
         'src/lib/i18n.tsx',
+        // Browser plumbing around the worker: registration, `controllerchange`,
+        // `postMessage`. Everything it decides lives in sw-core.ts, which is
+        // covered directly; what is left here needs a real service worker.
+        'src/lib/sw-client.ts',
         'src/lib/theme.ts',
         'src/orpc/client.ts',
       ],

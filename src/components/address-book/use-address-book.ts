@@ -19,6 +19,7 @@ import {
   serializeDevices,
 } from '#/lib/device-transfer'
 import { formatRustdeskId } from '#/lib/device-meta'
+import { clearRuntimeCache } from '#/lib/sw-client'
 import { applyTheme, getCurrentTheme, type Theme } from '#/lib/theme'
 import { type ViewMode, writeViewCookie } from '#/lib/view-mode'
 import type { Device, DeviceInput } from '#/orpc/schema'
@@ -238,6 +239,10 @@ export function useAddressBook(initialView: ViewMode) {
     },
     async signOut() {
       await authClient.signOut()
+      // Nothing user-specific is ever cached (see #/lib/sw-core), but a
+      // sign-out is the moment to make that true of the device as well, not
+      // just of the rules — so whatever the worker filled goes with it.
+      await clearRuntimeCache()
       await router.navigate({ to: '/login' })
     },
   }

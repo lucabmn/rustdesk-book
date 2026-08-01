@@ -138,6 +138,20 @@ describe('syncQueue', () => {
     })
   })
 
+  // Adopting writes to the device that was collided with, so a conflict that
+  // does not name one is not a decision the user can be offered.
+  it('treats a conflict without a device to adopt as stuck', async () => {
+    const create = vi.fn(async () => {
+      throw orpcError('CONFLICT', 409, {})
+    })
+
+    const result = await syncQueue(queue(), create)
+
+    expect(result.conflicts).toEqual([])
+    expect(result.failed).toEqual([ONE, TWO])
+    expect(result.queue.every((entry) => entry.state === 'failed')).toBe(true)
+  })
+
   it('does not send an entry that is waiting on a decision', async () => {
     const create = vi.fn(async (device: DeviceInput) => {
       if (device.id === ONE) {

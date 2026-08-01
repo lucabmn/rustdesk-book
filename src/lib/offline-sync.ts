@@ -118,10 +118,14 @@ export async function syncQueue(
         return outcome
       }
 
-      if (failure === 'conflict') {
+      // Only a conflict that names the device it collided with can be offered
+      // as a choice — adopting means writing to that row. Without an id there
+      // is nothing to adopt, so the entry is stuck rather than decidable, and
+      // it says so instead of showing a button that does nothing.
+      if (failure === 'conflict' && data?.existing?.id) {
         outcome.queue = markEntry(outcome.queue, entry.id, {
           state: 'conflict',
-          conflictId: data?.existing?.id,
+          conflictId: data.existing.id,
           error: message,
         })
         outcome.conflicts.push(entry.id)

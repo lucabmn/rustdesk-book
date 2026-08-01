@@ -107,10 +107,17 @@ export function useAddressBook(initialView: ViewMode, userId: string) {
   // Keep the stored address book current — but only from an unfiltered list,
   // which is the whole book. Writing a filtered result would shrink the
   // snapshot to whatever the user last searched for.
+  //
+  // And only while the connection holds. React Query keeps the last successful
+  // data after a failed refetch, so this effect can run again offline — with
+  // hour-old devices and a fresh `Date.now()`, which would quietly reset the
+  // age the notice is showing to "just now".
   const unfiltered = !hasActiveFilters(filters)
   useEffect(() => {
-    if (listQuery.data && unfiltered) offlineBook.remember(listQuery.data)
-  }, [listQuery.data, unfiltered, offlineBook.remember])
+    if (listQuery.data && unfiltered && !degraded) {
+      offlineBook.remember(listQuery.data)
+    }
+  }, [listQuery.data, unfiltered, degraded, offlineBook.remember])
 
   const devices = useMemo<DisplayDevice[]>(() => {
     const known: DisplayDevice[] =
@@ -363,7 +370,10 @@ export function useAddressBook(initialView: ViewMode, userId: string) {
     stats,
     customerNames,
     osNames,
-    isLoading: listQuery.isLoading,
+    // A failed list query settles fast, so without the second half of this an
+    // offline start would paint "no devices" for as long as it takes to read
+    // the store — an empty address book, briefly, for a user who has one.
+    isLoading: listQuery.isLoading || (degraded && !offlineBook.ready),
     syncEnabled: syncInfoQuery.data?.enabled ?? false,
     syncPending: syncMut.isPending,
     syncNow: () => syncMut.mutate({}),

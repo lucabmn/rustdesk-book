@@ -81,11 +81,16 @@ export function useOfflineBook({ userId, onSynced }: UseOfflineBookOptions) {
   queueRef.current = queue
   const syncing = useRef(false)
 
+  /**
+   * Update the queue in memory and on disk. Returns the write, because a
+   * caller that is about to navigate away has to be able to wait for it: the
+   * next screen builds its own view of the queue by reading the same record.
+   */
   const writeQueue = useCallback(
-    (next: QueueEntry[]) => {
+    (next: QueueEntry[]): Promise<void> => {
       queueRef.current = next
       setQueue(next)
-      void store.write(OFFLINE_KEYS.queue, next)
+      return store.write(OFFLINE_KEYS.queue, next)
     },
     [store],
   )
@@ -154,7 +159,9 @@ export function useOfflineBook({ userId, onSynced }: UseOfflineBookOptions) {
       const outcome = await syncQueue(queueRef.current, (device) =>
         client.devices.create(device),
       )
-      writeQueue(outcome.queue)
+      // Stored before it is reported: `onSynced` may navigate, and the screen
+      // that follows reads this record on the way in.
+      await writeQueue(outcome.queue)
       onSyncedRef.current?.(outcome)
       return outcome
     } finally {

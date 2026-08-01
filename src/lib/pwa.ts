@@ -9,6 +9,10 @@
  * `src/test/pwa-manifest.test.ts` checks them against what is really on disk:
  * a wrong path or a `sizes` that disagrees with the pixels is dropped silently
  * by every browser, and no build step would catch it.
+ *
+ * Keep this module free of app imports: `vite.config.ts` reads it through
+ * `scripts/service-worker-plugin.ts` to know which static files the worker
+ * precaches, and anything pulled in here has to load before the build does.
  */
 
 export const PWA_HEAD_LINKS = [

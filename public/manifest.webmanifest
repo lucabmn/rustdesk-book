@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "rustdesk-book",
-  "short_name": "rustdesk",
+  "short_name": "rustdesk-book",
   "description": "Selbstgehostetes RustDesk-Adressbuch mit verschlüsselten Zugangsdaten.",
   "lang": "de",
   "dir": "ltr",

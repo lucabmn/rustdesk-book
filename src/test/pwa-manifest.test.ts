@@ -33,6 +33,7 @@ interface ManifestIcon {
 }
 
 const manifest: {
+  name: string
   short_name: string
   theme_color: string
   background_color: string
@@ -53,8 +54,11 @@ describe('web app manifest', () => {
     })
   })
 
-  it('keeps short_name inside the 12 characters a launcher shows', () => {
-    expect(manifest.short_name.length).toBeLessThanOrEqual(12)
+  it('never lets short_name grow past the name it stands in for', () => {
+    // No hard cap on top of that: a launcher wraps or ellipsises past roughly
+    // twelve characters, and being told apart from the RustDesk client on the
+    // same home screen is worth the second line.
+    expect(manifest.short_name.length).toBeLessThanOrEqual(manifest.name.length)
   })
 
   it('paints its splash in the colour the app itself opens with', () => {

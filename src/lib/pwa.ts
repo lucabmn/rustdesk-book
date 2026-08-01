@@ -24,7 +24,7 @@ export const PWA_HEAD_META = [
   // Without this iOS labels the home screen icon with the full <title>,
   // subtitle and all. The manifest's `short_name` covers the same job on
   // Android, which never reads these.
-  { name: 'apple-mobile-web-app-title', content: 'rustdesk' },
+  { name: 'apple-mobile-web-app-title', content: 'rustdesk-book' },
   // `default` keeps iOS reserving the status bar for itself, so the layout is
   // the one the browser tab already gets. `black-translucent` would slide the
   // web view up under the clock and every screen would need a new top inset;

@@ -1,12 +1,18 @@
 /**
- * The head tags that make the app installable. No service worker — the app is
- * online-only by design, and nothing here implies otherwise.
+ * The head tags that make the app installable. The offline half of that —
+ * the service worker and what it may store — lives in `#/lib/sw-core`; it is
+ * registered from the app, not from here, so nothing in the document head
+ * depends on it.
  *
  * The manifest and the icons it lists are static files under `public/`,
  * generated from the brand mark by `scripts/generate-icons.mjs`.
  * `src/test/pwa-manifest.test.ts` checks them against what is really on disk:
  * a wrong path or a `sizes` that disagrees with the pixels is dropped silently
  * by every browser, and no build step would catch it.
+ *
+ * Keep this module free of app imports: `vite.config.ts` reads it through
+ * `scripts/service-worker-plugin.ts` to know which static files the worker
+ * precaches, and anything pulled in here has to load before the build does.
  */
 
 export const PWA_HEAD_LINKS = [

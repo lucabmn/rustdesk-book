@@ -255,5 +255,13 @@
   "toast_user_updated": "User updated",
   "toast_user_banned": "User banned",
   "toast_user_unbanned": "Ban lifted",
-  "toast_user_deleted": "User deleted"
+  "toast_user_deleted": "User deleted",
+  "offline_title": "No connection",
+  "offline_subtitle": "The app started, but the server cannot be reached right now.",
+  "offline_body": "Devices, credentials and customers live on the server only — offline they are not here. As soon as you are back online, everything works as usual.",
+  "offline_retry": "Try again",
+  "sw_update_title": "A new version is available",
+  "sw_update_body": "Reload to start using it.",
+  "sw_update_action": "Reload",
+  "sw_update_dismiss": "Later"
 }

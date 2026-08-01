@@ -47,6 +47,11 @@ Kleine, thematisch fokussierte Commits sind einfacher zu reviewen als ein große
 - **Mobile**: Bedienelemente wachsen unter der `touch:`-Variante, alles was ein
   Hover einblendet, muss dort dauerhaft sichtbar sein. Neue Ansichten bitte bei
   375px Breite prüfen.
+- **Service Worker**: `src/sw/entry.ts` ist reine Event-Verdrahtung, alle Regeln
+  liegen in `src/lib/sw-core.ts` und sind dort getestet. Gecacht wird nur eine
+  Allowlist (Build-Assets, Icons, `/offline`) – API-Antworten, Geräte, Passwörter
+  und Sessions niemals. `pnpm dev` registriert nichts; den Worker baut ein Vite-
+  Plugin (`scripts/service-worker-plugin.ts`) nur im Production-Build.
 
 ## Sicherheit
 

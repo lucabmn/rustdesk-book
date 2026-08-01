@@ -11,6 +11,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { getLocale } from '#/paraglide/runtime'
 import { m } from '#/paraglide/messages'
 import { themeInitScript } from '#/lib/theme'
+import { ServiceWorkerPrompt } from '#/components/service-worker-prompt'
 import { PWA_HEAD_LINKS, PWA_HEAD_META } from '#/lib/pwa'
 import { LocaleProvider } from '#/lib/i18n'
 
@@ -60,7 +61,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <LocaleProvider>{children}</LocaleProvider>
+        <LocaleProvider>
+          {children}
+          <ServiceWorkerPrompt />
+        </LocaleProvider>
         <TanStackDevtools
           config={{ position: 'bottom-right' }}
           plugins={[

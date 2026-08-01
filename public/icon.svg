@@ -1,9 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <title>rustdesk-book</title>
   <!--
-    Maskable app icon: the same geometry as favicon.svg, scaled 24 -> 512 and
-    inset far enough that a circular or squircle mask never clips the frame.
-    Fixed colours on purpose — an installed icon does not follow the OS theme.
+    Source of truth for the app icon: the same geometry as favicon.svg, scaled
+    24 -> 512 and inset far enough that a circular or squircle mask never clips
+    the frame. Fixed colours on purpose — an installed icon does not follow the
+    OS theme.
+
+    scripts/generate-icons.mjs rasterises this into the PNGs the manifest and
+    iOS point at. The tile's rounded corners are transparent, so the maskable
+    and apple-touch variants are rendered over an opaque field; see
+    src/lib/pwa.ts.
   -->
   <rect width="512" height="512" rx="112" fill="#1b1e27" />
   <g transform="translate(112 112) scale(12)">

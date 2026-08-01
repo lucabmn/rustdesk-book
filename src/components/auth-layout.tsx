@@ -16,18 +16,24 @@ export function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas px-4 py-10">
-      <Card className="w-full max-w-[380px] p-6">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <BrandMark />
-          <LanguageSwitcher />
-        </div>
-        <h1 className="font-semibold text-text text-xl tracking-tight">
-          {title}
-        </h1>
-        <p className="mt-1 text-muted text-xs">{subtitle}</p>
-        <div className="mt-5">{children}</div>
-      </Card>
+    /* Two boxes rather than one because `px-safe` sets the horizontal padding
+       outright: the insets belong on the frame, the 16px gutter on the box
+       inside it. Installed there is no browser chrome to keep the card clear
+       of a cutout in landscape, or of the home indicator on a long form. */
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-safe py-10">
+      <div className="flex w-full justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+        <Card className="w-full max-w-[380px] p-6">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <BrandMark />
+            <LanguageSwitcher />
+          </div>
+          <h1 className="font-semibold text-text text-xl tracking-tight">
+            {title}
+          </h1>
+          <p className="mt-1 text-muted text-xs">{subtitle}</p>
+          <div className="mt-5">{children}</div>
+        </Card>
+      </div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Power, Star } from 'lucide-react'
+import { CloudUpload, Power, Star } from 'lucide-react'
 
 import { Badge, Button } from '#/components/ui'
 import { formatRustdeskId } from '#/lib/device-meta'
@@ -6,6 +6,22 @@ import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 
 /** Device-specific pieces shared by the three views and the detail drawer. */
+
+/**
+ * Marks a device that exists only in this browser so far.
+ *
+ * It is deliberately a visible label rather than a shade of grey: a row the
+ * server has never seen is not a normal record, and the difference has to
+ * survive a screenshot, a colour-blind reader and a phone in sunlight.
+ */
+export function PendingBadge({ className }: { className?: string }) {
+  return (
+    <Badge tone="accent" className={cn('gap-1', className)}>
+      <CloudUpload className="size-3" />
+      {m.offline_pending_badge()}
+    </Badge>
+  )
+}
 
 /**
  * A RustDesk id. Always monospaced and tabular so ids line up in a column and

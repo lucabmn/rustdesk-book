@@ -3,7 +3,7 @@
  * query, and shaping the results for the grouped view. Framework-free so it can
  * be unit-tested without React.
  */
-import { OS_OPTIONS } from '#/lib/device-meta'
+import { OS_OPTIONS, osLabel } from '#/lib/device-meta'
 import type { Device } from '#/orpc/schema'
 
 /** Sentinel used by the select/combobox inputs for "no restriction". */
@@ -81,6 +81,55 @@ export function mergeOsOptions(stored: readonly string[] = []): string[] {
   )
 }
 
+/**
+ * The same filtering the `devices.list` procedure does, applied to a list the
+ * browser already has.
+ *
+ * It exists for the offline view, where there is no server to ask and the
+ * snapshot holds the whole address book. The rules deliberately mirror
+ * `queryDevices` in `lib/device-service.ts` — status and customer by exact
+ * value, operating system by its display label, free text across the same
+ * fields, tags matching any — so a filter does not quietly mean two different
+ * things depending on the connection.
+ *
+ * Group membership is the one filter that cannot be answered here: it lives in
+ * a table the snapshot does not carry. It is ignored rather than guessed at,
+ * and the sidebar hides the groups while offline.
+ */
+export function filterDevices<T extends Device>(
+  devices: readonly T[],
+  filters: FilterState,
+): T[] {
+  const search = filters.search.trim().toLowerCase()
+  return devices.filter((device) => {
+    if (filters.status !== ANY && device.status !== filters.status) return false
+    if (
+      filters.customer !== ANY &&
+      (device.customer ?? '') !== filters.customer
+    )
+      return false
+    if (filters.osKey !== ANY && osLabel(device.osKey) !== filters.osKey)
+      return false
+    if (filters.favorite && !device.isFavorite) return false
+    if (
+      filters.tags.length &&
+      !filters.tags.some((t) => device.tags.includes(t))
+    )
+      return false
+    if (!search) return true
+    const haystack = [
+      device.rustdeskId,
+      device.alias,
+      device.customer ?? '',
+      device.notes ?? '',
+      device.tags.join(' '),
+    ]
+      .join(' ')
+      .toLowerCase()
+    return haystack.includes(search)
+  })
+}
+
 /** Bucket devices by customer for the grouped view, alphabetically. */
 /**
  * Identity of the "no customer" bucket. Distinct from its label because the
@@ -89,11 +138,11 @@ export function mergeOsOptions(stored: readonly string[] = []): string[] {
  */
 export const UNASSIGNED_KEY = ''
 
-export function groupByCustomer(
-  devices: readonly Device[],
+export function groupByCustomer<T extends Device>(
+  devices: readonly T[],
   unassignedLabel: string,
-): Array<{ key: string; name: string; items: Device[] }> {
-  const map = new Map<string, Device[]>()
+): Array<{ key: string; name: string; items: T[] }> {
+  const map = new Map<string, T[]>()
   for (const device of devices) {
     const key = device.customer || UNASSIGNED_KEY
     const items = map.get(key) ?? []

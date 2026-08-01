@@ -13,8 +13,8 @@ import {
 } from '#/components/ui'
 import { osLabel } from '#/lib/device-meta'
 import { formatLastSeen } from '#/lib/format'
+import { type DisplayDevice, displayStatus } from '#/lib/offline-cache'
 import { cn } from '#/lib/utils'
-import type { Device } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
 import {
   ConnectButton,
@@ -22,15 +22,16 @@ import {
   DeviceTags,
   FavoriteButton,
   PasswordMask,
+  PendingBadge,
 } from '../device-bits'
 
 export interface TableViewProps {
-  devices: Device[]
-  onOpen: (device: Device) => void
-  onConnect: (device: Device) => void
-  onEdit: (device: Device) => void
-  onDelete: (device: Device) => void
-  onToggleFavorite: (device: Device) => void
+  devices: DisplayDevice[]
+  onOpen: (device: DisplayDevice) => void
+  onConnect: (device: DisplayDevice) => void
+  onEdit: (device: DisplayDevice) => void
+  onDelete: (device: DisplayDevice) => void
+  onToggleFavorite: (device: DisplayDevice) => void
 }
 
 /*
@@ -73,7 +74,7 @@ export function TableView({
           // click anywhere else safely means "inspect this device".
           <TR key={d.id} interactive onClick={() => onOpen(d)}>
             <TD>
-              <StatusDot status={d.status} />
+              <StatusDot status={displayStatus(d)} />
             </TD>
             <TD>
               <DeviceId id={d.rustdeskId} />
@@ -82,8 +83,11 @@ export function TableView({
               {/* A long alias in a nowrap cell sets the table's width, which on
                   a phone pushes the action column past the edge. Bounding it
                   to roughly a third of the viewport keeps the row on screen. */}
-              <div className="max-w-[34vw] truncate sm:max-w-none">
-                {d.alias}
+              <div className="flex items-center gap-2">
+                <span className="max-w-[34vw] truncate sm:max-w-none">
+                  {d.alias}
+                </span>
+                {d.pending && <PendingBadge />}
               </div>
             </TD>
             <TD className={cn('text-muted', AT_SM)}>{d.customer || '—'}</TD>
@@ -109,44 +113,51 @@ export function TableView({
                   an id and a customer, and the drawer this row opens offers
                   both anyway. */}
               <div className="flex justify-end gap-1">
-                <FavoriteButton
-                  active={d.isFavorite}
-                  onToggle={() => onToggleFavorite(d)}
-                  className={d.isFavorite ? undefined : hoverReveal}
-                />
-                <div className={cn('flex gap-1', hoverReveal)}>
-                  <ConnectButton
-                    variant="outline"
-                    compact
-                    onClick={() => onConnect(d)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="hidden md:inline-flex"
-                    title={m.common_edit()}
-                    aria-label={m.common_edit()}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEdit(d)
-                    }}
-                  >
-                    <Pencil />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    title={m.common_delete()}
-                    aria-label={m.common_delete()}
-                    className="hidden hover:bg-danger-soft hover:text-danger md:inline-flex"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete(d)
-                    }}
-                  >
-                    <Trash2 />
-                  </Button>
-                </div>
+                {/* A queued device has no row to star, connect to, edit or
+                    delete — every one of these acts on a server record that
+                    does not exist yet. */}
+                {d.pending ? null : (
+                  <>
+                    <FavoriteButton
+                      active={d.isFavorite}
+                      onToggle={() => onToggleFavorite(d)}
+                      className={d.isFavorite ? undefined : hoverReveal}
+                    />
+                    <div className={cn('flex gap-1', hoverReveal)}>
+                      <ConnectButton
+                        variant="outline"
+                        compact
+                        onClick={() => onConnect(d)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        className="hidden md:inline-flex"
+                        title={m.common_edit()}
+                        aria-label={m.common_edit()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEdit(d)
+                        }}
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        title={m.common_delete()}
+                        aria-label={m.common_delete()}
+                        className="hidden hover:bg-danger-soft hover:text-danger md:inline-flex"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDelete(d)
+                        }}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </TD>
           </TR>

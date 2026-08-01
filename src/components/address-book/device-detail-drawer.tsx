@@ -14,23 +14,25 @@ import {
 } from '#/components/ui'
 import { formatRustdeskId, osLabel } from '#/lib/device-meta'
 import { formatLastSeen } from '#/lib/format'
+import { type DisplayDevice, displayStatus } from '#/lib/offline-cache'
 import { orpc } from '#/orpc/client'
-import type { Device } from '#/orpc/schema'
 import { m } from '#/paraglide/messages'
 import { DeviceHistoryList } from './device-history-list'
 import { DevicePasswordField } from './device-password-field'
-import { FavoriteButton } from './device-bits'
+import { FavoriteButton, PendingBadge } from './device-bits'
 import { GroupMembership } from './group-membership'
 
 interface Props {
-  device: Device | null
+  device: DisplayDevice | null
   onOpenChange: (open: boolean) => void
-  onConnect: (device: Device) => void
-  onEdit: (device: Device) => void
-  onDelete: (device: Device) => void
-  onCopyId: (device: Device) => void
-  onToggleFavorite: (device: Device) => void
-  reveal: (device: Device) => Promise<string>
+  onConnect: (device: DisplayDevice) => void
+  onEdit: (device: DisplayDevice) => void
+  onDelete: (device: DisplayDevice) => void
+  onCopyId: (device: DisplayDevice) => void
+  onToggleFavorite: (device: DisplayDevice) => void
+  reveal: (device: DisplayDevice) => Promise<string>
+  /** No connection: everything that is a server round trip steps aside. */
+  offline?: boolean
 }
 
 /** Everything known about one device, without leaving the list behind it. */
@@ -43,14 +45,19 @@ export function DeviceDetailDrawer({
   onCopyId,
   onToggleFavorite,
   reveal,
+  offline,
 }: Props) {
   const [password, setPassword] = useState<string | null>(null)
   const [revealing, setRevealing] = useState(false)
 
+  // A device the server has never seen has no history and no groups, and
+  // asking for either would be a request for a row that does not exist.
+  const serverKnowsIt = device !== null && !device.pending && !offline
+
   const historyQuery = useQuery(
     orpc.audit.listForDevice.queryOptions({
       input: { deviceId: device?.id ?? '' },
-      enabled: device !== null,
+      enabled: serverKnowsIt,
     }),
   )
   const history = historyQuery.data ?? []
@@ -87,7 +94,11 @@ export function DeviceDetailDrawer({
       title={
         <span className="flex items-center gap-2">
           <span className="truncate">{device.alias}</span>
-          <StatusBadge status={device.status} />
+          {device.pending ? (
+            <PendingBadge />
+          ) : (
+            <StatusBadge status={displayStatus(device)} />
+          )}
         </span>
       }
       subtitle={
@@ -96,35 +107,44 @@ export function DeviceDetailDrawer({
         </span>
       }
       actions={
-        <FavoriteButton
-          active={device.isFavorite}
-          onToggle={() => onToggleFavorite(device)}
-        />
+        serverKnowsIt ? (
+          <FavoriteButton
+            active={device.isFavorite}
+            onToggle={() => onToggleFavorite(device)}
+          />
+        ) : null
       }
+      // Editing and deleting are server writes. Offline they are not offered
+      // at all rather than offered and refused — issue #37 leaves them out
+      // deliberately, and a disabled pair of buttons would suggest otherwise.
       footer={
-        <>
-          <Button className="flex-1" onClick={() => onEdit(device)}>
-            <Pencil />
-            {m.common_edit()}
-          </Button>
-          <Button variant="danger" onClick={() => onDelete(device)}>
-            <Trash2 />
-            {m.common_delete()}
-          </Button>
-        </>
+        serverKnowsIt ? (
+          <>
+            <Button className="flex-1" onClick={() => onEdit(device)}>
+              <Pencil />
+              {m.common_edit()}
+            </Button>
+            <Button variant="danger" onClick={() => onDelete(device)}>
+              <Trash2 />
+              {m.common_delete()}
+            </Button>
+          </>
+        ) : null
       }
     >
-      <div className="px-4 py-3.5">
-        <Button
-          variant="accent"
-          size="lg"
-          className="w-full"
-          onClick={() => onConnect(device)}
-        >
-          <Power />
-          {m.drawer_open_session()}
-        </Button>
-      </div>
+      {serverKnowsIt && (
+        <div className="px-4 py-3.5">
+          <Button
+            variant="accent"
+            size="lg"
+            className="w-full"
+            onClick={() => onConnect(device)}
+          >
+            <Power />
+            {m.drawer_open_session()}
+          </Button>
+        </div>
+      )}
 
       <div className="px-4 pb-1">
         <MetaList>
@@ -155,6 +175,7 @@ export function DeviceDetailDrawer({
         password={password}
         revealing={revealing}
         onToggleReveal={toggleReveal}
+        offline={offline}
       />
 
       {device.tags.length > 0 && (
@@ -177,11 +198,15 @@ export function DeviceDetailDrawer({
         </Section>
       )}
 
-      <Section title={m.drawer_groups()}>
-        <GroupMembership deviceId={device.id} />
-      </Section>
+      {serverKnowsIt && (
+        <>
+          <Section title={m.drawer_groups()}>
+            <GroupMembership deviceId={device.id} />
+          </Section>
 
-      <DeviceHistoryList history={history} />
+          <DeviceHistoryList history={history} />
+        </>
+      )}
     </Drawer>
   )
 }

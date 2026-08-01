@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  ANY,
   buildListInput,
   EMPTY_FILTERS,
+  filterDevices,
   groupByCustomer,
   hasActiveFilters,
   initialsOf,
@@ -139,5 +141,70 @@ describe('initialsOf', () => {
   it('takes the first two characters, upper-cased', () => {
     expect(initialsOf('luca')).toBe('LU')
     expect(initialsOf('A')).toBe('A')
+  })
+})
+
+// The offline half of `devices.list`. Every case here mirrors one the
+// procedure is tested for, because a filter that means two different things
+// depending on the connection is worse than no offline filter at all.
+describe('filterDevices', () => {
+  const book = [
+    device({
+      id: '1',
+      alias: 'Reception PC',
+      customer: 'Acme',
+      osKey: 'win11',
+      status: 'online',
+      tags: ['office'],
+      isFavorite: true,
+    }),
+    device({
+      id: '2',
+      alias: 'Warehouse',
+      rustdeskId: '987654321',
+      customer: 'Globex',
+      osKey: 'ubuntu',
+      status: 'offline',
+      tags: ['depot'],
+      notes: 'cold store',
+    }),
+  ]
+  const only = (patch: Partial<typeof EMPTY_FILTERS>) =>
+    filterDevices(book, { ...EMPTY_FILTERS, ...patch }).map((d) => d.id)
+
+  it('returns the whole book when nothing narrows it', () => {
+    expect(only({})).toEqual(['1', '2'])
+  })
+
+  it('filters by status, customer, os, tag and favorite', () => {
+    expect(only({ status: 'online' })).toEqual(['1'])
+    expect(only({ customer: 'Globex' })).toEqual(['2'])
+    expect(only({ osKey: 'Windows 11' })).toEqual(['1'])
+    expect(only({ tags: ['depot'] })).toEqual(['2'])
+    expect(only({ favorite: true })).toEqual(['1'])
+  })
+
+  it('searches id, alias, customer, notes and tags alike', () => {
+    expect(only({ search: 'reception' })).toEqual(['1'])
+    expect(only({ search: '987654321' })).toEqual(['2'])
+    expect(only({ search: 'acme' })).toEqual(['1'])
+    expect(only({ search: 'cold' })).toEqual(['2'])
+    expect(only({ search: 'office' })).toEqual(['1'])
+    expect(only({ search: 'nothing' })).toEqual([])
+  })
+
+  it('matches an unassigned device against the empty customer', () => {
+    const orphan = [device({ id: '3', customer: null })]
+    expect(
+      filterDevices(orphan, { ...EMPTY_FILTERS, customer: '' }),
+    ).toHaveLength(1)
+    expect(
+      filterDevices(orphan, { ...EMPTY_FILTERS, customer: 'Acme' }),
+    ).toHaveLength(0)
+  })
+
+  it('ignores a group filter it has no membership data for', () => {
+    expect(only({ groupId: 'a-group' })).toEqual(['1', '2'])
+    expect(EMPTY_FILTERS.customer).toBe(ANY)
   })
 })

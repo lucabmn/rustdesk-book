@@ -3,21 +3,22 @@ import { Pencil } from 'lucide-react'
 import { activatable, Button, Card, StatusBadge } from '#/components/ui'
 import { osLabel } from '#/lib/device-meta'
 import { formatLastSeen } from '#/lib/format'
-import type { Device } from '#/orpc/schema'
+import { type DisplayDevice, displayStatus } from '#/lib/offline-cache'
 import { m } from '#/paraglide/messages'
 import {
   ConnectButton,
   DeviceId,
   DeviceTags,
   FavoriteButton,
+  PendingBadge,
 } from '../device-bits'
 
 export interface CardsViewProps {
-  devices: Device[]
-  onOpen: (device: Device) => void
-  onConnect: (device: Device) => void
-  onEdit: (device: Device) => void
-  onToggleFavorite: (device: Device) => void
+  devices: DisplayDevice[]
+  onOpen: (device: DisplayDevice) => void
+  onConnect: (device: DisplayDevice) => void
+  onEdit: (device: DisplayDevice) => void
+  onToggleFavorite: (device: DisplayDevice) => void
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -55,11 +56,17 @@ export function CardsView({
               </div>
               <DeviceId id={d.rustdeskId} className="text-2xs" />
             </div>
-            <StatusBadge status={d.status} />
-            <FavoriteButton
-              active={d.isFavorite}
-              onToggle={() => onToggleFavorite(d)}
-            />
+            {d.pending ? (
+              <PendingBadge />
+            ) : (
+              <>
+                <StatusBadge status={displayStatus(d)} />
+                <FavoriteButton
+                  active={d.isFavorite}
+                  onToggle={() => onToggleFavorite(d)}
+                />
+              </>
+            )}
           </div>
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 px-3.5 py-3 text-xs">
@@ -74,23 +81,28 @@ export function CardsView({
             </div>
           )}
 
-          <div className="flex gap-1.5 border-line border-t px-3.5 py-2.5">
-            <ConnectButton
-              onClick={() => onConnect(d)}
-              className="h-7 flex-1 text-xs"
-            />
-            <Button
-              size="icon-sm"
-              title={m.common_edit()}
-              aria-label={m.common_edit()}
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit(d)
-              }}
-            >
-              <Pencil />
-            </Button>
-          </div>
+          {/* Nothing to act on until the device exists: connecting needs the
+              server to build the URI, and editing a queued entry is out of
+              scope for the offline feature by design. */}
+          {!d.pending && (
+            <div className="flex gap-1.5 border-line border-t px-3.5 py-2.5">
+              <ConnectButton
+                onClick={() => onConnect(d)}
+                className="h-7 flex-1 text-xs"
+              />
+              <Button
+                size="icon-sm"
+                title={m.common_edit()}
+                aria-label={m.common_edit()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit(d)
+                }}
+              >
+                <Pencil />
+              </Button>
+            </div>
+          )}
         </Card>
       ))}
     </div>

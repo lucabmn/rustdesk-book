@@ -1,11 +1,30 @@
 import { m } from '#/paraglide/messages'
-import type { DeviceStatus } from '#/lib/device-meta'
+import type { DisplayStatus } from '#/lib/offline-cache'
 
-/** Localized status label. */
-export function statusLabel(status: DeviceStatus): string {
+/**
+ * Localized status label. `unknown` is what a row from the local snapshot or
+ * from the queue reports — see `displayStatus`, which is the only thing that
+ * produces it.
+ */
+export function statusLabel(status: DisplayStatus): string {
   if (status === 'online') return m.status_online()
   if (status === 'away') return m.status_away()
+  if (status === 'unknown') return m.status_unknown()
   return m.status_offline()
+}
+
+/**
+ * How old the stored address book is, in words. Rounded down and coarse on
+ * purpose: the point is "this is from a while ago", and a minute-accurate age
+ * would only invite reading it as a live figure.
+ */
+export function cacheAgeLabel(fetchedAt: number, now: number): string {
+  const minutes = Math.floor(Math.max(0, now - fetchedAt) / 60_000)
+  if (minutes < 1) return m.offline_age_now()
+  if (minutes < 60) return m.offline_age_minutes({ count: minutes })
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return m.offline_age_hours({ count: hours })
+  return m.offline_age_days({ count: Math.floor(hours / 24) })
 }
 
 /** Localized role label. */

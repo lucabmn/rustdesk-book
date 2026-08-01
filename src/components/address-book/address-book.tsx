@@ -14,6 +14,8 @@ import { DeviceFormDialog } from './device-form-dialog'
 import { EnrollmentDialog } from './enrollment-dialog'
 import { FilterSheet, FilterSidebar } from './filter-sidebar'
 import { InviteDialog } from './invite-dialog'
+import { OfflineNotice } from './offline-notice'
+import { QueueDialog } from './queue-dialog'
 import { ContentHeader } from './toolbar'
 import { useAddressBook } from './use-address-book'
 import { UsersDialog } from './users-dialog'
@@ -33,7 +35,7 @@ export function AddressBook({
   user: SessionUser
   initialView: ViewMode
 }) {
-  const book = useAddressBook(initialView)
+  const book = useAddressBook(initialView, user.id)
   const { filters, patch, actions, stats } = book
   const isAdmin = user.role === 'admin'
 
@@ -144,6 +146,15 @@ export function AddressBook({
         <FilterSheet {...navProps} open={navOpen} onOpenChange={setNavOpen} />
 
         <main className="flex min-w-0 flex-1 flex-col">
+          {/* Above the toolbar and in normal flow: what it says changes how
+              everything below it should be read. */}
+          <OfflineNotice
+            offline={book.offline}
+            fetchedAt={book.cachedAt}
+            pending={book.pendingCount}
+            stuck={book.stuckCount}
+            onReview={() => book.setQueueOpen(true)}
+          />
           <ContentHeader
             heading={
               filters.customer === ANY ? m.nav_all_devices() : filters.customer
@@ -182,6 +193,7 @@ export function AddressBook({
         operatingSystems={book.osNames}
         onSubmit={actions.submitForm}
         busy={book.formBusy}
+        offline={book.offline}
       />
       <DeviceDetailDrawer
         device={book.detail}
@@ -192,6 +204,17 @@ export function AddressBook({
         onCopyId={actions.copyId}
         onToggleFavorite={actions.toggleFavorite}
         reveal={actions.reveal}
+        offline={book.offline}
+      />
+      <QueueDialog
+        open={book.queueOpen}
+        onOpenChange={book.setQueueOpen}
+        queue={book.queue}
+        offline={book.offline}
+        conflictNames={book.conflictNames}
+        onAdopt={actions.adoptConflict}
+        onDiscard={actions.discardEntry}
+        onRetry={actions.retryEntry}
       />
       <CustomersDialog open={customersOpen} onOpenChange={setCustomersOpen} />
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />

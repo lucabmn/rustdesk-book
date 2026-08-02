@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-02
+
+### Added
+- The app is installable: `public/manifest.webmanifest`, a rendered icon set
+  (192, 512, maskable and an Apple touch icon) and the head data in
+  `src/lib/pwa.ts`, so it starts standalone from a home screen. The maskable
+  and Apple icons are full-bleed and opaque, because a launcher clips them and
+  iOS composites transparency onto black
+- A service worker built into the client output by a Vite plugin. Every
+  decision it makes lives in `src/lib/sw-core.ts`, where what may be cached is
+  an allowlist: hashed build assets, the icons, the manifest and the offline
+  document. oRPC, better-auth, `/mcp`, server functions and every SSR document
+  go to the network untouched
+- `/offline` is a route, not a hand-written file, so the offline start renders
+  in the app's own design and without JavaScript. A failed navigation is
+  redirected there rather than served in place
+- A new worker installs and waits: the user is offered the update and the
+  running version keeps serving until they accept
+- The address book stays readable without a connection, out of a snapshot in
+  IndexedDB, and a device created offline is held in a queue that transfers
+  itself once there is a connection again
+- `devices.create` accepts an optional `id` and `offlineCreatedAt`. A replayed
+  create returns the existing device instead of a second row, and only then is
+  a `rustdeskId` already in use reported as a conflict — reversed, a resend
+  after a lost reply would conflict with itself. Online behaviour is unchanged
+- Sign-out wipes the queue and the snapshot, and the queue carries an owner
+  stamp: the actor recorded for a transfer is whoever was signed in for it
+
+### Changed
+- The no-caching rule from the service worker is narrowed for device master
+  data only, as a list of field names in `src/lib/offline-cache.ts`: ids,
+  alias, customer *name*, OS, tags, notes, status, timestamps, plus
+  `hasPassword` and `isFavorite`. Never a cleartext password,
+  `passwordCipher`, a session or an enrollment token. Anything the server
+  projection gains later is dropped until it is added to that list on purpose
+- The password field is disabled offline. The key that protects it
+  (`APP_ENCRYPTION_KEY`) exists on the server only, and a queue entry
+  structurally cannot carry one
+- `displayStatus` is the single funnel a status reaches the screen through, so
+  a row from the snapshot or the queue reports `unknown` rather than the green
+  of a live device. The status filter goes through the same funnel; the group
+  filter is hidden offline, as membership is not carried
+- Safe-area insets on the auth frame — installed, there is no browser chrome
+  to keep the card clear of a cutout or the home indicator
+
 ## [0.6.0] - 2026-07-30
 
 ### Added

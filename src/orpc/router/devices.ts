@@ -197,10 +197,60 @@ export const create = authed
   .input(DeviceInputSchema)
   .output(DeviceSchema)
   .handler(async ({ input, context }) => {
+    const offline = Boolean(input.offlineCreatedAt)
+
+    // An entry sent twice — the reply to the first attempt was lost — must
+    // find its own row and stop here. This has to come before the duplicate
+    // check below, or a resend would be reported as a conflict with itself.
+    if (input.id) {
+      const [existing] = await context.db
+        .select()
+        .from(devices)
+        .where(eq(devices.id, input.id))
+        .limit(1)
+      if (existing) {
+        const customerName = await customerNameOf(
+          context.db,
+          existing.customerId,
+        )
+        return toPublicDevice(existing, undefined, customerName)
+      }
+    }
+
+    // Only for the queue: online the list is in front of the user, and a
+    // repeated id there can be a deliberate second entry. A queue is replayed
+    // blind, which is the one place a duplicate appears unseen.
+    //
+    // `devices_enrollment_token_rustdesk_id_idx` is no help: a device created
+    // offline has no enrollment token, and Postgres treats every NULL in a
+    // unique index as distinct. The check belongs here.
+    if (offline) {
+      const [clash] = await context.db
+        .select()
+        .from(devices)
+        .where(eq(devices.rustdeskId, input.rustdeskId))
+        .limit(1)
+      if (clash) {
+        throw new ORPCError('CONFLICT', {
+          message: 'Diese RustDesk-ID ist bereits vergeben.',
+          // The public projection, so the decision the user is asked to make
+          // never carries the stored secret with it.
+          data: {
+            existing: toPublicDevice(
+              clash,
+              undefined,
+              await customerNameOf(context.db, clash.customerId),
+            ),
+          },
+        })
+      }
+    }
+
     const customerId = await resolveCustomerId(context.db, input.customer)
     const [row] = await context.db
       .insert(devices)
       .values({
+        id: input.id,
         rustdeskId: input.rustdeskId,
         alias: input.alias,
         customerId,
@@ -218,13 +268,27 @@ export const create = authed
       metadata: {
         rustdeskId: row.rustdeskId,
         withPassword: Boolean(row.passwordCipher),
+        // Two timestamps, deliberately: the entry's own `createdAt` is when
+        // the device reached the server, `offlineCreatedAt` when the user
+        // actually filled the form. The actor is whoever was signed in for
+        // the transfer — the only identity the server can authenticate.
+        ...(offline
+          ? { offline: true, offlineCreatedAt: input.offlineCreatedAt }
+          : {}),
       },
     })
     return toPublicDevice(row, undefined, input.customer?.trim() || null)
   })
 
 export const update = authed
-  .input(z.object({ id: z.string().uuid(), data: DeviceInputSchema }))
+  .input(
+    z.object({
+      id: z.string().uuid(),
+      // The two queue-only fields have no meaning here: the row already
+      // exists, and it is `input.id` that says which one.
+      data: DeviceInputSchema.omit({ id: true, offlineCreatedAt: true }),
+    }),
+  )
   .output(DeviceSchema)
   .handler(async ({ input, context }) => {
     const existing = await loadDeviceRow(context.db, input.id)

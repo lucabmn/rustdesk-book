@@ -8,21 +8,26 @@ import {
   writeCollapsedGroups,
 } from '#/lib/collapsed-groups'
 import { osLabel } from '#/lib/device-meta'
-import type { Device } from '#/orpc/schema'
+import { type DisplayDevice, displayStatus } from '#/lib/offline-cache'
 import { cn } from '#/lib/utils'
-import { ConnectButton, DeviceId, DeviceTags } from '../device-bits'
+import {
+  ConnectButton,
+  DeviceId,
+  DeviceTags,
+  PendingBadge,
+} from '../device-bits'
 
 export interface DeviceGroup {
   /** Stable identity — the customer name, or '' for the unassigned bucket. */
   key: string
   name: string
-  items: Device[]
+  items: DisplayDevice[]
 }
 
 export interface GroupedViewProps {
   groups: DeviceGroup[]
-  onOpen: (device: Device) => void
-  onConnect: (device: Device) => void
+  onOpen: (device: DisplayDevice) => void
+  onConnect: (device: DisplayDevice) => void
 }
 
 /** Devices bucketed by customer, one foldable card per customer. */
@@ -78,7 +83,7 @@ export function GroupedView({ groups, onOpen, onConnect }: GroupedViewProps) {
                     {...activatable(() => onOpen(d))}
                     className="flex cursor-pointer items-center gap-3 border-line border-b px-3.5 py-2 transition-colors last:border-b-0 hover:bg-hover"
                   >
-                    <StatusDot status={d.status} />
+                    <StatusDot status={displayStatus(d)} />
                     {/* One column of fixed-width fields reads well across a
                         desk and not at all across a phone, so below `sm` the
                         id and alias stack and the rest gives way to Connect. */}
@@ -98,10 +103,14 @@ export function GroupedView({ groups, onOpen, onConnect }: GroupedViewProps) {
                       tags={d.tags}
                       className="hidden flex-nowrap lg:inline-flex"
                     />
-                    <ConnectButton
-                      variant="outline"
-                      onClick={() => onConnect(d)}
-                    />
+                    {d.pending ? (
+                      <PendingBadge />
+                    ) : (
+                      <ConnectButton
+                        variant="outline"
+                        onClick={() => onConnect(d)}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

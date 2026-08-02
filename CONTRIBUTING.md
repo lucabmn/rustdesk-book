@@ -52,6 +52,18 @@ Kleine, thematisch fokussierte Commits sind einfacher zu reviewen als ein große
   Allowlist (Build-Assets, Icons, `/offline`) – API-Antworten, Geräte, Passwörter
   und Sessions niemals. `pnpm dev` registriert nichts; den Worker baut ein Vite-
   Plugin (`scripts/service-worker-plugin.ts`) nur im Production-Build.
+- **Offline-Adressbuch**: Gerätestammdaten dürfen als einzige Ausnahme lokal
+  liegen (IndexedDB). Welche Felder das sind, steht als Liste in
+  `src/lib/offline-cache.ts` – Passwörter, `passwordCipher`, Session- und
+  Enrollment-Tokens gehören nie dazu, weil der Schlüssel dafür nur auf dem
+  Server existiert. Der Rest teilt sich in `offline-queue.ts` (was mit einem
+  Eintrag passiert), `offline-sync.ts` (in welcher Reihenfolge gesendet wird
+  und wie ein Fehlschlag zählt) und `offline-store.ts` (die einzige Stelle mit
+  Browser-API, deshalb von der Coverage ausgenommen). Jeder Eintrag bringt
+  seine `devices.id` selbst mit, damit ein zweiter Versuch kein zweites Gerät
+  anlegt. Gezeigt wird ein Status ausschließlich über `displayStatus` – ein
+  gecachtes „online“ ist nie die Gegenwart. Abmelden löscht Cache und
+  Warteschlange.
 
 ## Sicherheit
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 
@@ -7,12 +7,18 @@ import { client, orpc } from '#/orpc/client'
 import {
   buildListInput,
   EMPTY_FILTERS,
+  filterDevices,
   groupByCustomer,
   hasActiveFilters,
+  localDevices,
   mergeOsOptions,
   toggleTag as toggleTagIn,
   type FilterState,
 } from '#/lib/address-book-filters'
+import type { DisplayDevice } from '#/lib/offline-cache'
+import { queuedDevices, stuckEntries } from '#/lib/offline-queue'
+import type { SyncOutcome } from '#/lib/offline-sync'
+import { useOfflineBook } from './use-offline-book'
 import {
   EXPORT_FILENAME,
   parseDeviceImport,
@@ -37,7 +43,7 @@ export type { ViewMode }
  * the server renders the view the user last chose instead of a default the
  * client then has to correct.
  */
-export function useAddressBook(initialView: ViewMode) {
+export function useAddressBook(initialView: ViewMode, userId: string) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { toast } = useToast()
@@ -47,8 +53,31 @@ export function useAddressBook(initialView: ViewMode) {
   const [theme, setTheme] = useState<Theme>(getCurrentTheme())
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Device | null>(null)
-  const [detail, setDetail] = useState<Device | null>(null)
-  const [pendingDelete, setPendingDelete] = useState<Device | null>(null)
+  const [detail, setDetail] = useState<DisplayDevice | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<DisplayDevice | null>(null)
+  const [queueOpen, setQueueOpen] = useState(false)
+
+  /**
+   * One summary for a whole transfer, in the words of issue #37: "3 devices
+   * transferred", not a cascade of toasts. An expired session is the one
+   * outcome that needs more than a sentence — it needs the login.
+   */
+  const onSynced = useCallback(
+    (outcome: SyncOutcome) => {
+      if (outcome.transferred.length) {
+        void queryClient.invalidateQueries({ queryKey: orpc.devices.key() })
+        void queryClient.invalidateQueries({ queryKey: orpc.customers.key() })
+        toast(m.toast_transferred({ count: outcome.transferred.length }))
+      }
+      if (outcome.stoppedBy === 'unauthorized') {
+        toast(m.toast_sync_expired())
+        void router.navigate({ to: '/login' })
+      }
+    },
+    [queryClient, router, toast],
+  )
+
+  const offlineBook = useOfflineBook({ userId, onSynced })
 
   const patch = (next: Partial<FilterState>) =>
     setFilters((current) => ({ ...current, ...next }))
@@ -69,7 +98,53 @@ export function useAddressBook(initialView: ViewMode) {
     orpc.devices.syncInfo.queryOptions({ input: {} }),
   )
 
-  const devices = listQuery.data ?? []
+  /**
+   * Serving from the snapshot is not only about `navigator.onLine`: a server
+   * that cannot be reached looks exactly the same from here, and a failed list
+   * query is the more reliable of the two signals.
+   */
+  const degraded = !offlineBook.online || listQuery.isError
+
+  // Keep the stored address book current — but only from an unfiltered list,
+  // which is the whole book. Writing a filtered result would shrink the
+  // snapshot to whatever the user last searched for.
+  //
+  // And only while the connection holds. React Query keeps the last successful
+  // data after a failed refetch, so this effect can run again offline — with
+  // hour-old devices and a fresh `Date.now()`, which would quietly reset the
+  // age the notice is showing to "just now".
+  const unfiltered = !hasActiveFilters(filters)
+  useEffect(() => {
+    if (listQuery.data && unfiltered && !degraded) {
+      offlineBook.remember(listQuery.data)
+    }
+  }, [listQuery.data, unfiltered, degraded, offlineBook.remember])
+
+  const devices = useMemo<DisplayDevice[]>(() => {
+    // The server's answer is already filtered by the procedure; the stored one
+    // has to be filtered here, which `localDevices` does for both halves.
+    if (degraded) {
+      return localDevices(offlineBook.snapshot, offlineBook.queue, filters)
+    }
+    return [
+      ...filterDevices(queuedDevices(offlineBook.queue), filters),
+      ...(listQuery.data ?? []),
+    ]
+  }, [
+    degraded,
+    offlineBook.snapshot,
+    offlineBook.queue,
+    listQuery.data,
+    filters,
+  ])
+
+  // A group filter cannot be answered from the snapshot, so it is dropped
+  // rather than left selected while it quietly does nothing.
+  useEffect(() => {
+    if (degraded && filters.groupId)
+      setFilters((f) => ({ ...f, groupId: null }))
+  }, [degraded, filters.groupId])
+
   const stats = statsQuery.data
   const customerNames = customersQuery.data?.map((c) => c.name) ?? []
   const osNames = mergeOsOptions(stats?.operatingSystems.map((o) => o.name))
@@ -160,8 +235,20 @@ export function useAddressBook(initialView: ViewMode) {
       setFormOpen(true)
     },
     submitForm(input: DeviceInput) {
-      if (editing) updateMut.mutate({ id: editing.id, data: input })
-      else createMut.mutate(input)
+      if (editing) {
+        updateMut.mutate({ id: editing.id, data: input })
+        return
+      }
+      // Offline the form does not fail and it does not ask twice: the device
+      // is taken, appears in the list immediately as not yet transferred, and
+      // goes out by itself when there is a connection again.
+      if (degraded) {
+        offlineBook.enqueue(input)
+        toast(m.toast_queued())
+        setFormOpen(false)
+        return
+      }
+      createMut.mutate(input)
     },
     confirmDelete(device: Device) {
       removeMut.mutate({ id: device.id })
@@ -243,9 +330,41 @@ export function useAddressBook(initialView: ViewMode) {
       // sign-out is the moment to make that true of the device as well, not
       // just of the rules — so whatever the worker filled goes with it.
       await clearRuntimeCache()
+      // And with it the address book this session stored and anything it
+      // still had waiting. A queue outliving its session would be a stack of
+      // one user's devices sitting in the next user's browser.
+      await offlineBook.wipe()
       await router.navigate({ to: '/login' })
     },
+    async adoptConflict(entryId: string) {
+      try {
+        await offlineBook.adopt(entryId)
+        invalidate()
+        toast(m.toast_adopted())
+      } catch (error) {
+        onError(error as { message: string })
+      }
+    },
+    discardEntry(entryId: string) {
+      offlineBook.discard(entryId)
+      toast(m.toast_discarded())
+    },
+    retryEntry(entryId: string) {
+      void offlineBook.retry(entryId)
+    },
   }
+
+  /**
+   * The devices that entries collide with, so the decision dialog can name
+   * them. Read from what is already on screen rather than fetched: the list
+   * holds the whole address book, and a conflict is by definition with a
+   * device that is in it.
+   */
+  const conflictNames = useMemo(() => {
+    const names: Record<string, string | undefined> = {}
+    for (const device of devices) names[device.id] = device.alias
+    return names
+  }, [devices])
 
   return {
     filters,
@@ -258,7 +377,10 @@ export function useAddressBook(initialView: ViewMode) {
     stats,
     customerNames,
     osNames,
-    isLoading: listQuery.isLoading,
+    // A failed list query settles fast, so without the second half of this an
+    // offline start would paint "no devices" for as long as it takes to read
+    // the store — an empty address book, briefly, for a user who has one.
+    isLoading: listQuery.isLoading || (degraded && !offlineBook.ready),
     syncEnabled: syncInfoQuery.data?.enabled ?? false,
     syncPending: syncMut.isPending,
     syncNow: () => syncMut.mutate({}),
@@ -272,6 +394,14 @@ export function useAddressBook(initialView: ViewMode) {
     pendingDelete,
     setPendingDelete,
     actions,
+    offline: degraded,
+    cachedAt: offlineBook.snapshot?.fetchedAt,
+    queue: offlineBook.queue,
+    pendingCount: offlineBook.pendingCount,
+    stuckCount: stuckEntries(offlineBook.queue).length,
+    conflictNames,
+    queueOpen,
+    setQueueOpen,
   }
 }
 

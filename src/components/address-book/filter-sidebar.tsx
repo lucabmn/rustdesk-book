@@ -35,6 +35,13 @@ export interface FilterSidebarProps {
   tags: Facet[]
   isAdmin: boolean
   onManageCustomers: () => void
+  /**
+   * No connection. Every facet here is answered from the stored address book
+   * except group membership, which lives in a table the snapshot does not
+   * carry — so the groups step aside rather than offer a filter that would
+   * silently return the unfiltered list.
+   */
+  offline?: boolean
 }
 
 /** Section header with an optional action button on the right. */
@@ -77,6 +84,7 @@ function SidebarBody({
   tags,
   isAdmin,
   onManageCustomers,
+  offline,
 }: FilterSidebarProps) {
   const allActive =
     filters.customer === ANY &&
@@ -197,10 +205,12 @@ function SidebarBody({
         </Group>
       )}
 
-      <GroupSidebar
-        activeGroupId={filters.groupId}
-        onSelect={(groupId) => patch({ groupId })}
-      />
+      {!offline && (
+        <GroupSidebar
+          activeGroupId={filters.groupId}
+          onSelect={(groupId) => patch({ groupId })}
+        />
+      )}
     </>
   )
 }

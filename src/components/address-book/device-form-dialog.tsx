@@ -26,6 +26,13 @@ interface Props {
   operatingSystems: string[]
   onSubmit: (input: DeviceInput) => void
   busy?: boolean
+  /**
+   * No connection. The device can still be filled in and queued; the password
+   * cannot, because the key that would protect it lives on the server and a
+   * cleartext secret in this browser's storage is the one thing issue #37
+   * refuses to introduce.
+   */
+  offline?: boolean
 }
 
 const empty = {
@@ -47,6 +54,7 @@ export function DeviceFormDialog({
   operatingSystems,
   onSubmit,
   busy,
+  offline,
 }: Props) {
   const [form, setForm] = useState(empty)
 
@@ -188,17 +196,19 @@ export function DeviceFormDialog({
             label={m.form_password_label()}
             htmlFor="f-password"
             className="col-span-2"
+            hint={offline ? m.offline_password_disabled() : undefined}
           >
             <Input
               id="f-password"
               type="password"
               className="font-mono"
-              value={form.password}
+              value={offline ? '' : form.password}
               onChange={(e) => set('password', e.target.value)}
               placeholder={
                 device ? m.form_password_ph_edit() : m.form_password_ph_new()
               }
               autoComplete="new-password"
+              disabled={offline}
             />
           </Field>
           <Field
